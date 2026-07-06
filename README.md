@@ -89,19 +89,30 @@ docker compose build
 
 ### 提交流程
 
+> 提示：以下流程可配合 Claude 命令（`/` 斜杠命令）自动完成部分步骤，详见 `.claude/commands/`。
+
 ```bash
-# 1. 从 main 创建特性分支
-git checkout -b feat/backup-engine
+# 1. 用 Claude 创建分支（按规范命名，支持所有分支类型）
+/git:create-branch
+# → 交互式引导：选择分支类型（feat/fix/docs/refactor...）、输入需求描述、自动生成分支名
+# → 效果：feature/airprofly_01-core-backup-restore
 
-# 2. 开发完成后，使用 Claude /simplify 审查并优化变更
-# 3. 暂存、提交
+# 2. 暂存所有变更
 git add .
-git commit -m "feat: implement backup engine core"
 
-# 4. 推送到远程 (非 main 分支)
-git push origin feat/backup-engine
+# 3. 使用 Claude 审查并优化已暂存的变更
+/simplify
+# → 自动审查变更并应用简化/复用/优化建议
 
-# 5. 在 GitHub 上创建 Pull Request → 待 review 通过后合入 main
+# 4. 将 /simplify 的改动重新暂存，然后生成提交信息
+git add .
+/git:git-commit
+# → 基于 git diff --staged 自动生成 Conventional Commits 格式信息
+
+# 5. 推送到远程 (非 main 分支)
+git push origin <分支名>
+
+# 6. 在 GitHub 上创建 Pull Request → 待 review 通过后合入 main
 ```
 
 ## 📄 许可证
