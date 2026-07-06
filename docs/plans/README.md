@@ -6,7 +6,7 @@
 
 | # | 功能 | 文件 | 工作量 | 周期 |
 |---|------|------|--------|------|
-| 1 | 核心备份与还原 | [01-core-backup-restore.md](01-core-backup-restore.md) | ~1500 行 | 1-2 周 |
+| 1 | ✅ 核心备份与还原 (已实现) | [01-core-backup-restore.md](01-core-backup-restore.md) | ~1500 行 | 1-2 周 |
 
 ## 扩展要求（扩展分）
 

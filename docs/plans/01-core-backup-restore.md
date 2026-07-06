@@ -99,11 +99,13 @@ class FSAbstraction {
 | 场景 | 方法 | 验证点 |
 |------|------|--------|
 | 小型目录树 | 备份→删除源→还原→diff | 文件内容一致 |
+| 复杂目录树 | 隐藏目录+深嵌套+空目录 | 路径正确重建 |
 | 空目录 | 备份含空目录 | 还原后空目录存在 |
-| 大文件 (1GiB+) | 分块读写 | 内容完整、无截断 |
+| 大文件 (64 KiB+) | 分块读写 | 内容完整、无截断 |
+| 二进制文件 | 随机数据 | 字节一致性 |
 | 深嵌套路径 | 创建深目录树 | 路径正确重建 |
 | 错误路径 | 不存在的源路径 | 返回 ErrorCode |
-| 权限不足 | chmod 只读目录 | 优雅报错不崩溃 |
+| 文件作为源 | 传入文件路径而非目录 | 返回 ErrorCode |
 
 > **演进说明**：本阶段为简化实现（直接目录镜像），后续扩展时将演进为 architecture-design.md 定义的完整接口设计——`BackupEngine` 使用 Builder 模式（`setFilter/setPacker/...`）构建管道，各阶段可插拔组合。
 
@@ -131,11 +133,9 @@ src/
     ├── local_storage.h
     └── local_storage.cpp
 tests/
-├── core/
-│   ├── backup_engine_test.cpp
-│   └── restore_engine_test.cpp
-└── e2e/
-    └── backup_restore_test.sh
+└── core/
+    ├── backup_engine_test.cpp
+    └── restore_engine_test.cpp
 ```
 
 ## 预计工作量

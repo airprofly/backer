@@ -1,0 +1,35 @@
+# 构建输出
+build/
+build-*/
+
+data/
+
+# 版本控制
+.git/
+.gitignore
+.gitattributes
+
+# 配置文件（不在构建上下文中需要）
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 文档（构建不需要）
+docs/
+README.md
+CLAUDE.md
+
+# Docker 自身
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 测试数据（tests/ 已拷贝源码，但测试数据不参与编译）
+testdata/
+
+# 临时文件
+*.log
+*.tmp

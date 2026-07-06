@@ -1,6 +1,7 @@
 # ================ Customized according to the project requirements ===============
 assets/
 .claude/commands/info.md
+data/
 
 
 # ================= latex =================

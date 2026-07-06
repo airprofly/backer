@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  # ── 代码风格检查 ───────────────────────────────────
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-Debug-default
+          restore-keys: |
+            deps-${{ hashFiles('CMakeLists.txt') }}-
+            deps-
+
+      - name: Install cpplint
+        run: pip3 install --user cpplint
+
+      - name: Run cpplint
+        run: |
+          cpplint --filter=-runtime/references \
+            --recursive \
+            src/ tests/
+
+      - name: Install clang-tidy
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq clang-tidy-14
+
+      - name: Run clang-tidy
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DBUILD_TESTING=ON
+          run-clang-tidy-14 -p build \
+            -checks='-*,bugprone-*,clang-analyzer-*,performance-*,modernize-*,-modernize-use-trailing-return-type' \
+            src/
+
+  # ── 构建 + 单元测试（编译器矩阵） ──────────────────
+  build-and-test:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - { cc: gcc-12,   cxx: g++-12,   pkg: g++-12 }
+          - { cc: clang-14, cxx: clang++-14, pkg: clang-14 }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install compiler
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ${{ matrix.compiler.pkg }}
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ matrix.compiler.cc }}
+          restore-keys: |
+            deps-${{ hashFiles('CMakeLists.txt') }}-
+            deps-
+
+      - name: Configure CMake
+        run: >
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }}
+          -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure
+
+  # ── Valgrind 内存检测 ──────────────────────────────
+  memcheck:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install valgrind
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq valgrind
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-Debug-default
+          restore-keys: |
+            deps-${{ hashFiles('CMakeLists.txt') }}-
+            deps-
+
+      - name: Configure & build (Debug)
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+          cmake --build build -j$(nproc)
+
+      - name: Valgrind test
+        run: |
+          valgrind --leak-check=full --show-leak-kinds=all \
+            --error-exitcode=1 \
+            ./build/backer_test 2>&1 | tee valgrind.log
+          echo "✅ Valgrind passed"
+
+  # ── Docker 构建验证 ────────────────────────────────
+  docker:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t backer .
+
+      - name: Verify binary exists in image
+        run: |
+          docker run --rm backer ls -la /app/backer-cli
+
