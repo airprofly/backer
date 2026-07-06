@@ -1,5 +1,4 @@
 # ================ Customized according to the project requirements ===============
-# 如果是 node.js 项目，请注释掉这一行
 assets/
 .claude/commands/info.md
 
@@ -86,7 +85,6 @@ nbproject/private/
 nbbuild/
 nbdist/
 .nb-gradle/
-
 # Sublime Text
 *.sublime-project
 *.sublime-workspace
@@ -145,18 +143,6 @@ gcov
 coverage.info
 *.coverage
 
-# ================= Java ===============
-*.class
-*.jar
-*.war
-*.ear
-*.nar
-*.zip
-*.tar.gz
-*.rar
-*.log
-
-
 # =============== 测试与临时文件 ===============
 Testing/
 Temporary/
@@ -164,8 +150,6 @@ tmp/
 temp/
 *.tmp
 *.bak
-*.swp
-*~
 
 # =============== 其他 ===============
 HELP.md
