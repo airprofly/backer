@@ -1,0 +1,14 @@
+services:
+  backer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: backer:latest
+    container_name: backer
+    entrypoint: ["/usr/local/bin/backer"]
+    command: ["--help"]
+    # Mount host directories for backup/restore operations
+    volumes:
+      - ./data/source:/data/source:ro
+      - ./data/backup:/data/backup
+      - ./data/restore:/data/restore

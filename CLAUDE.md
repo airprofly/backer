@@ -19,24 +19,39 @@ cmake --build build -j$(nproc)
 
 # 运行单元测试
 ctest --test-dir build
+# 带详细输出
+ctest --test-dir build --output-on-failure
 
 # 运行指定测试
-./build/tests/backer_test --gtest_filter="*BackupCore*"
+./build/backer_test --gtest_filter="*BackupCore*"
+
+# CLI 使用
+./build/backer-cli --help
+./build/backer-cli backup /path/to/source /path/to/backup
+./build/backer-cli restore /path/to/backup /path/to/restore
 
 # 代码风格检查
-cpplint --filter=-runtime/references src/**/*.cpp src/**/*.h
-clang-tidy src/**/*.cpp -- -std=c++17
+cpplint --filter=-runtime/references --recursive src/ tests/
+clang-tidy-14 src/**/*.cpp -- -std=c++17
 
 # 内存检测
-valgrind --leak-check=full --show-leak-kinds=all ./build/backer-cli backup /path
-
-# 性能分析
-perf record ./build/backer-cli backup /path
-gprof ./build/backer-cli gmon.out > analysis.txt
+valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 ./build/backer_test
 
 # Docker 构建
 docker build -t backer .
 docker compose up -d
+
+# 交互式进入容器
+docker run --rm -it --entrypoint /bin/bash backer
+```
+
+### Docker Compose 挂载约定
+
+```yaml
+volumes:
+  - ./data/source:/data/source:ro   # 待备份源目录（只读）
+  - ./data/backup:/data/backup      # 备份输出目录
+  - ./data/restore:/data/restore    # 还原目标目录
 ```
 
 ## 技术栈
@@ -44,15 +59,15 @@ docker compose up -d
 | 层面 | 技术 |
 |------|------|
 | 语言 | C++17 (GCC 9+ / Clang 12+) |
-| 构建 | CMake 3.16+ |
-| CLI 解析 | CLI11 (header-only) |
-| 日志 | spdlog |
-| 文件系统 | std::filesystem + sys/stat.h |
-| 测试 | Google Test |
-| 代码检查 | cpplint + clang-tidy |
-| 性能分析 | Valgrind + gperf + perf |
-| 容器 | Docker (multi-stage build) + Compose |
-| CI | GitHub Actions |
+| 构建 | CMake 3.16+ (FetchContent 自动拉取依赖) |
+| CLI 解析 | CLI11 v2.4.2 (header-only) |
+| 日志 | spdlog v1.14.1 |
+| 文件系统 | std::filesystem |
+| 测试 | Google Test v1.15.2 |
+| 代码检查 | cpplint + clang-tidy-14 |
+| 内存检测 | Valgrind (CI 自动校验) |
+| 容器 | Docker (multi-stage build: gcc:13-bookworm → debian:bookworm-slim) + Compose |
+| CI | GitHub Actions (lint / 双编译器矩阵构建测试 / Valgrind / Docker) |
 
 ### 扩展功能选型
 
@@ -66,7 +81,7 @@ docker compose up -d
 | 定时备份 | timerfd + ccronexpr |
 | 实时备份 | inotify + 事件队列 |
 | 网络备份 | gRPC + Protocol Buffers |
-| 增备备份 | 文件哈希比较 |
+| 增量备份 | 文件哈希比较 |
 
 ## 测试要求
 
@@ -112,22 +127,68 @@ docker compose up -d
 ## 目录结构
 
 ```
-├── CMakeLists.txt        # 根构建配置
-├── Dockerfile            # 多阶段构建
-├── docker-compose.yml    # 容器编排
-├── docs/                 # 课程文档
-├── src/
-│   ├── core/             # 备份/还原引擎
-│   ├── fs/               # 文件系统抽象 (常规/特殊文件/元数据)
-│   ├── filters/          # 自定义筛选
-│   ├── pack/             # 打包 (Tar/Zip)
-│   ├── compress/         # 压缩 (gzip/zstd/lzma)
-│   ├── crypto/           # 加密 (AES/SM4)
-│   ├── gui/              # Qt 6 图形界面
-│   ├── watch/            # inotify 实时监控
-│   └── network/          # gRPC 网络备份
-└── tests/                # Google Test 用例
+├── CMakeLists.txt              # 根构建配置（含测试目标生成）
+├── Dockerfile                  # Multi-stage 构建（gcc:13-bookworm → slim）
+├── docker-compose.yml          # Compose 编排（含数据卷挂载）
+├── .dockerignore               # 构建上下文精简（排除 docs/ testdata/ 等）
+├── .gitignore                  # Git 忽略规则
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # GitHub Actions CI（lint + 构建测试 + Valgrind + Docker）
+├── .claude/
+│   ├── commands/
+│   │   ├── update-info.md      # 本项目专用的 /update-info 命令
+│   │   └── git/
+│   │       ├── create-branch.md # /git:create-branch 命令
+│   │       └── git-commit.md    # /git:git-commit 命令
+│   └── settings.local.json     # 本地 Claude 权限等配置
+├── docs/
+│   ├── architecture-design.md  # 分层架构 + 管道模式设计
+│   ├── plans/
+│   │   ├── README.md           # 分阶段实现路线图（01～11）
+│   │   ├── 01-core-backup-restore.md  # ✅ 已完成
+│   │   └── 02-*.md ~ 11-*.md          # 🔲 待实施
+│   ├── reportDetails.md        # 报告提交要求
+│   ├── requirements.md         # 需求规格说明
+│   └── technology-selection.md # 技术选型论证
+├── src/                        # 全部业务源码
+│   ├── main.cpp                # 程序入口，初始化 CLI 并派发命令
+│   ├── cli/
+│   │   ├── commands.h          # CLI 命令类声明（backup/restore）
+│   │   └── commands.cpp        # CLI 命令实现
+│   ├── core/                   # ✅ 备份/还原引擎——中心调度逻辑
+│   │   ├── backup_engine.h/cpp # 备份引擎
+│   │   ├── restore_engine.h/cpp# 还原引擎
+│   │   ├── types.h             # 核心数据类型（BackupContext 等）
+│   │   ├── error_code.h        # 错误码枚举
+│   │   └── expected.h          # std::expected 替代（C++17 polyfill）
+│   ├── fs/                     # ✅ 文件系统抽象层
+│   │   ├── fs_abstraction.h/cpp# 文件读写、目录遍历
+│   │   └── path_mapper.h/cpp   # 路径映射（相对/绝对转换）
+│   ├── storage/                # ✅ 存储抽象层
+│   │   ├── storage.h           # 存储接口（纯虚类）
+│   │   └── local_storage.h/cpp # 本地文件系统实现
+│   ├── filters/    🚧          # 自定义筛选（按正则/大小/日期过滤）
+│   ├── pack/       🚧          # 打包格式（自实现 Tar + miniz Zip）
+│   ├── compress/   🚧          # 压缩（zlib / zstd / liblzma 策略接口）
+│   ├── crypto/     🚧          # 加密（AES / SM4 策略接口，基于 OpenSSL）
+│   ├── gui/        🚧          # Qt 6 Widgets 图形界面
+│   ├── watch/      🚧          # inotify 实时文件监控
+│   └── network/    🚧          # gRPC 网络备份
+├── tests/
+│   └── core/                   # ✅ 备份/还原引擎单元测试（Google Test）
+│       ├── backup_engine_test.cpp
+│       └── restore_engine_test.cpp
+└── testdata/                   # 🧪 测试数据（按场景分类）
+    ├── text/                   # 文本文件（hello.txt / empty.txt / large.txt）
+    ├── filter/                 # 筛选测试（data.bin / debug.log / tmp/）
+    ├── meta/                   # 元数据测试（executable.sh / private.key）
+    ├── naming/                 # 特殊命名测试（.hidden / 空格 / 中文）
+    ├── nested/                 # 深层嵌套（a/b/c/leaf.txt）
+    └── special/                # 特殊文件占位（placeholder.txt / link.txt）
 ```
+
+> 🚧 = 已规划但尚未实现的模块；✅ = 已完成
 
 ## 实现路线
 
