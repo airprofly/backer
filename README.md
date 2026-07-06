@@ -59,21 +59,15 @@ backer/
 
 ## 🔧 构建与运行
 
-### 方式一：本地构建
-
 **前置要求**：GCC 9+ / Clang 12+、CMake 3.16+
 
 ```bash
+# 本地构建
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ctest --test-dir build
-```
 
-### 方式二：Docker 构建
-
-依赖已包含在镜像中，无需在宿主机安装：
-
-```bash
+# Docker 构建 (依赖已包含，无需宿主机安装)
 docker compose build
 ```
 
@@ -81,15 +75,33 @@ docker compose build
 
 详见 [架构设计文档](docs/architecture-design.md)。
 
-## ⚠️ 提交规范
+## ⚠️ 开发规范
 
-提交前必须执行以下步骤，**禁止直接 `git commit`**：
+### 分支管理
+
+- **`main` 分支为保护分支**，禁止直接在上面开发
+- 所有开发在**特性分支**上进行，分支命名规则：
+  - `feat/<功能名>` — 新功能
+  - `fix/<bug描述>` — 缺陷修复
+  - `docs/<文档名>` — 文档变更
+  - `refactor/<模块名>` — 重构
+- **禁止直接 `push` 或 `merge` 到 `main`**，所有变更必须通过 **Pull Request** 合入
+
+### 提交流程
 
 ```bash
-# 1. 使用 Claude /simplify 命令审查并优化变更
-# 2. 暂存所有改动
+# 1. 从 main 创建特性分支
+git checkout -b feat/backup-engine
+
+# 2. 开发完成后，使用 Claude /simplify 审查并优化变更
+# 3. 暂存、提交
 git add .
-# 3. 使用 Claude 生成 commit 信息并提交（通过 /git:git-commit 命令）
+git commit -m "feat: implement backup engine core"
+
+# 4. 推送到远程 (非 main 分支)
+git push origin feat/backup-engine
+
+# 5. 在 GitHub 上创建 Pull Request → 待 review 通过后合入 main
 ```
 
 ## 📄 许可证
