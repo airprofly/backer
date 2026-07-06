@@ -164,7 +164,7 @@ git add .
 # 5. 推送到远程 (非 main 分支)
 git push origin <分支名>
 
-# 6. 在 GitHub 上创建 Pull Request → 待 review 通过后合入 main
+# 6. 在 GitHub 上创建 Pull Request → 待 review 通过后合入 main（合并时务必选择 **Squash and merge**，不要使用 Create a merge commit）
 ```
 
 ### CI/CD
