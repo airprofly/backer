@@ -1,0 +1,172 @@
+# ================ Customized according to the project requirements ===============
+# 如果是 node.js 项目，请注释掉这一行
+assets/
+.claude/commands/info.md
+
+
+# ================= latex =================
+.build/*
+build/*
+*.tex
+*.cls
+
+
+# =============== 构建产物 ===============
+install/
+target/ 
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+CTestTestfile.cmake
+_deps/
+
+# =============== 模型文件 ===============
+# 训练检查点与导出的ONNX模型均不上传仓库,clone 后需重新训练
+*.pt
+*.pth
+*.data
+*.onnx
+*.npz
+*.npy
+
+# =============== Python ===============
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+pip-log.txt
+pip-delete-this-directory.txt
+.coverage
+.pytest-version
+
+# =============== 虚拟环境 ===============
+.env
+.venv
+venv/
+env/
+ENV/
+.env.bak/
+.conda-env/
+
+# =============== 日志文件 ===============
+logs/
+**/logs/
+*.log
+
+# =============== IDE ===============
+# JetBrains
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# VS Code
+.vscode/
+
+# Eclipse/STS
+.project
+.classpath
+.factorypath
+.settings/
+.springBeans
+.sts4-cache
+.apt_generated
+
+# NetBeans
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+
+# =============== 操作系统 ===============
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+desktop.ini
+*.lnk
+
+# =============== 压缩文件 ===============
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# =============== 私有配置 ===============
+config.json
+*.key
+*.pem
+*.crt
+secrets/
+credentials/
+
+# =============== C/C++ ===============
+# 编译产物
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+*.a
+*.lib
+*.bc
+
+# 代码覆盖率
+gcov
+*.gcda
+*.gcno
+*.gcov
+coverage.info
+*.coverage
+
+# ================= Java ===============
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+*.log
+
+
+# =============== 测试与临时文件 ===============
+Testing/
+Temporary/
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# =============== 其他 ===============
+HELP.md
+.mvn/wrapper/maven-wrapper.jar
