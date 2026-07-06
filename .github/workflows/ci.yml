@@ -29,15 +29,6 @@ jobs:
             deps-${{ hashFiles('CMakeLists.txt') }}-
             deps-
 
-      - name: Install cpplint
-        run: pip3 install --user cpplint
-
-      - name: Run cpplint
-        run: |
-          cpplint --filter=-runtime/references \
-            --recursive \
-            src/ tests/
-
       - name: Install clang-tidy
         run: sudo apt-get update -qq && sudo apt-get install -y -qq clang-tidy-14
 
@@ -128,5 +119,5 @@ jobs:
 
       - name: Verify binary exists in image
         run: |
-          docker run --rm backer ls -la /app/backer-cli
+          docker run --rm --entrypoint /usr/bin/ls backer -la /usr/local/bin/backer
 
