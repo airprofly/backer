@@ -167,10 +167,10 @@ volumes:
 │   ├── plans/
 │   │   ├── README.md           # 分阶段实现路线图（01～11）
 │   │   ├── 01-core-backup-restore.md  # ✅ 已完成
-│   │   ├── 02-special-files.md        # 🔲 待实施
-│   │   ├── 03-metadata.md             # 🔲 ...
-│   │   ├── 04-filtering.md
-│   │   ├── 05-packing.md
+│   │   ├── 02-special-files.md        # ✅ 已完成
+│   │   ├── 03-metadata.md             # ✅ 已完成
+│   │   ├── 04-filtering.md            # ✅ 已完成
+│   │   ├── 05-packing.md              # ✅ 已完成（Tar）
 │   │   ├── 06-compression.md
 │   │   ├── 07-encryption.md
 │   │   ├── 08-gui.md
@@ -189,12 +189,10 @@ volumes:
 │   │   ├── commands.h          # CLI 命令类声明（backup/restore）
 │   │   └── commands.cpp        # CLI 命令实现
 │   ├── core/                   # ✅ 备份/还原引擎——中心调度逻辑
-<<<<<<< HEAD
-│   │   ├── backup_engine.h/cpp # 备份引擎（含特殊文件+元数据支持）
-│   │   ├── restore_engine.h/cpp# 还原引擎（含特殊文件+元数据支持）
+│   │   ├── backup_engine.h/cpp # 备份引擎（含筛选+打包支持）
+│   │   ├── restore_engine.h/cpp# 还原引擎（含打包解包支持）
 │   │   ├── types.h             # 核心数据类型（FileType/Metadata/FileEntry）
 │   │   ├── error_code.h        # 错误码枚举（0x00~0x03 分类）
->>>>>>> origin/main
 │   │   └── expected.h          # std::expected 替代（C++17 polyfill）
 │   ├── fs/                     # ✅ 文件系统抽象层
 │   │   ├── fs_abstraction.h/cpp# 文件读写、目录遍历、元数据、特殊文件
@@ -205,8 +203,8 @@ volumes:
 │   ├── storage/                # ✅ 存储抽象层
 │   │   ├── storage.h           # 存储接口（纯虚类）
 │   │   └── local_storage.h/cpp # 本地文件系统实现
-│   ├── filters/    🚧          # 自定义筛选（按正则/大小/日期过滤）
-│   ├── pack/       🚧          # 打包格式（自实现 Tar + miniz Zip）
+│   ├── filters/    ✅          # 自定义筛选（路径/类型/名称/时间/尺寸/用户）
+│   ├── pack/       ✅          # 打包格式（自实现 Tar ustar）
 │   ├── compress/   🚧          # 压缩（zlib / zstd / liblzma 策略接口）
 │   ├── crypto/     🚧          # 加密（AES / SM4 策略接口，基于 OpenSSL）
 │   ├── gui/        🚧          # Qt 6 Widgets 图形界面
@@ -216,9 +214,13 @@ volumes:
 │   ├── core/                   # ✅ 备份/还原引擎单元测试（Google Test）
 │   │   ├── backup_engine_test.cpp
 │   │   └── restore_engine_test.cpp
-│   └── fs/                     # ✅ 元数据 + 特殊文件 单元测试
-│       ├── metadata_test.cpp
-│       └── special_file_test.cpp
+│   ├── fs/                     # ✅ 元数据 + 特殊文件 单元测试
+│   │   ├── metadata_test.cpp
+│   │   └── special_file_test.cpp
+│   ├── filter/                 # ✅ 筛选器单元测试（28 cases）
+│   │   └── criteria_filter_test.cpp
+│   └── pack/                   # ✅ Tar 打包单元测试（20 cases）
+│       └── tar_packer_test.cpp
 ├── scripts/                    # 辅助脚本（setup-testdata.sh, test-backup-restore.sh）
 ├── testdata/                   # 🧪 git 管理的测试数据（按场景分类）
 │   ├── text/                   # 文本文件（hello.txt / empty.txt / large.txt）
