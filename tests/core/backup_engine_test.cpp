@@ -191,5 +191,132 @@ TEST_F(BackupEngineTest, BackupFileAsSourceFails) {
     EXPECT_EQ(result.errorCode, ErrorCode::kPathNotFound);
 }
 
+// ── Backup with unicode and special filenames ─────────────────────────────
+
+TEST_F(BackupEngineTest, BackupUnicodeFilenames) {
+    createFile(sourceDir_ / "[unicode].txt", "unicode content");
+    createFile(sourceDir_ / "file with spaces.txt", "spaces content");
+    createFile(sourceDir_ / ".hidden", "hidden content");
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    EXPECT_EQ(result.stats.totalFiles, 3);
+
+    EXPECT_EQ(readFile(backupDir_ / "[unicode].txt"), "unicode content");
+    EXPECT_EQ(readFile(backupDir_ / "file with spaces.txt"), "spaces content");
+    EXPECT_EQ(readFile(backupDir_ / ".hidden"), "hidden content");
+}
+
+// ── Backup idempotency ───────────────────────────────────────────────────
+
+TEST_F(BackupEngineTest, BackupIdempotency) {
+    createTestTree();
+
+    auto fs1 = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine1(std::move(fs1));
+    auto result1 = engine1.backup(sourceDir_, backupDir_);
+    ASSERT_TRUE(result1.success) << result1.errorMessage;
+
+    // Backup again to the same destination
+    auto fs2 = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine2(std::move(fs2));
+    auto result2 = engine2.backup(sourceDir_, backupDir_);
+    ASSERT_TRUE(result2.success) << result2.errorMessage;
+
+    EXPECT_EQ(result2.stats.totalFiles, result1.stats.totalFiles);
+    EXPECT_EQ(result2.stats.totalDirs, result1.stats.totalDirs);
+    EXPECT_EQ(result2.stats.totalBytes, result1.stats.totalBytes);
+
+    // Verify content is still correct after second backup
+    EXPECT_EQ(readFile(backupDir_ / "file1.txt"), "Hello, World!");
+    EXPECT_EQ(readFile(backupDir_ / "subdir" / "nested.txt"), "Nested file");
+}
+
+// ── Backup large file (1 MiB) ────────────────────────────────────────────
+
+TEST_F(BackupEngineTest, BackupLargeFile) {
+    constexpr std::size_t kOneMiB = 1024 * 1024;
+    std::vector<char> largeData(kOneMiB);
+    for (std::size_t i = 0; i < kOneMiB; ++i) {
+        largeData[i] = static_cast<char>((i * 13) & 0xFF);
+    }
+
+    auto filePath = sourceDir_ / "large.bin";
+    {
+        std::ofstream f(filePath, std::ios::binary);
+        f.write(largeData.data(), static_cast<std::streamsize>(kOneMiB));
+    }
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    EXPECT_EQ(result.stats.totalFiles, 1);
+    EXPECT_EQ(result.stats.totalBytes, kOneMiB);
+
+    // Verify byte-for-byte
+    auto backedUp = readFile(backupDir_ / "large.bin");
+    ASSERT_EQ(backedUp.size(), kOneMiB);
+    EXPECT_EQ(memcmp(backedUp.data(), largeData.data(), kOneMiB), 0);
+}
+
+// ── Backup mixed content ─────────────────────────────────────────────────
+
+TEST_F(BackupEngineTest, BackupMixedContent) {
+    createFile(sourceDir_ / "regular.txt", "regular");
+    createFile(sourceDir_ / "empty.txt", "");                        // empty file
+    createFile(sourceDir_ / "sub1" / "a.txt", "a content");
+    createFile(sourceDir_ / "sub2" / "b.txt", "b content");
+    std::filesystem::create_directories(sourceDir_ / "emptydir1");
+    std::filesystem::create_directories(sourceDir_ / "emptydir2" / "sub");
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    EXPECT_EQ(result.stats.totalFiles, 4);   // regular.txt, empty.txt, sub1/a.txt, sub2/b.txt
+    EXPECT_EQ(result.stats.totalDirs, 5);    // sub1, sub2, emptydir1, emptydir2, emptydir2/sub
+
+    // Verify empty file is preserved
+    EXPECT_TRUE(std::filesystem::exists(backupDir_ / "empty.txt"));
+    EXPECT_EQ(readFile(backupDir_ / "empty.txt"), "");
+}
+
+// ── Backup single file directory ─────────────────────────────────────────
+
+TEST_F(BackupEngineTest, BackupSingleFile) {
+    createFile(sourceDir_ / "only.txt", "just one");
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    EXPECT_EQ(result.stats.totalFiles, 1);
+    EXPECT_EQ(result.stats.totalDirs, 0);
+    EXPECT_EQ(readFile(backupDir_ / "only.txt"), "just one");
+}
+
+// ── Backup nested empty directories ──────────────────────────────────────
+
+TEST_F(BackupEngineTest, BackupNestedEmptyDirs) {
+    std::filesystem::create_directories(sourceDir_ / "a" / "b" / "c");
+    std::filesystem::create_directories(sourceDir_ / "x" / "y");
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    EXPECT_EQ(result.stats.totalFiles, 0);
+    EXPECT_TRUE(std::filesystem::is_directory(backupDir_ / "a" / "b" / "c"));
+    EXPECT_TRUE(std::filesystem::is_directory(backupDir_ / "x" / "y"));
+}
+
 } // namespace
 } // namespace backer::test
