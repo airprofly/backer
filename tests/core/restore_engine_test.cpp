@@ -4,6 +4,7 @@
 #include "fs/fs_abstraction.h"
 
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 
@@ -245,6 +246,182 @@ TEST_F(RestoreEngineTest, RestoreBinaryFile) {
     auto restored = readFile(restoreDir_ / "large.bin");
     ASSERT_EQ(restored.size(), binaryData.size());
     EXPECT_EQ(memcmp(restored.data(), binaryData.data(), binaryData.size()), 0);
+}
+
+// ── Restore with unicode and special filenames ───────────────────────────
+
+TEST_F(RestoreEngineTest, RestoreUnicodeFilenames) {
+    createFile(sourceDir_ / "[unicode].txt", "unicode content");
+    createFile(sourceDir_ / "file with spaces.txt", "spaces content");
+    createFile(sourceDir_ / ".hidden", "hidden content");
+    doBackup();
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    RestoreEngine engine(std::move(fs));
+    auto result = engine.restore(backupDir_, restoreDir_);
+
+    ASSERT_TRUE(result.success);
+    EXPECT_EQ(readFile(restoreDir_ / "[unicode].txt"), "unicode content");
+    EXPECT_EQ(readFile(restoreDir_ / "file with spaces.txt"), "spaces content");
+    EXPECT_EQ(readFile(restoreDir_ / ".hidden"), "hidden content");
+}
+
+// ── Restore large file (1 MiB) ──────────────────────────────────────────
+
+TEST_F(RestoreEngineTest, RestoreLargeFile) {
+    constexpr std::size_t kOneMiB = 1024 * 1024;
+    std::vector<char> largeData(kOneMiB);
+    for (std::size_t i = 0; i < kOneMiB; ++i) {
+        largeData[i] = static_cast<char>((i * 13) & 0xFF);
+    }
+
+    auto filePath = sourceDir_ / "large.bin";
+    {
+        std::ofstream f(filePath, std::ios::binary);
+        f.write(largeData.data(), static_cast<std::streamsize>(kOneMiB));
+    }
+    doBackup();
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    RestoreEngine engine(std::move(fs));
+    auto result = engine.restore(backupDir_, restoreDir_);
+    ASSERT_TRUE(result.success);
+
+    auto restored = readFile(restoreDir_ / "large.bin");
+    ASSERT_EQ(restored.size(), kOneMiB);
+    EXPECT_EQ(memcmp(restored.data(), largeData.data(), kOneMiB), 0);
+}
+
+// ── Restore idempotency ─────────────────────────────────────────────────
+
+TEST_F(RestoreEngineTest, RestoreIdempotency) {
+    createTestTree();
+    doBackup();
+
+    // Restore twice to the same destination
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto result = engine.restore(backupDir_, restoreDir_);
+        ASSERT_TRUE(result.success);
+    }
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto result = engine.restore(backupDir_, restoreDir_);
+        ASSERT_TRUE(result.success);
+    }
+
+    // Content should still be correct
+    EXPECT_EQ(readFile(restoreDir_ / "file1.txt"), "Hello, World!");
+    EXPECT_EQ(readFile(restoreDir_ / "subdir" / "nested.txt"), "Nested file");
+}
+
+// ── Restore overwrite with different content ─────────────────────────────
+
+TEST_F(RestoreEngineTest, RestoreOverwriteDifferentContent) {
+    // 1. Backup version A
+    createFile(sourceDir_ / "data.txt", "version A");
+    doBackup();
+
+    // 2. Restore version A
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto result = engine.restore(backupDir_, restoreDir_);
+        ASSERT_TRUE(result.success);
+    }
+    EXPECT_EQ(readFile(restoreDir_ / "data.txt"), "version A");
+
+    // 3. Backup version B (same filename, different content)
+    std::filesystem::remove_all(backupDir_);
+    std::filesystem::remove_all(sourceDir_);
+    std::filesystem::create_directories(sourceDir_);
+    createFile(sourceDir_ / "data.txt", "version B");
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        BackupEngine engine(std::move(fs));
+        auto result = engine.backup(sourceDir_, backupDir_);
+        ASSERT_TRUE(result.success);
+    }
+
+    // 4. Restore version B to same destination — should overwrite
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto result = engine.restore(backupDir_, restoreDir_);
+        ASSERT_TRUE(result.success);
+    }
+    EXPECT_EQ(readFile(restoreDir_ / "data.txt"), "version B");
+}
+
+// ── End-to-end round trip with large diverse tree ────────────────────────
+
+TEST_F(RestoreEngineTest, BackupRestoreRoundTripLargeTree) {
+    // Build a complex source tree
+    createFile(sourceDir_ / "readme.md", "# Project\n\nDescription");
+    createFile(sourceDir_ / "src" / "main.cpp", "int main() {}");
+    createFile(sourceDir_ / "src" / "utils" / "helper.cpp", "// helper");
+    createFile(sourceDir_ / "src" / "utils" / "common.h", "#pragma once");
+    createFile(sourceDir_ / "include" / "app.h", "#pragma once");
+    createFile(sourceDir_ / "docs" / "guide.txt", "User guide");
+    createFile(sourceDir_ / ".config" / "settings.json", "{}");
+    createFile(sourceDir_ / "data" / "empty.bin", "");
+    createFile(sourceDir_ / "tests" / "test_a.cpp", "// test a");
+    createFile(sourceDir_ / "tests" / "test_b.cpp", "// test b");
+    std::filesystem::create_directories(sourceDir_ / "build" / "cache");
+    std::filesystem::create_directories(sourceDir_ / "tmp");
+
+    // Backup
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        BackupEngine engine(std::move(fs));
+        auto result = engine.backup(sourceDir_, backupDir_);
+        ASSERT_TRUE(result.success);
+        EXPECT_EQ(result.stats.totalFiles, 10);
+    }
+
+    // Remove source
+    std::filesystem::remove_all(sourceDir_);
+    ASSERT_FALSE(std::filesystem::exists(sourceDir_));
+
+    // Restore
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto result = engine.restore(backupDir_, restoreDir_);
+        ASSERT_TRUE(result.success);
+        EXPECT_EQ(result.stats.totalFiles, 10);
+    }
+
+    // Verify all contents
+    EXPECT_EQ(readFile(restoreDir_ / "readme.md"), "# Project\n\nDescription");
+    EXPECT_EQ(readFile(restoreDir_ / "src" / "main.cpp"), "int main() {}");
+    EXPECT_EQ(readFile(restoreDir_ / "src" / "utils" / "helper.cpp"), "// helper");
+    EXPECT_EQ(readFile(restoreDir_ / "src" / "utils" / "common.h"), "#pragma once");
+    EXPECT_EQ(readFile(restoreDir_ / "include" / "app.h"), "#pragma once");
+    EXPECT_EQ(readFile(restoreDir_ / "docs" / "guide.txt"), "User guide");
+    EXPECT_EQ(readFile(restoreDir_ / ".config" / "settings.json"), "{}");
+    EXPECT_EQ(readFile(restoreDir_ / "data" / "empty.bin"), "");
+    EXPECT_EQ(readFile(restoreDir_ / "tests" / "test_a.cpp"), "// test a");
+    EXPECT_EQ(readFile(restoreDir_ / "tests" / "test_b.cpp"), "// test b");
+
+    // Verify empty directories
+    EXPECT_TRUE(std::filesystem::is_directory(restoreDir_ / "build" / "cache"));
+    EXPECT_TRUE(std::filesystem::is_directory(restoreDir_ / "tmp"));
+
+    // Verify structural equality between backup and restore
+    std::error_code ec;
+    std::vector<std::filesystem::path> backupPaths, restorePaths;
+    for (auto const& e : std::filesystem::recursive_directory_iterator(backupDir_, ec)) {
+        backupPaths.push_back(e.path().lexically_relative(backupDir_));
+    }
+    for (auto const& e : std::filesystem::recursive_directory_iterator(restoreDir_, ec)) {
+        restorePaths.push_back(e.path().lexically_relative(restoreDir_));
+    }
+    std::sort(backupPaths.begin(), backupPaths.end());
+    std::sort(restorePaths.begin(), restorePaths.end());
+    EXPECT_EQ(backupPaths, restorePaths);
 }
 
 } // namespace
