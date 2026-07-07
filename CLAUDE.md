@@ -73,6 +73,8 @@ volumes:
 
 | 功能 | 技术 |
 |------|------|
+| 特殊文件 | POSIX lstat/mkfifo/mknod + std::filesystem 回退 |
+| 元数据 | POSIX lchown/fchmodat/utimensat + JSON 序列化 |
 | 打包 (Tar) | 自实现 Tar 格式 |
 | 打包 (Zip) | miniz |
 | 压缩 | zlib / zstd / liblzma |
@@ -157,14 +159,17 @@ volumes:
 │   │   ├── commands.h          # CLI 命令类声明（backup/restore）
 │   │   └── commands.cpp        # CLI 命令实现
 │   ├── core/                   # ✅ 备份/还原引擎——中心调度逻辑
-│   │   ├── backup_engine.h/cpp # 备份引擎
-│   │   ├── restore_engine.h/cpp# 还原引擎
-│   │   ├── types.h             # 核心数据类型（BackupContext 等）
+│   │   ├── backup_engine.h/cpp # 备份引擎（含特殊文件+元数据支持）
+│   │   ├── restore_engine.h/cpp# 还原引擎（含特殊文件+元数据支持）
+│   │   ├── types.h             # 核心数据类型（FileType/Metadata/FileEntry）
 │   │   ├── error_code.h        # 错误码枚举
 │   │   └── expected.h          # std::expected 替代（C++17 polyfill）
 │   ├── fs/                     # ✅ 文件系统抽象层
-│   │   ├── fs_abstraction.h/cpp# 文件读写、目录遍历
-│   │   └── path_mapper.h/cpp   # 路径映射（相对/绝对转换）
+│   │   ├── fs_abstraction.h/cpp# 文件读写、目录遍历、元数据、特殊文件
+│   │   ├── metadata.h/cpp      # 元数据读取/恢复/JSON 序列化
+│   │   ├── path_mapper.h/cpp   # 路径映射（相对/绝对转换）
+│   │   ├── platform.h          # 平台检测（POSIX/Windows）
+│   │   └── special_file.h/cpp  # 特殊文件检测与创建（symlink/FIFO/device）
 │   ├── storage/                # ✅ 存储抽象层
 │   │   ├── storage.h           # 存储接口（纯虚类）
 │   │   └── local_storage.h/cpp # 本地文件系统实现
@@ -176,9 +181,12 @@ volumes:
 │   ├── watch/      🚧          # inotify 实时文件监控
 │   └── network/    🚧          # gRPC 网络备份
 ├── tests/
-│   └── core/                   # ✅ 备份/还原引擎单元测试（Google Test）
-│       ├── backup_engine_test.cpp
-│       └── restore_engine_test.cpp
+│   ├── core/                   # ✅ 备份/还原引擎单元测试（Google Test）
+│   │   ├── backup_engine_test.cpp
+│   │   └── restore_engine_test.cpp
+│   └── fs/                     # ✅ 元数据 + 特殊文件 单元测试
+│       ├── metadata_test.cpp
+│       └── special_file_test.cpp
 └── testdata/                   # 🧪 测试数据（按场景分类）
     ├── text/                   # 文本文件（hello.txt / empty.txt / large.txt）
     ├── filter/                 # 筛选测试（data.bin / debug.log / tmp/）
@@ -188,7 +196,7 @@ volumes:
     └── special/                # 特殊文件占位（placeholder.txt / link.txt）
 ```
 
-> 🚧 = 已规划但尚未实现的模块；✅ = 已完成
+> ✅ = 已完成；🚧 = 已规划但尚未实现的模块
 
 ## 实现路线
 

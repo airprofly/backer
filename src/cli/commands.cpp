@@ -12,9 +12,17 @@ namespace backer::cli {
 
 int handleBackup(
     std::filesystem::path const& source,
-    std::filesystem::path const& destination)
+    std::filesystem::path const& destination,
+    BackupOptions const& options)
 {
     spdlog::info("Starting backup: {} → {}", source.string(), destination.string());
+
+    if (!options.preserveMetadata) {
+        spdlog::warn("Metadata preservation is DISABLED");
+    }
+    if (!options.handleSpecial) {
+        spdlog::warn("Special file handling is DISABLED");
+    }
 
     auto fs = std::make_unique<LocalFsAbstraction>();
     BackupEngine engine(std::move(fs));
@@ -40,9 +48,17 @@ int handleBackup(
 
 int handleRestore(
     std::filesystem::path const& source,
-    std::filesystem::path const& destination)
+    std::filesystem::path const& destination,
+    RestoreOptions const& options)
 {
     spdlog::info("Starting restore: {} → {}", source.string(), destination.string());
+
+    if (!options.preserveMetadata) {
+        spdlog::warn("Metadata preservation is DISABLED");
+    }
+    if (!options.handleSpecial) {
+        spdlog::warn("Special file handling is DISABLED");
+    }
 
     auto fs = std::make_unique<LocalFsAbstraction>();
     RestoreEngine engine(std::move(fs));

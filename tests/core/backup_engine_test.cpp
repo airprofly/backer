@@ -1,6 +1,7 @@
 #include "core/backup_engine.h"
 #include "core/error_code.h"
 #include "fs/fs_abstraction.h"
+#include "fs/platform.h"
 
 #include <gtest/gtest.h>
 #include <filesystem>
@@ -316,6 +317,73 @@ TEST_F(BackupEngineTest, BackupNestedEmptyDirs) {
     EXPECT_EQ(result.stats.totalFiles, 0);
     EXPECT_TRUE(std::filesystem::is_directory(backupDir_ / "a" / "b" / "c"));
     EXPECT_TRUE(std::filesystem::is_directory(backupDir_ / "x" / "y"));
+}
+
+// ── Backup with symlinks (POSIX-only) ────────────────────────────────────
+
+#if BACKER_PLATFORM_POSIX
+
+TEST_F(BackupEngineTest, BackupSymlinks) {
+    createFile(sourceDir_ / "target.txt", "symlink target");
+    std::filesystem::create_directories(sourceDir_ / "sub");
+    std::filesystem::create_directory_symlink(
+        "../target.txt", sourceDir_ / "sub" / "link");
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    // Should include: target.txt (file), sub (dir), sub/link (symlink)
+    EXPECT_EQ(result.stats.totalFiles, 1);  // regular file only
+    EXPECT_EQ(result.stats.totalDirs, 1);   // sub dir
+
+    // Symlink should exist in backup
+    EXPECT_TRUE(std::filesystem::exists(backupDir_ / "sub" / "link"));
+    EXPECT_TRUE(std::filesystem::is_symlink(backupDir_ / "sub" / "link"));
+    EXPECT_EQ(std::filesystem::read_symlink(backupDir_ / "sub" / "link"), "../target.txt");
+}
+
+// ── Backup symlink to file inside same directory ──────────────────────────
+
+TEST_F(BackupEngineTest, BackupSymlinkToFileInSameDir) {
+    createFile(sourceDir_ / "readme.md", "# Readme");
+    std::filesystem::create_symlink("readme.md", sourceDir_ / "link.md");
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+
+    EXPECT_TRUE(std::filesystem::is_symlink(backupDir_ / "link.md"));
+    EXPECT_EQ(std::filesystem::read_symlink(backupDir_ / "link.md"), "readme.md");
+    EXPECT_EQ(readFile(backupDir_ / "readme.md"), "# Readme");
+}
+
+#endif // BACKER_PLATFORM_POSIX
+
+// ── Backup with metadata preservation ────────────────────────────────────
+
+TEST_F(BackupEngineTest, BackupPreservesPermissions) {
+    // Create a file and set specific permissions
+    createFile(sourceDir_ / "script.sh", "#!/bin/sh\necho hello");
+    std::filesystem::permissions(
+        sourceDir_ / "script.sh",
+        std::filesystem::perms::owner_all | std::filesystem::perms::group_read | std::filesystem::perms::group_exec |
+        std::filesystem::perms::others_read | std::filesystem::perms::others_exec,
+        std::filesystem::perm_options::replace);
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+
+    // Verify permissions are preserved
+    auto expected = std::filesystem::status(sourceDir_ / "script.sh").permissions();
+    auto actual   = std::filesystem::status(backupDir_ / "script.sh").permissions();
+    EXPECT_EQ(expected, actual);
 }
 
 } // namespace

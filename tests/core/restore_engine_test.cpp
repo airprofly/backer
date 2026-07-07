@@ -2,11 +2,17 @@
 #include "core/restore_engine.h"
 #include "core/error_code.h"
 #include "fs/fs_abstraction.h"
+#include "fs/platform.h"
 
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+
+#if BACKER_PLATFORM_POSIX
+    #include <sys/stat.h>
+    #include <unistd.h>
+#endif
 
 namespace backer::test {
 namespace {
@@ -423,6 +429,172 @@ TEST_F(RestoreEngineTest, BackupRestoreRoundTripLargeTree) {
     std::sort(restorePaths.begin(), restorePaths.end());
     EXPECT_EQ(backupPaths, restorePaths);
 }
+
+// ── End-to-end with symlinks (POSIX-only) ─────────────────────────────────
+
+#if BACKER_PLATFORM_POSIX
+
+TEST_F(RestoreEngineTest, BackupRestoreWithSymlinks) {
+    // Create source with symlinks
+    createFile(sourceDir_ / "target.txt", "actual content");
+    std::filesystem::create_symlink("target.txt", sourceDir_ / "link.txt");
+    std::filesystem::create_directories(sourceDir_ / "sub");
+    std::filesystem::create_directory_symlink(
+        "..", sourceDir_ / "sub" / "parent");
+
+    // Backup
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        BackupEngine engine(std::move(fs));
+        auto result = engine.backup(sourceDir_, backupDir_);
+        ASSERT_TRUE(result.success) << result.errorMessage;
+    }
+
+    // Remove source
+    std::filesystem::remove_all(sourceDir_);
+
+    // Restore
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto result = engine.restore(backupDir_, restoreDir_);
+        ASSERT_TRUE(result.success) << result.errorMessage;
+    }
+
+    // Verify symlinks
+    EXPECT_TRUE(std::filesystem::is_symlink(restoreDir_ / "link.txt"));
+    EXPECT_EQ(std::filesystem::read_symlink(restoreDir_ / "link.txt"), "target.txt");
+    EXPECT_TRUE(std::filesystem::is_symlink(restoreDir_ / "sub" / "parent"));
+    EXPECT_EQ(std::filesystem::read_symlink(restoreDir_ / "sub" / "parent"), "..");
+
+    // Verify regular file content
+    EXPECT_EQ(readFile(restoreDir_ / "target.txt"), "actual content");
+}
+
+// ── End-to-end with dangling symlink (POSIX-only) ─────────────────────────
+
+TEST_F(RestoreEngineTest, BackupRestoreDanglingSymlink) {
+    // Create a dangling symlink (points to non-existent file)
+    std::filesystem::create_symlink("nonexistent.txt", sourceDir_ / "broken.link");
+
+    // Backup
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        BackupEngine engine(std::move(fs));
+        auto result = engine.backup(sourceDir_, backupDir_);
+        ASSERT_TRUE(result.success) << result.errorMessage;
+    }
+
+    // Remove source
+    std::filesystem::remove_all(sourceDir_);
+
+    // Restore
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto result = engine.restore(backupDir_, restoreDir_);
+        ASSERT_TRUE(result.success) << result.errorMessage;
+    }
+
+    // Verify dangling symlink is preserved
+    EXPECT_TRUE(std::filesystem::is_symlink(restoreDir_ / "broken.link"));
+    EXPECT_EQ(std::filesystem::read_symlink(restoreDir_ / "broken.link"), "nonexistent.txt");
+    EXPECT_FALSE(std::filesystem::exists(restoreDir_ / "nonexistent.txt"));
+}
+
+#endif // BACKER_PLATFORM_POSIX
+
+// ── End-to-end with metadata preservation ─────────────────────────────────
+
+TEST_F(RestoreEngineTest, BackupRestorePreservesPermissions) {
+    // Create a file with specific permissions
+    createFile(sourceDir_ / "exec.sh", "#!/bin/sh");
+    std::filesystem::permissions(
+        sourceDir_ / "exec.sh",
+        std::filesystem::perms::owner_all | std::filesystem::perms::group_read | std::filesystem::perms::group_exec |
+        std::filesystem::perms::others_read | std::filesystem::perms::others_exec,
+        std::filesystem::perm_options::replace);
+
+    // Create a read-only file
+    createFile(sourceDir_ / "secret.key", "private-key-data");
+    std::filesystem::permissions(
+        sourceDir_ / "secret.key",
+        std::filesystem::perms::owner_read | std::filesystem::perms::owner_write,
+        std::filesystem::perm_options::replace);
+
+    // Backup
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        BackupEngine engine(std::move(fs));
+        auto result = engine.backup(sourceDir_, backupDir_);
+        ASSERT_TRUE(result.success);
+    }
+
+    // Remove source
+    std::filesystem::remove_all(sourceDir_);
+
+    // Restore
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto result = engine.restore(backupDir_, restoreDir_);
+        ASSERT_TRUE(result.success);
+    }
+
+    // Verify metadata restored correctly:
+    // Files should exist and have some permissions set.
+    auto execPerms = std::filesystem::status(restoreDir_ / "exec.sh").permissions();
+    EXPECT_NE(execPerms, std::filesystem::perms::none);
+
+    auto keyPerms = std::filesystem::status(restoreDir_ / "secret.key").permissions();
+    EXPECT_NE(keyPerms & std::filesystem::perms::owner_read, std::filesystem::perms::none);
+    EXPECT_NE(keyPerms & std::filesystem::perms::owner_write, std::filesystem::perms::none);
+
+    // On POSIX, also verify the execute bit was preserved.
+    // (Windows permission model doesn't always round-trip the exec bit.)
+#if BACKER_PLATFORM_POSIX
+    EXPECT_NE(execPerms & std::filesystem::perms::owner_exec, std::filesystem::perms::none);
+#endif
+}
+
+// ── End-to-end with FIFO (POSIX-only) ────────────────────────────────────
+
+#if BACKER_PLATFORM_POSIX
+
+TEST_F(RestoreEngineTest, BackupRestoreWithFifo) {
+    // Create FIFO in source
+    ASSERT_EQ(::mkfifo((sourceDir_ / "myfifo").c_str(), 0644), 0);
+    createFile(sourceDir_ / "note.txt", "alongside fifo");
+
+    // Backup
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        BackupEngine engine(std::move(fs));
+        auto result = engine.backup(sourceDir_, backupDir_);
+        ASSERT_TRUE(result.success);
+    }
+
+    // Remove source
+    std::filesystem::remove_all(sourceDir_);
+
+    // Restore
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto result = engine.restore(backupDir_, restoreDir_);
+        ASSERT_TRUE(result.success);
+    }
+
+    // Verify FIFO exists
+    struct stat st;
+    ASSERT_EQ(::lstat((restoreDir_ / "myfifo").c_str(), &st), 0);
+    EXPECT_TRUE(S_ISFIFO(st.st_mode));
+
+    // Verify regular file alongside
+    EXPECT_EQ(readFile(restoreDir_ / "note.txt"), "alongside fifo");
+}
+
+#endif // BACKER_PLATFORM_POSIX
 
 } // namespace
 } // namespace backer::test

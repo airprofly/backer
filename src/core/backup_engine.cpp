@@ -1,6 +1,8 @@
 #include "core/backup_engine.h"
 #include "fs/fs_abstraction.h"
+#include "fs/metadata.h"
 #include "fs/path_mapper.h"
+#include "fs/special_file.h"
 
 #include <chrono>
 #include <spdlog/spdlog.h>
@@ -56,12 +58,16 @@ BackupResult BackupEngine::backup(
         return result;
     }
 
+    // Determine if we can restore ownership (root check once)
+    bool const canOwn = canRestoreOwnership();
+
     // 4. Copy each entry
     for (auto const& entry : entries) {
         auto destPath = PathMapper::relativeToBackup(entry.relativePath, destination);
 
-        if (entry.type == FileType::kDirectory) {
-            // Create directory in backup
+        switch (entry.type) {
+
+        case FileType::kDirectory: {
             auto r = fs_->mkdir(destPath);
             if (!r) {
                 spdlog::warn("BackupEngine: failed to create dir {}: {}",
@@ -70,9 +76,10 @@ BackupResult BackupEngine::backup(
                 continue;
             }
             result.stats.totalDirs++;
+            break;
+        }
 
-        } else if (entry.type == FileType::kRegular) {
-            // Read source → write to backup
+        case FileType::kRegular: {
             auto sourcePath = PathMapper::relativeToSource(entry.relativePath, source);
             auto readResult = fs_->read(sourcePath);
             if (!readResult) {
@@ -81,28 +88,91 @@ BackupResult BackupEngine::backup(
                 result.stats.skipped++;
                 continue;
             }
-
             auto& content = readResult.value();
-            auto writeResult = fs_->write(destPath, content);
+            auto writeResult = fs_->write(destPath, content, FileType::kRegular);
             if (!writeResult) {
                 spdlog::warn("BackupEngine: failed to write {}: {}",
                              destPath.string(), toString(writeResult.error()));
                 result.stats.skipped++;
                 continue;
             }
-
             result.stats.totalBytes += content.size();
             result.stats.totalFiles++;
+            break;
+        }
 
-        } else if (entry.type == FileType::kSymlink) {
-            // Symlinks: just note them for now (metadata phase will handle fully)
-            spdlog::debug("BackupEngine: skipping symlink {} (metadata support pending)",
-                          entry.relativePath.string());
+        case FileType::kSymlink: {
+            // Create parent directories for the symlink itself
+            auto parent = destPath.parent_path();
+            if (!parent.empty()) {
+                fs_->mkdir(parent);
+            }
+            auto target = entry.symlinkTarget.string();
+            auto r = createSymlink(destPath, target);
+            if (!r) {
+                spdlog::warn("BackupEngine: failed to create symlink {} → {}: {}",
+                             destPath.string(), target, toString(r.error()));
+                result.stats.skipped++;
+                continue;
+            }
+            result.stats.totalFiles++;
+            break;
+        }
+
+        case FileType::kFifo: {
+            // Create parent directories
+            auto parent = destPath.parent_path();
+            if (!parent.empty()) {
+                fs_->mkdir(parent);
+            }
+            auto r = createFifo(destPath, entry.metadata.permissions);
+            if (!r) {
+                spdlog::warn("BackupEngine: failed to create FIFO {}: {}",
+                             destPath.string(), toString(r.error()));
+                result.stats.skipped++;
+                continue;
+            }
+            result.stats.totalFiles++;
+            break;
+        }
+
+        case FileType::kBlockDevice:
+        case FileType::kCharDevice: {
+            auto parent = destPath.parent_path();
+            if (!parent.empty()) {
+                fs_->mkdir(parent);
+            }
+            auto r = createDevice(destPath, entry.type,
+                                  entry.deviceMajor, entry.deviceMinor,
+                                  entry.metadata.permissions);
+            if (!r) {
+                spdlog::warn("BackupEngine: failed to create device {} ({},{}): {}",
+                             destPath.string(), entry.deviceMajor, entry.deviceMinor,
+                             toString(r.error()));
+                result.stats.skipped++;
+                continue;
+            }
+            result.stats.totalFiles++;
+            break;
+        }
+
+        case FileType::kSocket:
+        default:
+            spdlog::debug("BackupEngine: skipping entry {} (type {})",
+                          entry.relativePath.string(), static_cast<int>(entry.type));
             result.stats.skipped++;
+            continue;  // Skip metadata restore — no entry was created
+        }
+
+        // 5. Restore metadata for every created entry
+        auto metaResult = fs_->restoreMetadata(destPath, entry.metadata, canOwn);
+        if (!metaResult) {
+            spdlog::warn("BackupEngine: metadata restore partially failed for {}",
+                         destPath.string());
         }
     }
 
-    // 5. Finalize
+    // 6. Finalize
     auto const endTime = std::chrono::steady_clock::now();
     result.stats.elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
         endTime - startTime);

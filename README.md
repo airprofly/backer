@@ -18,11 +18,13 @@ Backer 是计算机组成与体系结构/软件工程课程项目，基于 **C++
 
 依赖通过 **CMake FetchContent** 自动拉取（CLI11 v2.4.2、spdlog v1.14.1、GTest v1.15.2），无需手动安装。
 
-**当前状态**：第一阶段（核心备份/还原）已完成，支持目录树的完整备份与还原。后续将通过管道架构扩展压缩加密、GUI 界面、实时监控、定时调度及网络备份等功能。
+**当前状态**：第二阶段（特殊文件 + 元数据）已完成，支持符号链接、命名管道、设备文件的备份还原，以及属主/权限/时间戳元数据的完整保留。后续将通过管道架构扩展打包格式、压缩加密、GUI 界面、实时监控、定时调度及网络备份等功能。
 
 ## 🔧 构建与运行
 
 **前置要求**：GCC 9+ / Clang 12+、CMake 3.16+
+
+### Linux
 
 ```bash
 # 构建
@@ -39,6 +41,23 @@ ctest --test-dir build --output-on-failure
 # 仅运行特定测试
 ./build/backer_test --gtest_filter="*RestoreEngine*"
 ```
+
+### MSYS2 (Windows)
+
+```bash
+# 构建（使用 UCRT64 环境）
+cmake -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+
+# 运行测试
+./build/backer_test.exe
+
+# CLI 使用
+./build/backer-cli.exe backup /path/to/source /path/to/backup
+./build/backer-cli.exe restore /path/to/backup /path/to/restore
+```
+
+> **注意**：MSYS2 环境下部分特殊文件功能（FIFO、设备文件）不可用，符号链接需管理员权限或开发者模式。元数据功能中权限保留正常，属主/组还原需在 Linux 下以 root 运行。
 
 ### Docker 构建
 
@@ -61,8 +80,8 @@ docker run --rm backer --help
 ## 📌 规划特性
 
 - ✅ **核心备份/还原** — 目录树递归扫描，文件内容读写，备份索引
-- 🔲 **特殊文件处理** — 软硬链接、管道、设备文件等无损重建
-- 🔲 **元数据保留** — 权限、时间戳、ACL、扩展属性完整保存
+- ✅ **特殊文件处理** — 符号链接、命名管道 (FIFO)、块/字符设备、Socket 完整备份与还原
+- ✅ **元数据保留** — 属主 (uid/gid)、权限 (含 setuid/setgid/sticky)、时间戳 (atime/mtime, 纳秒精度)
 - 🔲 **灵活筛选** — 支持自定义包含/排除规则、正则表达式过滤
 - 🔲 **打包格式** — 自实现 Tar 格式，可选 Zip (miniz) 打包
 - 🔲 **压缩算法** — 支持 gzip / zstd / lzma 多级压缩
@@ -96,8 +115,8 @@ backer/
 ├── src/                      # 🔧 源代码
 │   ├── main.cpp              # 程序入口（CLI 初始化 + 命令派发）
 │   ├── cli/                  # ✅ 命令行接口 (CLI11)
-│   ├── core/                 # ✅ 备份/还原引擎
-│   ├── fs/                   # ✅ 文件系统抽象层
+│   ├── core/                 # ✅ 备份/还原引擎（含特殊文件+元数据）
+│   ├── fs/                   # ✅ 文件系统抽象层（含元数据+特殊文件）
 │   ├── storage/              # ✅ 存储抽象层（本地文件系统）
 │   ├── filters/    🔲       # 筛选器
 │   ├── pack/       🔲       # 打包模块
@@ -107,9 +126,12 @@ backer/
 │   ├── watch/      🔲       # inotify 实时监控
 │   └── network/    🔲       # gRPC 网络备份
 ├── tests/                    # 📝 Google Test 单元测试
-│   └── core/
-│       ├── backup_engine_test.cpp
-│       └── restore_engine_test.cpp
+│   ├── core/
+│   │   ├── backup_engine_test.cpp
+│   │   └── restore_engine_test.cpp
+│   └── fs/
+│       ├── metadata_test.cpp        # 元数据读写/恢复/序列化
+│       └── special_file_test.cpp    # 特殊文件检测/创建
 └── testdata/                 # 🧪 测试数据（按场景分类）
     ├── text/                 # 常规文本（hello.txt / empty.txt / large.txt）
     ├── filter/               # 筛选测试（data.bin / debug.log / tmp/）
