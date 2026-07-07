@@ -1,10 +1,13 @@
 #include "core/backup_engine.h"
+#include "filters/filter.h"
 #include "fs/fs_abstraction.h"
 #include "fs/metadata.h"
 #include "fs/path_mapper.h"
 #include "fs/special_file.h"
+#include "pack/packer.h"
 
 #include <chrono>
+#include <sstream>
 #include <spdlog/spdlog.h>
 
 namespace backer {
@@ -16,7 +19,9 @@ BackupEngine::BackupEngine(std::unique_ptr<FSAbstraction> fs)
 
 BackupResult BackupEngine::backup(
     std::filesystem::path const& source,
-    std::filesystem::path const& destination)
+    std::filesystem::path const& destination,
+    Filter* filter,
+    Packer* packer)
 {
     auto const startTime = std::chrono::steady_clock::now();
 
@@ -46,10 +51,62 @@ BackupResult BackupEngine::backup(
         return result;
     }
 
-    auto const& entries = walkResult.value();
+    auto entries = std::move(walkResult.value());
     spdlog::info("BackupEngine: found {} entries in {}", entries.size(), source.string());
 
-    // 3. Create destination root
+    // 3. Apply filter (if any) — walk() → filter → copy/pack
+    if (filter) {
+        entries = filter->apply(entries);
+    }
+
+    // 4a. Archive mode (packer is set): pack entries into a single archive
+    if (packer) {
+        spdlog::info("BackupEngine: packing {} entries as {}", entries.size(), packer->formatName());
+
+        std::ostringstream archive;
+        auto packResult = packer->pack(entries, *fs_, source, archive);
+        if (!packResult) {
+            result.errorCode = packResult.error();
+            result.errorMessage = std::string(toString(packResult.error()));
+            spdlog::error("BackupEngine: pack failed: {}", result.errorMessage);
+            return result;
+        }
+
+        // Write the archive to destination (as a regular file)
+        auto archiveStr = archive.str();
+        std::vector<char> archiveData(archiveStr.begin(), archiveStr.end());
+        auto writeResult = fs_->write(destination, archiveData, FileType::kRegular);
+        if (!writeResult) {
+            result.errorCode = writeResult.error();
+            result.errorMessage = std::string(toString(writeResult.error()));
+            spdlog::error("BackupEngine: failed to write archive {}: {}", destination.string(),
+                          result.errorMessage);
+            return result;
+        }
+
+        // Count stats
+        for (auto const& entry : entries) {
+            if (entry.type == FileType::kDirectory) {
+                result.stats.totalDirs++;
+            } else {
+                result.stats.totalFiles++;
+                result.stats.totalBytes += entry.size;
+            }
+        }
+
+        auto const endTime = std::chrono::steady_clock::now();
+        result.stats.elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            endTime - startTime);
+        result.success = true;
+        result.errorCode = ErrorCode::kOk;
+
+        spdlog::info("Backup complete (archive mode): {} files, {} dirs, {} bytes in {:.1f}s",
+                     result.stats.totalFiles, result.stats.totalDirs, result.stats.totalBytes,
+                     static_cast<double>(result.stats.elapsed.count()) / 1000.0);
+        return result;
+    }
+
+    // 4b. Directory mirror mode (default): copy each entry individually
     auto mkdirResult = fs_->mkdir(destination);
     if (!mkdirResult) {
         result.errorCode = mkdirResult.error();
@@ -58,10 +115,8 @@ BackupResult BackupEngine::backup(
         return result;
     }
 
-    // Determine if we can restore ownership (root check once)
     bool const canOwn = canRestoreOwnership();
 
-    // 4. Copy each entry
     for (auto const& entry : entries) {
         auto destPath = PathMapper::relativeToBackup(entry.relativePath, destination);
 
@@ -102,7 +157,6 @@ BackupResult BackupEngine::backup(
         }
 
         case FileType::kSymlink: {
-            // Create parent directories for the symlink itself
             auto parent = destPath.parent_path();
             if (!parent.empty()) {
                 fs_->mkdir(parent);
@@ -120,7 +174,6 @@ BackupResult BackupEngine::backup(
         }
 
         case FileType::kFifo: {
-            // Create parent directories
             auto parent = destPath.parent_path();
             if (!parent.empty()) {
                 fs_->mkdir(parent);
@@ -161,7 +214,7 @@ BackupResult BackupEngine::backup(
             spdlog::debug("BackupEngine: skipping entry {} (type {})",
                           entry.relativePath.string(), static_cast<int>(entry.type));
             result.stats.skipped++;
-            continue;  // Skip metadata restore — no entry was created
+            continue;
         }
 
         // 5. Restore metadata for every created entry
