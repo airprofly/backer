@@ -25,21 +25,32 @@ ctest --test-dir build --output-on-failure
 # 运行指定测试
 ./build/backer_test --gtest_filter="*BackupCore*"
 
-# CLI 使用
-./build/backer-cli --help
-./build/backer-cli backup /path/to/source /path/to/backup
-./build/backer-cli restore /path/to/backup /path/to/restore
+# 版本信息
+./build/backer-cli --version
 
-# 代码风格检查
+# 生成测试数据（在 data/source 下创建目录及各类文件）
+bash scripts/setup-testdata.sh
+
+# CLI 使用（测试数据目录备份/还原）
+./build/backer-cli --help
+./build/backer-cli backup data/source data/backup
+./build/backer-cli restore data/backup data/restore
+
+# 端到端备份/还原流程测试（交互式：选择 Local 或 Docker）
+bash scripts/test-backup-restore.sh
+
+# 代码风格检查（cpplint 仅本地使用，CI 使用 clang-tidy-14）
 cpplint --filter=-runtime/references --recursive src/ tests/
-clang-tidy-14 src/**/*.cpp -- -std=c++17
+run-clang-tidy-14 src/ -p build
 
 # 内存检测
 valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 ./build/backer_test
 
 # Docker 构建
 docker build -t backer .
-docker compose up -d
+
+# 使用 Compose（含数据卷挂载）进入容器执行备份
+docker compose run --rm backer backup /data/source /data/backup
 
 # 交互式进入容器
 docker run --rm -it --entrypoint /bin/bash backer
@@ -64,10 +75,10 @@ volumes:
 | 日志 | spdlog v1.14.1 |
 | 文件系统 | std::filesystem |
 | 测试 | Google Test v1.15.2 |
-| 代码检查 | cpplint + clang-tidy-14 |
+| 代码检查 | cpplint（本地）+ clang-tidy-14（CI） |
 | 内存检测 | Valgrind (CI 自动校验) |
-| 容器 | Docker (multi-stage build: gcc:13-bookworm → debian:bookworm-slim) + Compose |
-| CI | GitHub Actions (lint / 双编译器矩阵构建测试 / Valgrind / Docker) |
+| 容器 | Docker（multi-stage：gcc:13-bookworm → slim，GH_PROXY 构建参数支持国内加速）+ Compose |
+| CI | GitHub Actions（clang-tidy lint / 双编译器矩阵构建测试 / Valgrind / Docker） |
 
 ### 扩展功能选型
 
@@ -126,15 +137,20 @@ volumes:
 
 ## 目录结构
 
+目录树展示规则：
+- 单文件/单子目录的目录合入父级注释，不展开
+- 只有含多个子项的目录才保持展开
+
 ```
 ├── CMakeLists.txt              # 根构建配置（含测试目标生成）
 ├── Dockerfile                  # Multi-stage 构建（gcc:13-bookworm → slim）
 ├── docker-compose.yml          # Compose 编排（含数据卷挂载）
 ├── .dockerignore               # 构建上下文精简（排除 docs/ testdata/ 等）
 ├── .gitignore                  # Git 忽略规则
+├── LICENSE                     # Apache 2.0 许可证
 ├── .github/
 │   └── workflows/
-│       └── ci.yml              # GitHub Actions CI（lint + 构建测试 + Valgrind + Docker）
+│       └── ci.yml              # GitHub Actions CI（clang-tidy / 双编译器构建测试 / Valgrind / Docker）
 ├── .claude/
 │   ├── commands/
 │   │   ├── update-info.md      # 本项目专用的 /update-info 命令
@@ -142,15 +158,29 @@ volumes:
 │   │       ├── create-branch.md # /git:create-branch 命令
 │   │       └── git-commit.md    # /git:git-commit 命令
 │   └── settings.local.json     # 本地 Claude 权限等配置
+├── .vscode/
+│   └── c_cpp_properties.json   # VS Code C/C++ 配置（路径/标准）
 ├── docs/
 │   ├── architecture-design.md  # 分层架构 + 管道模式设计
 │   ├── plans/
 │   │   ├── README.md           # 分阶段实现路线图（01～11）
 │   │   ├── 01-core-backup-restore.md  # ✅ 已完成
-│   │   └── 02-*.md ~ 11-*.md          # 🔲 待实施
+│   │   ├── 02-special-files.md        # 🔲 待实施
+│   │   ├── 03-metadata.md             # 🔲 ...
+│   │   ├── 04-filtering.md
+│   │   ├── 05-packing.md
+│   │   ├── 06-compression.md
+│   │   ├── 07-encryption.md
+│   │   ├── 08-gui.md
+│   │   ├── 09-scheduled-backup.md
+│   │   ├── 10-realtime-backup.md
+│   │   └── 11-network-backup.md
 │   ├── reportDetails.md        # 报告提交要求
 │   ├── requirements.md         # 需求规格说明
 │   └── technology-selection.md # 技术选型论证
+├── scripts/                    # 辅助脚本
+│   ├── setup-testdata.sh       # 生成测试数据（data/source/）
+│   └── test-backup-restore.sh  # 端到端备份/还原流程测试（交互式）
 ├── src/                        # 全部业务源码
 │   ├── main.cpp                # 程序入口，初始化 CLI 并派发命令
 │   ├── cli/
@@ -159,8 +189,8 @@ volumes:
 │   ├── core/                   # ✅ 备份/还原引擎——中心调度逻辑
 │   │   ├── backup_engine.h/cpp # 备份引擎
 │   │   ├── restore_engine.h/cpp# 还原引擎
-│   │   ├── types.h             # 核心数据类型（BackupContext 等）
-│   │   ├── error_code.h        # 错误码枚举
+│   │   ├── types.h             # 核心数据类型（FileEntry/OperationStats 等）
+│   │   ├── error_code.h        # 错误码枚举（0x00~0x03 分类）
 │   │   └── expected.h          # std::expected 替代（C++17 polyfill）
 │   ├── fs/                     # ✅ 文件系统抽象层
 │   │   ├── fs_abstraction.h/cpp# 文件读写、目录遍历
@@ -179,13 +209,10 @@ volumes:
 │   └── core/                   # ✅ 备份/还原引擎单元测试（Google Test）
 │       ├── backup_engine_test.cpp
 │       └── restore_engine_test.cpp
-└── testdata/                   # 🧪 测试数据（按场景分类）
-    ├── text/                   # 文本文件（hello.txt / empty.txt / large.txt）
-    ├── filter/                 # 筛选测试（data.bin / debug.log / tmp/）
-    ├── meta/                   # 元数据测试（executable.sh / private.key）
-    ├── naming/                 # 特殊命名测试（.hidden / 空格 / 中文）
-    ├── nested/                 # 深层嵌套（a/b/c/leaf.txt）
-    └── special/                # 特殊文件占位（placeholder.txt / link.txt）
+└── data/                       # 🧪 脚本生成的测试数据（.gitignore，不含于仓库）
+    ├── source/                 # 源目录（setup-testdata.sh 生成）
+    ├── backup/                 # 备份输出
+    └── restore/                # 还原目标
 ```
 
 > 🚧 = 已规划但尚未实现的模块；✅ = 已完成

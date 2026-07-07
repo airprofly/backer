@@ -32,9 +32,15 @@ cmake --build build -j$(nproc)
 # 运行测试
 ctest --test-dir build --output-on-failure
 
-# CLI 使用
-./build/backer-cli backup /path/to/source /path/to/backup
-./build/backer-cli restore /path/to/backup /path/to/restore
+# 生成测试数据（在 data/source 下创建目录及各类文件）
+bash scripts/setup-testdata.sh
+
+# CLI 使用（测试数据目录备份/还原）
+./build/backer-cli backup data/source data/backup
+./build/backer-cli restore data/backup data/restore
+
+# 端到端流程测试（交互式选择 Local/Docker）
+bash scripts/test-backup-restore.sh
 
 # 仅运行特定测试
 ./build/backer_test --gtest_filter="*RestoreEngine*"
@@ -43,11 +49,24 @@ ctest --test-dir build --output-on-failure
 ### Docker 构建
 
 ```bash
+# 先准备好测试数据
+bash scripts/setup-testdata.sh
+
 # 构建镜像（multi-stage 构建，最终镜像约 100MB）
+# 国内用户可添加 --build-arg GH_PROXY=https://ghproxy.net/ 加速依赖下载
 docker build -t backer .
 
-# 使用 Compose（含数据卷挂载）
-docker compose up -d
+# 使用 Compose（含数据卷挂载）进入容器执行备份
+docker compose run --rm backer backup /data/source /data/backup
+
+# 查看备份结果（目录已挂载到宿主机）
+ls -la data/backup
+
+# 使用 Compose 还原备份
+docker compose run --rm backer restore /data/backup /data/restore
+
+# 查看还原结果
+ls -la data/restore
 
 # 交互式运行
 docker run --rm backer --help
@@ -80,10 +99,9 @@ backer/
 ├── Dockerfile                # Multi-stage Docker 构建
 ├── docker-compose.yml        # Compose 编排
 ├── .dockerignore             # 构建上下文精简
-├── .github/
-│   └── workflows/ci.yml      # CI: lint → 双编译器构建测试 → Valgrind → Docker
-├── .claude/                  # Claude Code AI 辅助配置
-│   └── commands/             # 斜杠命令（/update-info, /git:*）
+├── .github/                  # CI: workflows/ci.yml（lint → 构建测试 → Valgrind → Docker）
+├── .claude/                  # Claude Code AI 辅助配置（commands/ 斜杠命令）
+├── .vscode/                  # VS Code 编辑器配置（c_cpp_properties.json）
 ├── CLAUDE.md                 # AI 辅助开发指南
 ├── LICENSE                   # Apache 2.0
 ├── docs/
@@ -91,8 +109,7 @@ backer/
 │   ├── requirements.md            # 需求规格说明
 │   ├── technology-selection.md    # 技术选型记录
 │   ├── reportDetails.md           # 课程报告详情
-│   └── plans/                     # 分阶段实现计划（01~11）
-│       └── README.md
+│   └── plans/                     # 分阶段实现计划（README + 01~11）
 ├── src/                      # 🔧 源代码
 │   ├── main.cpp              # 程序入口（CLI 初始化 + 命令派发）
 │   ├── cli/                  # ✅ 命令行接口 (CLI11)
@@ -106,17 +123,12 @@ backer/
 │   ├── gui/        🔲       # Qt 6 图形界面
 │   ├── watch/      🔲       # inotify 实时监控
 │   └── network/    🔲       # gRPC 网络备份
-├── tests/                    # 📝 Google Test 单元测试
-│   └── core/
-│       ├── backup_engine_test.cpp
-│       └── restore_engine_test.cpp
-└── testdata/                 # 🧪 测试数据（按场景分类）
-    ├── text/                 # 常规文本（hello.txt / empty.txt / large.txt）
-    ├── filter/               # 筛选测试（data.bin / debug.log / tmp/）
-    ├── meta/                 # 元数据测试（executable.sh / private.key）
-    ├── naming/               # 特殊命名（.hidden / 空格 / 中文）
-    ├── nested/               # 深层嵌套（a/b/c/leaf.txt）
-    └── special/              # 特殊文件占位（link.txt / placeholder.txt）
+├── tests/                    # 📝 Google Test 单元测试（core/backup_engine_test.cpp, restore_engine_test.cpp）
+├── scripts/                  # 辅助脚本（setup-testdata.sh, test-backup-restore.sh）
+└── data/                     # 🧪 脚本生成的测试数据（.gitignore）
+    ├── source/               # 源目录（setup-testdata.sh 生成）
+    ├── backup/               # 备份输出
+    └── restore/              # 还原目标
 ```
 
 > ✅ = 已完成  🔲 = 待实施
@@ -173,7 +185,7 @@ git push origin <分支名>
 
 | 阶段 | 内容 |
 |------|------|
-| `lint` | cpplint 代码风格 + clang-tidy 静态分析 |
+| `lint` | clang-tidy 静态分析（cpplint 仅本地使用） |
 | `build-and-test` | GCC 12 / Clang 14 双编译器矩阵构建 + Google Test |
 | `memcheck` | Valgrind 内存泄漏检测 |
 | `docker` | Docker 镜像构建验证 |
