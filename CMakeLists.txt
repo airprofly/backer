@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ── Options ───────────────────────────────────────────────
 option(BUILD_TESTING "Build unit tests" ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ── Dependencies (via FetchContent) ───────────────────────
 include(FetchContent)
