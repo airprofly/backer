@@ -2,6 +2,7 @@
 assets/
 .claude/commands/info.md
 data/
+testdata/
 
 
 # ================= latex =================
