@@ -173,7 +173,7 @@ TEST_F(MetadataTest, ReadMetadataSymlink) {
 
     // readMetadata uses lstat, so it sees the symlink itself
     // Symlink permissions are 0777 on Linux
-    EXPECT_EQ(meta->permissions & 07777, 0777u);
+    EXPECT_EQ(meta.value().permissions & 07777, 0777u);
 }
 
 #endif // BACKER_PLATFORM_POSIX
