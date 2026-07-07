@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 
 #if BACKER_PLATFORM_POSIX
+    #include <climits>         // PATH_MAX
     #include <sys/stat.h>      // lstat, mknod, mkfifo, S_IS*
     #include <unistd.h>        // readlink, symlink
     #if defined(__linux__)

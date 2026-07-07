@@ -180,7 +180,7 @@ BackupResult RestoreEngine::restore(
                  result.stats.totalFiles,
                  result.stats.totalDirs,
                  result.stats.totalBytes,
-                 result.stats.elapsed.count() / 1000.0);
+                 static_cast<double>(result.stats.elapsed.count()) / 1000.0);
 
     return result;
 }

@@ -1,6 +1,7 @@
 #include "fs/metadata.h"
 #include "fs/platform.h"
 
+#include <array>
 #include <cerrno>
 #include <cstring>
 #include <spdlog/spdlog.h>
@@ -54,8 +55,8 @@ ErrorCode restorePermissions(std::filesystem::path const& path,
 ErrorCode restoreTimestamps(std::filesystem::path const& path,
                             timespec atime, timespec mtime) noexcept
 {
-    timespec times[2] = {atime, mtime};
-    if (utimensat(AT_FDCWD, path.c_str(), times, AT_SYMLINK_NOFOLLOW) != 0) {
+    std::array<timespec, 2> times{atime, mtime};
+    if (utimensat(AT_FDCWD, path.c_str(), times.data(), AT_SYMLINK_NOFOLLOW) != 0) {
         spdlog::warn("restoreMetadata: utimensat({}) failed: {}",
                      path.string(), std::strerror(errno));
         return ErrorCode::kMetadataRestoreFailed;
