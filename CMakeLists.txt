@@ -41,12 +41,14 @@ if(BUILD_TESTING)
     FetchContent_MakeAvailable(googletest)
 endif()
 
-# ── Core Library ──────────────────────────────────────────  
+# ── Core Library ──────────────────────────────────────────
 add_library(backer_core
     src/core/backup_engine.cpp
     src/core/restore_engine.cpp
     src/fs/fs_abstraction.cpp
+    src/fs/metadata.cpp
     src/fs/path_mapper.cpp
+    src/fs/special_file.cpp
     src/storage/local_storage.cpp
 )
 target_include_directories(backer_core PUBLIC src)
@@ -65,6 +67,8 @@ if(BUILD_TESTING)
     add_executable(backer_test
         tests/core/backup_engine_test.cpp
         tests/core/restore_engine_test.cpp
+        tests/fs/metadata_test.cpp
+        tests/fs/special_file_test.cpp
     )
     target_link_libraries(backer_test PRIVATE backer_core GTest::gtest_main)
     include(GoogleTest)

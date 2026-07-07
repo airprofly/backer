@@ -84,6 +84,8 @@ volumes:
 
 | 功能 | 技术 |
 |------|------|
+| 特殊文件 | POSIX lstat/mkfifo/mknod + std::filesystem 回退 |
+| 元数据 | POSIX lchown/fchmodat/utimensat + JSON 序列化 |
 | 打包 (Tar) | 自实现 Tar 格式 |
 | 打包 (Zip) | miniz |
 | 压缩 | zlib / zstd / liblzma |
@@ -187,14 +189,19 @@ volumes:
 │   │   ├── commands.h          # CLI 命令类声明（backup/restore）
 │   │   └── commands.cpp        # CLI 命令实现
 │   ├── core/                   # ✅ 备份/还原引擎——中心调度逻辑
-│   │   ├── backup_engine.h/cpp # 备份引擎
-│   │   ├── restore_engine.h/cpp# 还原引擎
-│   │   ├── types.h             # 核心数据类型（FileEntry/OperationStats 等）
+<<<<<<< HEAD
+│   │   ├── backup_engine.h/cpp # 备份引擎（含特殊文件+元数据支持）
+│   │   ├── restore_engine.h/cpp# 还原引擎（含特殊文件+元数据支持）
+│   │   ├── types.h             # 核心数据类型（FileType/Metadata/FileEntry）
 │   │   ├── error_code.h        # 错误码枚举（0x00~0x03 分类）
+>>>>>>> origin/main
 │   │   └── expected.h          # std::expected 替代（C++17 polyfill）
 │   ├── fs/                     # ✅ 文件系统抽象层
-│   │   ├── fs_abstraction.h/cpp# 文件读写、目录遍历
-│   │   └── path_mapper.h/cpp   # 路径映射（相对/绝对转换）
+│   │   ├── fs_abstraction.h/cpp# 文件读写、目录遍历、元数据、特殊文件
+│   │   ├── metadata.h/cpp      # 元数据读取/恢复/JSON 序列化
+│   │   ├── path_mapper.h/cpp   # 路径映射（相对/绝对转换）
+│   │   ├── platform.h          # 平台检测（POSIX/Windows）
+│   │   └── special_file.h/cpp  # 特殊文件检测与创建（symlink/FIFO/device）
 │   ├── storage/                # ✅ 存储抽象层
 │   │   ├── storage.h           # 存储接口（纯虚类）
 │   │   └── local_storage.h/cpp # 本地文件系统实现
@@ -206,16 +213,27 @@ volumes:
 │   ├── watch/      🚧          # inotify 实时文件监控
 │   └── network/    🚧          # gRPC 网络备份
 ├── tests/
-│   └── core/                   # ✅ 备份/还原引擎单元测试（Google Test）
-│       ├── backup_engine_test.cpp
-│       └── restore_engine_test.cpp
+│   ├── core/                   # ✅ 备份/还原引擎单元测试（Google Test）
+│   │   ├── backup_engine_test.cpp
+│   │   └── restore_engine_test.cpp
+│   └── fs/                     # ✅ 元数据 + 特殊文件 单元测试
+│       ├── metadata_test.cpp
+│       └── special_file_test.cpp
+├── scripts/                    # 辅助脚本（setup-testdata.sh, test-backup-restore.sh）
+├── testdata/                   # 🧪 git 管理的测试数据（按场景分类）
+│   ├── text/                   # 文本文件（hello.txt / empty.txt / large.txt）
+│   ├── filter/                 # 筛选测试（data.bin / debug.log / tmp/）
+│   ├── meta/                   # 元数据测试（executable.sh / private.key）
+│   ├── naming/                 # 特殊命名测试（.hidden / 空格 / 中文）
+│   ├── nested/                 # 深层嵌套（a/b/c/leaf.txt）
+│   └── special/                # 特殊文件占位（placeholder.txt / link.txt）
 └── data/                       # 🧪 脚本生成的测试数据（.gitignore，不含于仓库）
     ├── source/                 # 源目录（setup-testdata.sh 生成）
     ├── backup/                 # 备份输出
     └── restore/                # 还原目标
 ```
 
-> 🚧 = 已规划但尚未实现的模块；✅ = 已完成
+> ✅ = 已完成；🚧 = 已规划但尚未实现的模块
 
 ## 实现路线
 

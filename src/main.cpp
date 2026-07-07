@@ -21,22 +21,36 @@ int main(int argc, char** argv)
     // --backup subcommand
     auto* backupCmd = app.add_subcommand("backup", "Back up a directory tree");
     std::string backupSource, backupDest;
+    bool backupNoMetadata = false;
+    bool backupSkipSpecial = false;
+
     backupCmd->add_option("source", backupSource, "Source directory to back up")
         ->required()
         ->type_name("PATH");
     backupCmd->add_option("destination", backupDest, "Backup destination directory")
         ->required()
         ->type_name("PATH");
+    backupCmd->add_flag("--no-metadata", backupNoMetadata,
+                        "Skip metadata preservation (ownership, permissions, timestamps)");
+    backupCmd->add_flag("--skip-special", backupSkipSpecial,
+                        "Skip special file types (FIFO, devices, sockets)");
 
     // --restore subcommand
     auto* restoreCmd = app.add_subcommand("restore", "Restore a directory tree from backup");
     std::string restoreSource, restoreDest;
+    bool restoreNoMetadata = false;
+    bool restoreSkipSpecial = false;
+
     restoreCmd->add_option("source", restoreSource, "Backup directory to restore from")
         ->required()
         ->type_name("PATH");
     restoreCmd->add_option("destination", restoreDest, "Restore destination directory")
         ->required()
         ->type_name("PATH");
+    restoreCmd->add_flag("--no-metadata", restoreNoMetadata,
+                         "Skip metadata preservation");
+    restoreCmd->add_flag("--skip-special", restoreSkipSpecial,
+                         "Skip special file types (FIFO, devices, sockets)");
 
     // --version
     app.set_version_flag("--version", std::string(BACKER_VERSION),
@@ -47,10 +61,16 @@ int main(int argc, char** argv)
 
     // ── Dispatch ───────────────────────────────────────────────────
     if (*backupCmd) {
-        return backer::cli::handleBackup(backupSource, backupDest);
+        backer::cli::BackupOptions opts;
+        opts.preserveMetadata = !backupNoMetadata;
+        opts.handleSpecial    = !backupSkipSpecial;
+        return backer::cli::handleBackup(backupSource, backupDest, opts);
     }
     if (*restoreCmd) {
-        return backer::cli::handleRestore(restoreSource, restoreDest);
+        backer::cli::RestoreOptions opts;
+        opts.preserveMetadata = !restoreNoMetadata;
+        opts.handleSpecial    = !restoreSkipSpecial;
+        return backer::cli::handleRestore(restoreSource, restoreDest, opts);
     }
 
     return EXIT_FAILURE;
