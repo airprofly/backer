@@ -3,11 +3,13 @@
 #include "core/error_code.h"
 #include "fs/fs_abstraction.h"
 #include "fs/platform.h"
+#include "pack/tar_packer.h"
 
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 
 #if BACKER_PLATFORM_POSIX
     #include <sys/stat.h>
@@ -595,6 +597,71 @@ TEST_F(RestoreEngineTest, BackupRestoreWithFifo) {
 }
 
 #endif // BACKER_PLATFORM_POSIX
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Integration: restore from tar archive
+// ══════════════════════════════════════════════════════════════════════════════
+
+TEST_F(RestoreEngineTest, RestoreFromTarArchive)
+{
+    // First: create a backup as tar archive
+    createFile(sourceDir_ / "hello.txt", "hello from tar");
+    createFile(sourceDir_ / "subdir" / "nested.txt", "nested content");
+
+    auto archivePath = backupDir_ / "backup.tar";
+    auto tarPacker = std::make_unique<TarPacker>();
+
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        BackupEngine engine(std::move(fs));
+        auto backupResult = engine.backup(sourceDir_, archivePath,
+                                          nullptr, tarPacker.get());
+        ASSERT_TRUE(backupResult.success);
+    }
+
+    // Now: restore from the tar archive
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto restoreResult = engine.restore(archivePath, restoreDir_, tarPacker.get());
+
+        ASSERT_TRUE(restoreResult.success) << restoreResult.errorMessage;
+
+        EXPECT_TRUE(std::filesystem::exists(restoreDir_ / "hello.txt"));
+        EXPECT_TRUE(std::filesystem::exists(restoreDir_ / "subdir" / "nested.txt"));
+
+        EXPECT_EQ(readFile(restoreDir_ / "hello.txt"), "hello from tar");
+        EXPECT_EQ(readFile(restoreDir_ / "subdir" / "nested.txt"), "nested content");
+    }
+}
+
+TEST_F(RestoreEngineTest, RestoreFromTarArchiveEmptyDir)
+{
+    // Create a backup with an empty directory
+    std::filesystem::create_directories(sourceDir_ / "emptydir");
+
+    auto archivePath = backupDir_ / "backup.tar";
+    auto tarPacker = std::make_unique<TarPacker>();
+
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        BackupEngine engine(std::move(fs));
+        auto backupResult = engine.backup(sourceDir_, archivePath,
+                                          nullptr, tarPacker.get());
+        ASSERT_TRUE(backupResult.success);
+    }
+
+    // Restore
+    {
+        auto fs = std::make_unique<LocalFsAbstraction>();
+        RestoreEngine engine(std::move(fs));
+        auto restoreResult = engine.restore(archivePath, restoreDir_, tarPacker.get());
+        ASSERT_TRUE(restoreResult.success);
+
+        EXPECT_TRUE(std::filesystem::exists(restoreDir_ / "emptydir"));
+        EXPECT_TRUE(std::filesystem::is_directory(restoreDir_ / "emptydir"));
+    }
+}
 
 } // namespace
 } // namespace backer::test

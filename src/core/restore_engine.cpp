@@ -3,8 +3,10 @@
 #include "fs/metadata.h"
 #include "fs/path_mapper.h"
 #include "fs/special_file.h"
+#include "pack/packer.h"
 
 #include <chrono>
+#include <sstream>
 #include <spdlog/spdlog.h>
 
 namespace backer {
@@ -16,12 +18,69 @@ RestoreEngine::RestoreEngine(std::unique_ptr<FSAbstraction> fs)
 
 BackupResult RestoreEngine::restore(
     std::filesystem::path const& source,
-    std::filesystem::path const& destination)
+    std::filesystem::path const& destination,
+    Packer* packer)
 {
     auto const startTime = std::chrono::steady_clock::now();
     BackupResult result;
 
-    // 1. Validate backup source
+    // 1a. Archive mode: unpack from archive
+    if (packer) {
+        spdlog::info("RestoreEngine: unpacking {} as {}", source.string(), packer->formatName());
+
+        // Validate source exists
+        std::error_code ec;
+        if (!std::filesystem::exists(source, ec)) {
+            result.errorCode = ErrorCode::kPathNotFound;
+            result.errorMessage = "Archive does not exist: " + source.string();
+            spdlog::error(result.errorMessage);
+            return result;
+        }
+
+        // Read the archive file
+        auto readResult = fs_->read(source);
+        if (!readResult) {
+            result.errorCode = readResult.error();
+            result.errorMessage = std::string(toString(readResult.error()));
+            spdlog::error("RestoreEngine: failed to read archive {}: {}", source.string(),
+                          result.errorMessage);
+            return result;
+        }
+
+        auto const& archiveData = readResult.value();
+        std::string archiveStr(archiveData.begin(), archiveData.end());
+        std::istringstream archive(archiveStr);
+
+        // Create destination root
+        auto mkdirResult = fs_->mkdir(destination);
+        if (!mkdirResult) {
+            result.errorCode = mkdirResult.error();
+            result.errorMessage = std::string(toString(mkdirResult.error()));
+            spdlog::error("RestoreEngine: cannot create destination root: {}", result.errorMessage);
+            return result;
+        }
+
+        // Unpack
+        auto unpackResult = packer->unpack(archive, destination, *fs_);
+        if (!unpackResult) {
+            result.errorCode = unpackResult.error();
+            result.errorMessage = std::string(toString(unpackResult.error()));
+            spdlog::error("RestoreEngine: unpack failed: {}", result.errorMessage);
+            return result;
+        }
+
+        auto const endTime = std::chrono::steady_clock::now();
+        result.stats.elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            endTime - startTime);
+        result.success = true;
+        result.errorCode = ErrorCode::kOk;
+
+        spdlog::info("Restore complete (archive mode): {} in {:.1f}s",
+                     source.string(), static_cast<double>(result.stats.elapsed.count()) / 1000.0);
+        return result;
+    }
+
+    // 1b. Validate backup source (directory mode)
     std::error_code ec;
     if (!std::filesystem::exists(source, ec)) {
         result.errorCode = ErrorCode::kPathNotFound;
@@ -57,7 +116,6 @@ BackupResult RestoreEngine::restore(
         return result;
     }
 
-    // Determine if we can restore ownership (root check once)
     bool const canOwn = canRestoreOwnership();
 
     // 4. Restore each entry
@@ -158,7 +216,7 @@ BackupResult RestoreEngine::restore(
             spdlog::debug("RestoreEngine: skipping entry {} (type {})",
                           entry.relativePath.string(), static_cast<int>(entry.type));
             result.stats.skipped++;
-            continue;  // Skip metadata restore — no entry was created
+            continue;
         }
 
         // 5. Restore metadata for every successfully created entry

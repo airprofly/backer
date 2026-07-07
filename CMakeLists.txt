@@ -50,6 +50,8 @@ add_library(backer_core
     src/fs/path_mapper.cpp
     src/fs/special_file.cpp
     src/storage/local_storage.cpp
+    src/filters/criteria_filter.cpp
+    src/pack/tar_packer.cpp
 )
 target_include_directories(backer_core PUBLIC src)
 target_link_libraries(backer_core PUBLIC spdlog::spdlog)
@@ -69,6 +71,8 @@ if(BUILD_TESTING)
         tests/core/restore_engine_test.cpp
         tests/fs/metadata_test.cpp
         tests/fs/special_file_test.cpp
+        tests/filter/criteria_filter_test.cpp
+        tests/pack/tar_packer_test.cpp
     )
     target_link_libraries(backer_test PRIVATE backer_core GTest::gtest_main)
     include(GoogleTest)

@@ -1,7 +1,11 @@
 #include "core/backup_engine.h"
 #include "core/error_code.h"
+#include "filters/criteria_filter.h"
+#include "filters/filter.h"
 #include "fs/fs_abstraction.h"
 #include "fs/platform.h"
+#include "pack/packer.h"
+#include "pack/tar_packer.h"
 
 #include <gtest/gtest.h>
 #include <filesystem>
@@ -385,6 +389,169 @@ TEST_F(BackupEngineTest, BackupPreservesPermissions) {
     auto expected = std::filesystem::status(sourceDir_ / "script.sh").permissions();
     auto actual   = std::filesystem::status(backupDir_ / "script.sh").permissions();
     EXPECT_EQ(expected, actual);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Integration: backup engine + filter
+// ══════════════════════════════════════════════════════════════════════════════
+
+TEST_F(BackupEngineTest, BackupWithFilterIncludeType)
+{
+    createFile(sourceDir_ / "main.c", "code");
+    createFile(sourceDir_ / "data.txt", "text");
+    std::filesystem::create_directories(sourceDir_ / "subdir");
+    createFile(sourceDir_ / "subdir" / "notes.txt", "notes");
+
+    std::vector<FilterCriteria> criteria;
+    criteria.push_back(FilterCriteria{});
+    criteria.back().nameGlob = "*.txt";
+
+    CriteriaFilter filter(criteria);
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_, &filter);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    EXPECT_EQ(result.stats.totalFiles, 2);  // data.txt, subdir/notes.txt
+    // subdir dir entry was filtered out (not *.txt), but the file's write()
+    // creates parent dirs implicitly — dirs count is 0 though
+    EXPECT_EQ(result.stats.totalDirs, 0);
+
+    EXPECT_TRUE(std::filesystem::exists(backupDir_ / "data.txt"));
+    EXPECT_TRUE(std::filesystem::exists(backupDir_ / "subdir" / "notes.txt"));
+    EXPECT_FALSE(std::filesystem::exists(backupDir_ / "main.c"));
+}
+
+TEST_F(BackupEngineTest, BackupWithFilterExcludePath)
+{
+    createFile(sourceDir_ / "keep.txt", "keep");
+    createFile(sourceDir_ / "tmp" / "skip.txt", "skip");
+    createFile(sourceDir_ / "tmp" / "also_skip.log", "skip");
+
+    std::vector<FilterCriteria> criteria;
+    criteria.push_back(FilterCriteria{});
+    criteria.back().pathGlob = "tmp/*";
+    criteria.back().exclude = true;
+
+    CriteriaFilter filter(criteria);
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_, &filter);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    EXPECT_EQ(result.stats.totalFiles, 1);  // keep.txt only
+    EXPECT_TRUE(std::filesystem::exists(backupDir_ / "keep.txt"));
+    EXPECT_FALSE(std::filesystem::exists(backupDir_ / "tmp" / "skip.txt"));
+}
+
+TEST_F(BackupEngineTest, BackupWithFilterAllExcluded)
+{
+    createFile(sourceDir_ / "data.bin", "binary");
+
+    std::vector<FilterCriteria> criteria;
+    criteria.push_back(FilterCriteria{});
+    criteria.back().nameGlob = "*.txt";
+    criteria.push_back(FilterCriteria{});
+    criteria.back().nameGlob = "*.md";
+    criteria.back().exclude = false;
+    // Neither .txt nor .md → everything filtered out
+
+    CriteriaFilter filter(criteria);
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, backupDir_, &filter);
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    EXPECT_EQ(result.stats.totalFiles, 0);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Integration: backup engine + tar packer
+// ══════════════════════════════════════════════════════════════════════════════
+
+TEST_F(BackupEngineTest, BackupWithTarPacker)
+{
+    createFile(sourceDir_ / "a.txt", "Hello A");
+    createFile(sourceDir_ / "b.txt", "Hello B");
+    std::filesystem::create_directories(sourceDir_ / "sub");
+    createFile(sourceDir_ / "sub" / "c.txt", "Hello C");
+
+    // Destination is an archive file
+    auto archivePath = backupDir_ / "backup.tar";
+
+    auto packer = std::make_unique<TarPacker>();
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, archivePath, nullptr, packer.get());
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    EXPECT_TRUE(std::filesystem::exists(archivePath));
+    EXPECT_GT(std::filesystem::file_size(archivePath), 512U);
+
+    // Verify it's a valid tar by unpacking
+    TarPacker verifier;
+    std::ifstream archiveFile(archivePath, std::ios::binary);
+    ASSERT_TRUE(archiveFile.is_open());
+
+    // Use a local temp dir for verification
+    auto verifyDir = tempDir_ / "verify";
+    auto mockVerify = std::make_unique<LocalFsAbstraction>();
+    auto unpackResult = verifier.unpack(archiveFile, verifyDir, *mockVerify);
+    ASSERT_TRUE(unpackResult);
+
+    EXPECT_TRUE(std::filesystem::exists(verifyDir / "a.txt"));
+    EXPECT_TRUE(std::filesystem::exists(verifyDir / "sub" / "c.txt"));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Integration: backup engine + filter + packer combined
+// ══════════════════════════════════════════════════════════════════════════════
+
+TEST_F(BackupEngineTest, BackupWithFilterAndPacker)
+{
+    createFile(sourceDir_ / "keep.txt", "should be kept");
+    createFile(sourceDir_ / "exclude.bin", "should not be in archive");
+    createFile(sourceDir_ / "sub" / "keep.md", "also kept");
+
+    // Include only *.txt and *.md files (AND with path prefix "sub/")
+    std::vector<FilterCriteria> criteria;
+    criteria.push_back(FilterCriteria{});
+    criteria.back().nameGlob = "*.*";  // all files with extension
+    // Exclude specific types
+    criteria.push_back(FilterCriteria{});
+    criteria.back().nameGlob = "*.bin";
+    criteria.back().exclude = true;
+
+    CriteriaFilter filter(criteria);
+
+    auto archivePath = backupDir_ / "filtered.tar";
+    auto packer = std::make_unique<TarPacker>();
+
+    auto fs = std::make_unique<LocalFsAbstraction>();
+    BackupEngine engine(std::move(fs));
+    auto result = engine.backup(sourceDir_, archivePath, &filter, packer.get());
+
+    ASSERT_TRUE(result.success) << result.errorMessage;
+    EXPECT_EQ(result.stats.totalFiles, 2);  // keep.txt, sub/keep.md
+    EXPECT_TRUE(std::filesystem::exists(archivePath));
+
+    // Unpack and verify only filtered files are present
+    TarPacker verifier;
+    std::ifstream archiveFile(archivePath, std::ios::binary);
+    ASSERT_TRUE(archiveFile.is_open());
+
+    auto verifyDir = tempDir_ / "verify_filtered";
+    auto mockVerify = std::make_unique<LocalFsAbstraction>();
+    auto unpackResult = verifier.unpack(archiveFile, verifyDir, *mockVerify);
+    ASSERT_TRUE(unpackResult);
+
+    EXPECT_TRUE(std::filesystem::exists(verifyDir / "keep.txt"));
+    EXPECT_TRUE(std::filesystem::exists(verifyDir / "sub" / "keep.md"));
+    EXPECT_FALSE(std::filesystem::exists(verifyDir / "exclude.bin"));
 }
 
 } // namespace
