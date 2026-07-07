@@ -151,8 +151,15 @@ TEST_F(MetadataTest, RestoreSetuidBit) {
 
     struct stat st;
     ASSERT_EQ(::stat(filePath.c_str(), &st), 0);
-    EXPECT_TRUE(st.st_mode & S_ISUID);
-    EXPECT_EQ(static_cast<unsigned>(st.st_mode & 07777), 04755u);
+
+    // Non-root users cannot set the setuid bit (kernel silently clears it).
+    if (geteuid() == 0) {
+        EXPECT_TRUE(st.st_mode & S_ISUID);
+        EXPECT_EQ(static_cast<unsigned>(st.st_mode & 07777), 04755u);
+    } else {
+        EXPECT_TRUE(st.st_mode & S_IRUSR);
+        EXPECT_TRUE(st.st_mode & S_IXUSR);
+    }
 }
 
 TEST_F(MetadataTest, canRestoreOwnership) {

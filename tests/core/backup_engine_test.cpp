@@ -335,7 +335,8 @@ TEST_F(BackupEngineTest, BackupSymlinks) {
 
     ASSERT_TRUE(result.success) << result.errorMessage;
     // Should include: target.txt (file), sub (dir), sub/link (symlink)
-    EXPECT_EQ(result.stats.totalFiles, 1);  // regular file only
+    // Symlinks are now backed up (counted in totalFiles)
+    EXPECT_EQ(result.stats.totalFiles, 2);  // target.txt + symlink
     EXPECT_EQ(result.stats.totalDirs, 1);   // sub dir
 
     // Symlink should exist in backup
