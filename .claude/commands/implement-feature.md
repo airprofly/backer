@@ -12,6 +12,7 @@
 - 接口定义在对应的 `.h` 文件中，实现放在 `.cpp`
 - 遵循编码风格：`PascalCase` 类名、`camelCase` 函数/变量、`const` 右侧、`#pragma once`
 - 需要新依赖时，在 `CMakeLists.txt` 中用 `FetchContent` 声明
+- **新增依赖后检查 `Dockerfile` 是否需要同步更新**
 
 ### 2. 编写测试
 
@@ -61,6 +62,7 @@ ctest --test-dir build --output-on-failure
 ## 检查清单
 
 - [ ] 代码实现完成，符合项目规范和架构
+- [ ] `Dockerfile` 已同步更新（如有需要）
 - [ ] 测试用例覆盖正常和边界路径
 - [ ] 单元测试全部通过（`ctest --test-dir build --output-on-failure`）
 - [ ] `docs/usage.md` 已同步更新
