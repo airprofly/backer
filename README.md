@@ -102,7 +102,7 @@ backer/
 ├── docker-compose.yml        # Compose 编排
 ├── .dockerignore             # 构建上下文精简
 ├── .github/                  # CI: workflows/ci.yml（lint → 构建测试 → Valgrind → Docker）
-├── .claude/                  # Claude Code AI 辅助配置（commands/ 斜杠命令）
+├── .claude/                  # Claude Code AI 辅助配置（commands/：implement-feature, test-features, update-info, git 等）
 ├── .vscode/                  # VS Code 编辑器配置（c_cpp_properties.json）
 ├── CLAUDE.md                 # AI 辅助开发指南
 ├── LICENSE                   # Apache 2.0
@@ -119,27 +119,14 @@ backer/
 │   ├── fs/                   # ✅ 文件系统抽象层（含元数据+特殊文件）
 │   ├── storage/              # ✅ 存储抽象层（本地文件系统）
 │   ├── filters/              # ✅ 筛选器（6 维度自定义规则）
-│   ├── pack/                 # ✅ 打包模块（Tar ustar 格式）
+│   ├── pack/                 # ✅ 打包模块（Tar ustar + miniz Zip）
 │   ├── compress/   🔲       # 压缩模块
 │   ├── crypto/     🔲       # 加密模块
 │   ├── gui/        🔲       # Qt 6 图形界面
 │   ├── watch/      🔲       # inotify 实时监控
 │   └── network/    🔲       # gRPC 网络备份
 ├── tests/                    # 📝 Google Test 单元测试
-│   ├── core/
-│   │   ├── backup_engine_test.cpp
-│   │   └── restore_engine_test.cpp
-│   └── fs/
-│       ├── metadata_test.cpp        # 元数据读写/恢复/序列化
-│       └── special_file_test.cpp    # 特殊文件检测/创建
 ├── scripts/                  # 辅助脚本（setup-testdata.sh, test-backup-restore.sh）
-├── testdata/                 # 🧪 git 管理的测试数据（按场景分类）
-│   ├── text/                 # 常规文本（hello.txt / empty.txt / large.txt）
-│   ├── filter/               # 筛选测试（data.bin / debug.log / tmp/）
-│   ├── meta/                 # 元数据测试（executable.sh / private.key）
-│   ├── naming/               # 特殊命名（.hidden / 空格 / 中文）
-│   ├── nested/               # 深层嵌套（a/b/c/leaf.txt）
-│   └── special/              # 特殊文件占位（link.txt / placeholder.txt）
 └── data/                     # 🧪 脚本生成的测试数据（.gitignore）
     ├── source/               # 源目录（setup-testdata.sh 生成）
     ├── backup/               # 备份输出

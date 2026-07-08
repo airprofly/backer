@@ -30,7 +30,11 @@ struct SizeRange {
 /// A single filter criterion.
 ///
 /// Each optional field represents one dimension of filtering.
-/// For include criteria (exclude=false), ALL non-empty fields must match (AND logic).
+/// All non-empty fields within a single criterion must match (AND logic).
+/// For include criteria (exclude=false), same-dimension criteria are OR-ed
+/// while different dimensions are AND-ed. For example, two --include-type
+/// flags are OR-ed (dir OR file), but an --include-path and an --include-type
+/// flag across dimensions are AND-ed (path AND type).
 /// For exclude criteria (exclude=true), ANY match causes removal.
 struct FilterCriteria {
     std::optional<std::string> pathGlob;   ///< Glob pattern on relative path (e.g. "src/*.cpp")
@@ -45,7 +49,9 @@ struct FilterCriteria {
 /// Filter implementation based on a list of FilterCriteria.
 ///
 /// Processing order:
-///   1. Include phase — entries must match ALL include criteria (if any exist).
+///   1. Include phase — entries must satisfy ALL active dimensions.
+///      Within each dimension, matching ANY criterion passes (OR).
+///      Across dimensions, ALL must be satisfied (AND).
 ///      If no include criteria exist, all entries pass the include phase.
 ///   2. Exclude phase — entries matching ANY exclude criterion are removed.
 class CriteriaFilter final : public Filter {

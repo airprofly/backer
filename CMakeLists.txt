@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(backer VERSION 1.0.0 LANGUAGES CXX)
+project(backer VERSION 1.0.0 LANGUAGES CXX C)
 
 # ── C++ Standard ──────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 17)
@@ -29,6 +29,29 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+# miniz ─ zip library (single-file C library)
+FetchContent_Declare(
+    miniz
+    GIT_REPOSITORY https://github.com/richgel999/miniz.git
+    GIT_TAG 3.1.2
+)
+FetchContent_GetProperties(miniz)
+if(NOT miniz_POPULATED)
+    FetchContent_Populate(miniz)
+
+    # miniz 3.1.2+ 需要 miniz_export.h（原本由 CMake GenerateExportHeader 生成），
+    # 这里提供一个 stub 供静态库编译使用。
+    file(WRITE "${miniz_SOURCE_DIR}/miniz_export.h"
+        "#ifndef MINIZ_EXPORT\n#define MINIZ_EXPORT\n#endif\n")
+
+    add_library(miniz STATIC
+        "${miniz_SOURCE_DIR}/miniz.c"
+        "${miniz_SOURCE_DIR}/miniz_tdef.c"
+        "${miniz_SOURCE_DIR}/miniz_tinfl.c"
+        "${miniz_SOURCE_DIR}/miniz_zip.c")
+    target_include_directories(miniz PUBLIC "${miniz_SOURCE_DIR}")
+endif()
+
 # Google Test
 if(BUILD_TESTING)
     enable_testing()
@@ -52,9 +75,10 @@ add_library(backer_core
     src/storage/local_storage.cpp
     src/filters/criteria_filter.cpp
     src/pack/tar_packer.cpp
+    src/pack/zip_packer.cpp
 )
 target_include_directories(backer_core PUBLIC src)
-target_link_libraries(backer_core PUBLIC spdlog::spdlog)
+target_link_libraries(backer_core PUBLIC spdlog::spdlog miniz)
 
 # ── CLI Executable ────────────────────────────────────────
 add_executable(backer-cli
@@ -73,6 +97,7 @@ if(BUILD_TESTING)
         tests/fs/special_file_test.cpp
         tests/filter/criteria_filter_test.cpp
         tests/pack/tar_packer_test.cpp
+        tests/pack/zip_packer_test.cpp
     )
     target_link_libraries(backer_test PRIVATE backer_core GTest::gtest_main)
     include(GoogleTest)

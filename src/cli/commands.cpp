@@ -8,6 +8,7 @@
 #include "fs/platform.h"
 #include "pack/packer.h"
 #include "pack/tar_packer.h"
+#include "pack/zip_packer.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -184,6 +185,9 @@ std::unique_ptr<Filter> buildFilter(BackupOptions const& options) {
 std::unique_ptr<Packer> buildPacker(std::string const& format) {
     if (format == "tar") {
         return std::make_unique<TarPacker>();
+    }
+    if (format == "zip") {
+        return std::make_unique<ZipPacker>();
     }
     return nullptr;
 }

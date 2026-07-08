@@ -2,6 +2,7 @@
 #include "fs/fs_abstraction.h"
 
 #include <algorithm>
+#include <iterator>
 #include <sstream>
 #include <spdlog/spdlog.h>
 
@@ -359,6 +360,10 @@ Expected<void, ErrorCode> TarPacker::unpack(
     TarHeader header;
     int zeroBlocks = 0;
 
+    // Deferred directory metadata: restore AFTER all content is written,
+    // sorted deepest-first, so child writes don't overwrite parent mtime.
+    std::vector<std::pair<std::filesystem::path, Metadata>> dirsToRestore;
+
     while (true) {
         // Read header
         if (!readExact(input, reinterpret_cast<char*>(&header), sizeof(TarHeader))) {
@@ -430,9 +435,11 @@ Expected<void, ErrorCode> TarPacker::unpack(
             if (!r) {
                 spdlog::warn("TarPacker: mkdir failed for {}", destPath.string());
             }
+            // Defer metadata restoration until all content is unpacked
+            dirsToRestore.emplace_back(destPath, entry.metadata);
             // Directory entries in tar have no data, but skip just in case
             if (dataSize > 0) skipData(input, dataSize);
-            break;
+            continue;  // skip immediate metadata restore below
         }
 
         case FileType::kSymlink: {
@@ -496,11 +503,28 @@ Expected<void, ErrorCode> TarPacker::unpack(
             break;
         }
 
-        // Restore metadata
+        // Restore metadata for non-directory entries immediately
         auto metaResult = fs.restoreMetadata(destPath, entry.metadata, false);
         if (!metaResult) {
             spdlog::warn("TarPacker: metadata restore partially failed for {}",
                          destPath.string());
+        }
+    }
+
+    // Deferred directory metadata: deepest first so child writes
+    // no longer overwrite parent mtime after this point.
+    std::sort(dirsToRestore.begin(), dirsToRestore.end(),
+        [](auto const& a, auto const& b) {
+            auto depthA = std::distance(a.first.begin(), a.first.end());
+            auto depthB = std::distance(b.first.begin(), b.first.end());
+            return depthA > depthB;
+        });
+
+    for (auto const& [dirPath, meta] : dirsToRestore) {
+        auto metaResult = fs.restoreMetadata(dirPath, meta, false);
+        if (!metaResult) {
+            spdlog::warn("TarPacker: metadata restore partially failed for {}",
+                         dirPath.string());
         }
     }
 
