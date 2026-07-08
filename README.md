@@ -18,7 +18,7 @@ Backer 是计算机组成与体系结构/软件工程课程项目，基于 **C++
 
 依赖通过 **CMake FetchContent** 自动拉取（CLI11 v2.4.2、spdlog v1.14.1、GTest v1.15.2），无需手动安装。
 
-**当前状态**：第二阶段（特殊文件 + 元数据）已完成，支持符号链接、命名管道、设备文件的备份还原，以及属主/权限/时间戳元数据的完整保留。后续将通过管道架构扩展打包格式、压缩加密、GUI 界面、实时监控、定时调度及网络备份等功能。
+**当前状态**：已完成核心备份/还原、特殊文件、元数据保留、自定义筛选（6 维度）及 Tar 打包。后续将通过管道架构扩展压缩加密、GUI 界面、实时监控、定时调度及网络备份等功能。
 
 ## 🔧 构建与运行
 
@@ -47,23 +47,6 @@ bash scripts/test-backup-restore.sh
 # 仅运行特定测试
 ./build/backer_test --gtest_filter="*RestoreEngine*"
 ```
-
-### MSYS2 (Windows)
-
-```bash
-# 构建（使用 UCRT64 环境）
-cmake -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j$(nproc)
-
-# 运行测试
-./build/backer_test.exe
-
-# CLI 使用
-./build/backer-cli.exe backup /path/to/source /path/to/backup
-./build/backer-cli.exe restore /path/to/backup /path/to/restore
-```
-
-> **注意**：MSYS2 环境下部分特殊文件功能（FIFO、设备文件）不可用，符号链接需管理员权限或开发者模式。元数据功能中权限保留正常，属主/组还原需在 Linux 下以 root 运行。
 
 ### Docker 构建
 
@@ -101,8 +84,8 @@ docker run --rm backer --help
 - ✅ **核心备份/还原** — 目录树递归扫描，文件内容读写，备份索引
 - ✅ **特殊文件处理** — 符号链接、命名管道 (FIFO)、块/字符设备、Socket 完整备份与还原
 - ✅ **元数据保留** — 属主 (uid/gid)、权限 (含 setuid/setgid/sticky)、时间戳 (atime/mtime, 纳秒精度)
-- 🔲 **灵活筛选** — 支持自定义包含/排除规则、正则表达式过滤
-- 🔲 **打包格式** — 自实现 Tar 格式，可选 Zip (miniz) 打包
+- ✅ **灵活筛选** — 支持自定义包含/排除规则（路径/类型/名称/时间/尺寸/属主 6 维度）
+- ✅ **打包格式** — 自实现 Tar 格式，可选 Zip (miniz) 打包
 - 🔲 **压缩算法** — 支持 gzip / zstd / lzma 多级压缩
 - 🔲 **加密保护** — AES / SM4 (OpenSSL) 加密备份数据
 - 🔲 **图形界面** — Qt 6 桌面 GUI
@@ -135,8 +118,8 @@ backer/
 │   ├── core/                 # ✅ 备份/还原引擎（含特殊文件+元数据）
 │   ├── fs/                   # ✅ 文件系统抽象层（含元数据+特殊文件）
 │   ├── storage/              # ✅ 存储抽象层（本地文件系统）
-│   ├── filters/    🔲       # 筛选器
-│   ├── pack/       🔲       # 打包模块
+│   ├── filters/    ✅       # 筛选器（6 维度自定义规则）
+│   ├── pack/       ✅       # 打包模块（Tar ustar 格式）
 │   ├── compress/   🔲       # 压缩模块
 │   ├── crypto/     🔲       # 加密模块
 │   ├── gui/        🔲       # Qt 6 图形界面
