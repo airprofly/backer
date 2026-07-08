@@ -21,12 +21,16 @@ RUN set -eux; \
     curl -fsSL "${GH_PROXY}https://github.com/gabime/spdlog/archive/refs/tags/v1.14.1.tar.gz" \
       -o /deps/spdlog.tar.gz && \
     curl -fsSL "${GH_PROXY}https://github.com/google/googletest/archive/refs/tags/v1.15.2.tar.gz" \
-      -o /deps/gtest.tar.gz
+      -o /deps/gtest.tar.gz && \
+    curl -fsSL "${GH_PROXY}https://github.com/richgel999/miniz/archive/refs/tags/3.1.2.tar.gz" \
+      -o /deps/miniz.tar.gz
 RUN set -eux; \
     mkdir -p /deps/cli11 /deps/spdlog /deps/gtest && \
     tar xzf /deps/cli11.tar.gz   -C /deps/cli11   --strip-components=1 && \
     tar xzf /deps/spdlog.tar.gz  -C /deps/spdlog  --strip-components=1 && \
     tar xzf /deps/gtest.tar.gz   -C /deps/gtest   --strip-components=1 && \
+    mkdir -p /deps/miniz && \
+    tar xzf /deps/miniz.tar.gz   -C /deps/miniz   --strip-components=1 && \
     rm /deps/*.tar.gz
 
 WORKDIR /src
@@ -40,6 +44,7 @@ COPY tests/ tests/
 RUN cmake -B build -DCMAKE_BUILD_TYPE=Release \
     -DFETCHCONTENT_SOURCE_DIR_CLI11=/deps/cli11 \
     -DFETCHCONTENT_SOURCE_DIR_SPDLOG=/deps/spdlog \
+    -DFETCHCONTENT_SOURCE_DIR_MINIZ=/deps/miniz \
     -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=/deps/gtest
 
 # ── 层 3：增量编译 ──────────────────────────────────

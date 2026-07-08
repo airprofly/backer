@@ -8,51 +8,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 数据备份软件——计算机组成与体系结构/软件工程课程项目，基于 C++17 在 Linux 平台开发。支持目录树的备份与还原，以及特殊文件、元数据、压缩加密、GUI、实时/定时/网络备份等扩展功能。
 
+## 文档导航
+
+| 文档 | 位置 | 说明 |
+|------|------|------|
+| 使用文档 | [`docs/usage.md`](docs/usage.md) | 功能使用说明、命令参考、示例 |
+| 需求规格说明 | [`docs/requirements.md`](docs/requirements.md) | 课程项目基本要求与扩展要求 |
+| 实施计划 | [`docs/plans/README.md`](docs/plans/README.md) | 分阶段实现路线图（01～11） |
+| 架构设计 | [`docs/architecture-design.md`](docs/architecture-design.md) | 分层架构 + 管道模式设计 |
+
 ## 构建与运行
 
-```bash
-# 配置构建
-cmake -B build -DCMAKE_BUILD_TYPE=Release
+### 构建准则
 
-# 编译
+- **禁止 `rm -rf build` 全量重编**：始终使用增量编译。若遇到 FetchContent 缓存问题，只清理具体依赖目录（如 `rm -rf build/_deps/spdlog*`），切勿删除整个 build 目录。
+- **增量编译流程**：修改源码后直接 `cmake --build build -j$(nproc)`，CMake 会自动检测变更重新编译。只在修改 `CMakeLists.txt` 或新增文件后才需要重新 `cmake -B build`（无需删除 build 目录）。
+
+```bash
+# 构建
+cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
-# 运行单元测试
-ctest --test-dir build
-# 带详细输出
-ctest --test-dir build --output-on-failure
+# 测试
+ctest --test-dir build --output-on-failure            # 运行所有测试
+./build/backer_test --gtest_filter="*BackupCore*"     # 指定测试
 
-# 运行指定测试
-./build/backer_test --gtest_filter="*BackupCore*"
+# 使用
+bash scripts/setup-testdata.sh                        # 生成测试数据
+./build/backer-cli backup data/source data/backup     # 备份
+./build/backer-cli restore data/backup data/restore   # 还原
+bash scripts/test-backup-restore.sh                   # 端到端流程测试
 
-# 版本信息
-./build/backer-cli --version
-
-# 生成测试数据（在 data/source 下创建目录及各类文件）
-bash scripts/setup-testdata.sh
-
-# CLI 使用（测试数据目录备份/还原）
-./build/backer-cli --help
-./build/backer-cli backup data/source data/backup
-./build/backer-cli restore data/backup data/restore
-
-# 端到端备份/还原流程测试（交互式：选择 Local 或 Docker）
-bash scripts/test-backup-restore.sh
-
-# 代码风格检查（cpplint 仅本地使用，CI 使用 clang-tidy-14）
-cpplint --filter=-runtime/references --recursive src/ tests/
-run-clang-tidy-14 src/ -p build
-
-# 内存检测
-valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 ./build/backer_test
-
-# Docker 构建
+# Docker
 docker build -t backer .
-
-# 使用 Compose（含数据卷挂载）进入容器执行备份
 docker compose run --rm backer backup /data/source /data/backup
-
-# 交互式进入容器
 docker run --rm -it --entrypoint /bin/bash backer
 ```
 
@@ -156,6 +145,8 @@ volumes:
 ├── .claude/
 │   ├── commands/
 │   │   ├── update-info.md      # 本项目专用的 /update-info 命令
+│   │   ├── implement-feature.md # 新功能实现流水线
+│   │   ├── test-features.md     # 功能测试流程
 │   │   └── git/
 │   │       ├── create-branch.md # /git:create-branch 命令
 │   │       └── git-commit.md    # /git:git-commit 命令
@@ -204,31 +195,14 @@ volumes:
 │   │   ├── storage.h           # 存储接口（纯虚类）
 │   │   └── local_storage.h/cpp # 本地文件系统实现
 │   ├── filters/    ✅          # 自定义筛选（路径/类型/名称/时间/尺寸/用户）
-│   ├── pack/       ✅          # 打包格式（自实现 Tar ustar）
+│   ├── pack/       ✅          # 打包格式（自实现 Tar ustar + miniz Zip）
 │   ├── compress/   🚧          # 压缩（zlib / zstd / liblzma 策略接口）
 │   ├── crypto/     🚧          # 加密（AES / SM4 策略接口，基于 OpenSSL）
 │   ├── gui/        🚧          # Qt 6 Widgets 图形界面
 │   ├── watch/      🚧          # inotify 实时文件监控
 │   └── network/    🚧          # gRPC 网络备份
 ├── tests/
-│   ├── core/                   # ✅ 备份/还原引擎单元测试（Google Test）
-│   │   ├── backup_engine_test.cpp
-│   │   └── restore_engine_test.cpp
-│   ├── fs/                     # ✅ 元数据 + 特殊文件 单元测试
-│   │   ├── metadata_test.cpp
-│   │   └── special_file_test.cpp
-│   ├── filter/                 # ✅ 筛选器单元测试（28 cases）
-│   │   └── criteria_filter_test.cpp
-│   └── pack/                   # ✅ Tar 打包单元测试（20 cases）
-│       └── tar_packer_test.cpp
 ├── scripts/                    # 辅助脚本（setup-testdata.sh, test-backup-restore.sh）
-├── testdata/                   # 🧪 git 管理的测试数据（按场景分类）
-│   ├── text/                   # 文本文件（hello.txt / empty.txt / large.txt）
-│   ├── filter/                 # 筛选测试（data.bin / debug.log / tmp/）
-│   ├── meta/                   # 元数据测试（executable.sh / private.key）
-│   ├── naming/                 # 特殊命名测试（.hidden / 空格 / 中文）
-│   ├── nested/                 # 深层嵌套（a/b/c/leaf.txt）
-│   └── special/                # 特殊文件占位（placeholder.txt / link.txt）
 └── data/                       # 🧪 脚本生成的测试数据（.gitignore，不含于仓库）
     ├── source/                 # 源目录（setup-testdata.sh 生成）
     ├── backup/                 # 备份输出

@@ -272,9 +272,9 @@ TEST(CriteriaFilterTest, ExcludeOverridesInclude)
     EXPECT_EQ(result[0].relativePath.string(), "main.cpp");
 }
 
-// ── AND combination ─────────────────────────────────────────────────────────
+// ── Multiple include — OR within same dim, AND across dims ──────────────
 
-TEST(CriteriaFilterTest, AndCombinationMultipleInclude)
+TEST(CriteriaFilterTest, IncludeAcrossDimensionsAnd)
 {
     std::vector<FilterCriteria> criteria;
     criteria.push_back(FilterCriteria{});
@@ -286,9 +286,58 @@ TEST(CriteriaFilterTest, AndCombinationMultipleInclude)
     CriteriaFilter filter(criteria);
 
     auto entries = std::vector<FileEntry>{
-        makeEntry("build", FileType::kDirectory),
-        makeEntry("src", FileType::kDirectory),
-        makeEntry("build", FileType::kRegular),
+        makeEntry("build", FileType::kDirectory),  // matches both
+        makeEntry("src", FileType::kDirectory),     // matches type only
+        makeEntry("build", FileType::kRegular),     // matches name only
+    };
+    auto result = filter.apply(entries);
+
+    // AND across dims: must be dir AND named "build"
+    ASSERT_EQ(result.size(), 1U);
+    EXPECT_EQ(result[0].relativePath.string(), "build");
+    EXPECT_EQ(result[0].type, FileType::kDirectory);
+}
+
+TEST(CriteriaFilterTest, IncludeSameDimensionOr)
+{
+    // Same attribute with multiple values — OR within the dimension
+    std::vector<FilterCriteria> criteria;
+    criteria.push_back(FilterCriteria{});
+    criteria.back().fileType = FileType::kDirectory;
+
+    criteria.push_back(FilterCriteria{});
+    criteria.back().fileType = FileType::kSymlink;
+
+    CriteriaFilter filter(criteria);
+
+    auto entries = std::vector<FileEntry>{
+        makeEntry("file.txt"),
+        makeEntry("dir", FileType::kDirectory),
+        makeEntry("link", FileType::kSymlink),
+        makeEntry("fifo", FileType::kFifo),
+    };
+    auto result = filter.apply(entries);
+
+    // OR within type dim: dir OR symlink
+    ASSERT_EQ(result.size(), 2U);
+}
+
+// ── AND within a single criterion ──────────────────────────────────────────
+
+TEST(CriteriaFilterTest, SingleCriterionAndFields)
+{
+    std::vector<FilterCriteria> criteria;
+    FilterCriteria c;
+    c.fileType = FileType::kDirectory;
+    c.nameGlob = "build";
+    criteria.push_back(std::move(c));
+
+    CriteriaFilter filter(criteria);
+
+    auto entries = std::vector<FileEntry>{
+        makeEntry("build", FileType::kDirectory),  // matches both
+        makeEntry("src", FileType::kDirectory),     // matches type only
+        makeEntry("build", FileType::kRegular),     // matches name only
     };
     auto result = filter.apply(entries);
 
@@ -518,10 +567,10 @@ TEST(CriteriaFilterTest, TimeExactlyAtBoundary)
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Multiple include — AND logic with partial match
+// Multiple include — OR within same dim, AND across dims partial match
 // ══════════════════════════════════════════════════════════════════════════════
 
-TEST(CriteriaFilterTest, MultipleIncludeSomeMatch)
+TEST(CriteriaFilterTest, IncludeAcrossSomeMatch)
 {
     std::vector<FilterCriteria> criteria;
     criteria.push_back(FilterCriteria{});
@@ -539,6 +588,7 @@ TEST(CriteriaFilterTest, MultipleIncludeSomeMatch)
     };
     auto result = filter.apply(entries);
 
+    // AND across dims: must match name *.txt AND path sub/*
     ASSERT_EQ(result.size(), 1U);
     EXPECT_EQ(result[0].relativePath.string(), "sub/readme.txt");
 }

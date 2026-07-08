@@ -162,21 +162,124 @@ std::vector<FileEntry> CriteriaFilter::apply(
     std::vector<FileEntry> result;
     result.reserve(files.size());
 
+    // ── Determine which dimensions have include criteria ──────────────────────
+    //
+    // Include logic: entries pass if they satisfy ALL active dimensions.
+    // Within each dimension, matching ANY criterion satisfies that dimension (OR).
+    // Across dimensions, ALL must be satisfied (AND).
+    struct IncludeDims {
+        bool hasPathGlob   = false;
+        bool hasFileType   = false;
+        bool hasNameGlob   = false;
+        bool hasTimeRange  = false;
+        bool hasSizeRange  = false;
+        bool hasOwnerId    = false;
+        bool any() const { return hasPathGlob || hasFileType || hasNameGlob
+                                  || hasTimeRange || hasSizeRange || hasOwnerId; }
+    };
+    IncludeDims dims;
+    for (auto const& c : criteria_) {
+        if (c.exclude) continue;
+        if (c.pathGlob)   dims.hasPathGlob   = true;
+        if (c.fileType)   dims.hasFileType   = true;
+        if (c.nameGlob)   dims.hasNameGlob   = true;
+        if (c.timeRange)  dims.hasTimeRange  = true;
+        if (c.sizeRange)  dims.hasSizeRange  = true;
+        if (c.ownerId)    dims.hasOwnerId    = true;
+    }
+
     for (auto const& entry : files) {
-        bool passesInclude = true;
+        // ── Include phase ─────────────────────────────────────────────────────
+        if (dims.any()) {
+            bool passesAll = true;
 
-        // Apply all include criteria (AND logic)
-        for (auto const& c : criteria_) {
-            if (!c.exclude) {
-                if (!matches(c, entry)) {
-                    passesInclude = false;
-                    break;
+            // Path: entry matches at least one pathGlob criterion
+            if (passesAll && dims.hasPathGlob) {
+                bool ok = false;
+                auto pathStr = entry.relativePath.generic_string();
+                for (auto const& c : criteria_) {
+                    if (!c.exclude && c.pathGlob
+                        && matchGlob(pathStr, c.pathGlob.value(), true)) {
+                        ok = true; break;
+                    }
                 }
+                if (!ok) passesAll = false;
             }
-        }
 
-        if (!passesInclude) {
-            continue;
+            // File type: entry matches at least one fileType criterion
+            if (passesAll && dims.hasFileType) {
+                bool ok = false;
+                for (auto const& c : criteria_) {
+                    if (!c.exclude && c.fileType
+                        && entry.type == c.fileType.value()) {
+                        ok = true; break;
+                    }
+                }
+                if (!ok) passesAll = false;
+            }
+
+            // Name: entry matches at least one nameGlob criterion
+            if (passesAll && dims.hasNameGlob) {
+                bool ok = false;
+                auto nameStr = entry.relativePath.filename().generic_string();
+                for (auto const& c : criteria_) {
+                    if (!c.exclude && c.nameGlob
+                        && matchGlob(nameStr, c.nameGlob.value(), false)) {
+                        ok = true; break;
+                    }
+                }
+                if (!ok) passesAll = false;
+            }
+
+            // Time range: entry matches at least one timeRange criterion
+            if (passesAll && dims.hasTimeRange) {
+                bool ok = false;
+                int64_t mtimeSec = entry.metadata.modifyTimeSec;
+                int64_t mtimeNsec = entry.metadata.modifyTimeNsec;
+                for (auto const& c : criteria_) {
+                    if (c.exclude || !c.timeRange) continue;
+                    auto const& tr = c.timeRange.value();
+                    bool match = true;
+                    if (tr.hasAfter) {
+                        if (mtimeSec < tr.afterSec) match = false;
+                        else if (mtimeSec == tr.afterSec && mtimeNsec < tr.afterNsec) match = false;
+                    }
+                    if (match && tr.hasBefore) {
+                        if (mtimeSec > tr.beforeSec) match = false;
+                        else if (mtimeSec == tr.beforeSec && mtimeNsec >= tr.beforeNsec) match = false;
+                    }
+                    if (match) { ok = true; break; }
+                }
+                if (!ok) passesAll = false;
+            }
+
+            // Size range: entry matches at least one sizeRange criterion
+            if (passesAll && dims.hasSizeRange) {
+                bool ok = false;
+                for (auto const& c : criteria_) {
+                    if (c.exclude || !c.sizeRange) continue;
+                    auto const& sr = c.sizeRange.value();
+                    bool match = true;
+                    if (sr.hasMin && entry.size < sr.minSize) match = false;
+                    if (sr.hasMax && entry.size > sr.maxSize) match = false;
+                    if (match) { ok = true; break; }
+                }
+                if (!ok) passesAll = false;
+            }
+
+            // Owner: entry matches at least one ownerId criterion
+            if (passesAll && dims.hasOwnerId) {
+                bool ok = false;
+                for (auto const& c : criteria_) {
+                    if (!c.exclude && c.ownerId
+                        && entry.metadata.ownerId == c.ownerId.value()) {
+                        ok = true; break;
+                    }
+                }
+                if (!ok) passesAll = false;
+            }
+
+            if (!passesAll) continue;
         }
 
         // Apply all exclude criteria (ANY match removes)
