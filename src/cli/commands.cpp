@@ -223,13 +223,30 @@ int handleBackup(
         spdlog::info("Packing format: {}", packer->formatName());
     }
 
+    // ── Auto-append file extension for archive mode ────────────────
+    // e.g. --pack tar → destination + ".tar", --pack zip → destination + ".zip"
+    // Per docs/plans/05-packing.md naming convention.
+    auto actualDest = destination;
+    if (packer) {
+        auto ext = std::string(".") + std::string(packer->formatName());
+        auto destStr = destination.string();
+        // Avoid double-adding extension if user already typed it
+        if (destStr.size() < ext.size() ||
+            destStr.compare(destStr.size() - ext.size(), ext.size(), ext) != 0) {
+            actualDest = destination;
+            actualDest += ext;
+        }
+        spdlog::info("Output archive: {}", actualDest.string());
+    }
+
     BackupEngine engine(std::move(fs));
-    auto result = engine.backup(source, destination, filter.get(), packer.get());
+    auto result = engine.backup(source, actualDest, filter.get(), packer.get());
 
     if (result.success) {
         auto const& s = result.stats;
         std::cout
             << "✓ Backup completed successfully\n"
+            << "  Archive: " << actualDest.string() << "\n"
             << "  Files:   " << s.totalFiles << "\n"
             << "  Dirs:    " << s.totalDirs << "\n"
             << "  Size:    " << s.totalBytes << " bytes\n"
