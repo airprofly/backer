@@ -47,6 +47,7 @@ WORKDIR /src
 # ── 层 2：拷贝源码与构建配置 ────────────────────
 # 拷全源文件和测试文件，cmake configure 需要校验它们存在
 COPY CMakeLists.txt .
+COPY cmake/ cmake/
 COPY src/ src/
 COPY tests/ tests/
 

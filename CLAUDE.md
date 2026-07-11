@@ -27,9 +27,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > **⚠ FetchContent 依赖自带测试陷阱**：有些库（如 zlib）通过自己的 CMakeLists.txt 注册了测试目标（`example`/`minigzip`），即使 `EXCLUDE_FROM_ALL` 阻止了默认编译，ctest 仍会发现已注册的测试并报告 "Not Run"（视作失败）。**拉取这类依赖时，务必在 `FetchContent_MakeAvailable` 前关闭其测试选项**，例如 `set(ZLIB_BUILD_TESTING OFF CACHE INTERNAL "" FORCE)`。此坑在 CI（ctest 执行全部注册测试）中出现，本地增量 `cmake --build` 则无感。
 
 ```bash
-# 构建
+# 构建（CLI 版本，无外部依赖）
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
+
+# 构建 GUI 版本（需要 Qt6：sudo apt install qt6-base-dev）
+cmake -B build -DBUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+./build/backer-gui                                    # 启动图形界面
 
 # 测试（ctest 使用 Mock，无需外部数据）
 ctest --test-dir build --output-on-failure            # 运行所有测试
@@ -220,6 +225,8 @@ CI 包含以下 job，全部通过才可合入：
 │   │       ├── create-branch.md # /git:create-branch 命令
 │   │       └── git-commit.md    # /git:git-commit 命令
 │   └── settings.local.json     # 本地 Claude 权限等配置
+├── cmake/
+│   └── FetchQt6.cmake          # Qt6 自动下载模块（aqtinstall）
 ├── .vscode/
 │   └── c_cpp_properties.json   # VS Code C/C++ 配置（路径/标准）
 ├── docs/
@@ -233,7 +240,7 @@ CI 包含以下 job，全部通过才可合入：
 │   │   ├── 05-packing.md              # ✅ 已完成（Tar）
 │   │   ├── 06-compression.md         # ✅ 已完成（gzip/zstd/lzma）
 │   │   ├── 07-encryption.md
-│   │   ├── 08-gui.md
+│   │   ├── 08-gui.md                 # ✅ 已完成（Qt 6 Widget）
 │   │   ├── 09-scheduled-backup.md
 │   │   ├── 10-realtime-backup.md
 │   │   └── 11-network-backup.md
@@ -241,6 +248,7 @@ CI 包含以下 job，全部通过才可合入：
 │   ├── requirements.md         # 需求规格说明
 │   └── technology-selection.md # 技术选型论证
 ├── scripts/                    # 辅助脚本
+│   ├── setup-qt6.sh            # 手动下载 Qt6 预编译二进制
 │   ├── setup-testdata.sh       # 生成测试数据（data/source/）
 │   └── test-backup-restore.sh  # 端到端备份/还原流程测试（交互式）
 ├── src/                        # 全部业务源码
@@ -267,7 +275,7 @@ CI 包含以下 job，全部通过才可合入：
 │   ├── pack/       ✅          # 打包格式（自实现 Tar ustar + miniz Zip）
 │   ├── compress/   ✅          # 压缩（gzip/zstd/lzma 策略接口 + 工厂懒注册，span 缓冲区接口）
 │   ├── crypto/     🚧          # 加密（AES / SM4 策略接口，基于 OpenSSL）
-│   ├── gui/        🚧          # Qt 6 Widgets 图形界面
+│   ├── gui/        ✅          # Qt 6 Widgets 图形界面（自动下载 Qt6）
 │   ├── watch/      🚧          # inotify 实时文件监控
 │   └── network/    🚧          # gRPC 网络备份
 ├── tests/
