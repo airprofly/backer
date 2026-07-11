@@ -24,6 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **禁止 `rm -rf build` 全量重编**：始终使用增量编译。若遇到 FetchContent 缓存问题，只清理具体依赖目录（如 `rm -rf build/_deps/spdlog*`），切勿删除整个 build 目录。
 - **增量编译流程**：修改源码后直接 `cmake --build build -j$(nproc)`，CMake 会自动检测变更重新编译。只在修改 `CMakeLists.txt` 或新增文件后才需要重新 `cmake -B build`（无需删除 build 目录）。
 - **依赖零系统化**：所有编译期依赖（CLI11、spdlog、Google Test、miniz、zlib/zstd/liblzma、OpenSSL、Qt、gRPC 等）一律通过 CMake 管理，**禁止依赖系统已安装的库**（不 `find_package` 系统库、不链接 `-l<syslib>`）。目标是 `git clone` 后只需 CMake + 编译器即可直接产出可执行软件，无需预先安装任何开发包。优先用 `FetchContent` 从源码拉取编译；**若该依赖有官方预编译产物（prebuilt binary）且平台/ABI 匹配，可直接拉取产物跳过编译以加速构建**（如 miniz、zlib 等纯库可通过 header-only 或预编译 .a/.so 引入）。性能分析（perf/gprof/gperftools）、内存检测（Valgrind）、lint（clang-tidy）等**非编译工具**不在此约束内，使用本机已安装的即可。
+> **⚠ FetchContent 依赖自带测试陷阱**：有些库（如 zlib）通过自己的 CMakeLists.txt 注册了测试目标（`example`/`minigzip`），即使 `EXCLUDE_FROM_ALL` 阻止了默认编译，ctest 仍会发现已注册的测试并报告 "Not Run"（视作失败）。**拉取这类依赖时，务必在 `FetchContent_MakeAvailable` 前关闭其测试选项**，例如 `set(ZLIB_BUILD_TESTING OFF CACHE INTERNAL "" FORCE)`。此坑在 CI（ctest 执行全部注册测试）中出现，本地增量 `cmake --build` 则无感。
 
 ```bash
 # 构建

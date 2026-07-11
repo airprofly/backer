@@ -63,10 +63,10 @@ FetchContent_Declare(zlib
     GIT_REPOSITORY https://github.com/madler/zlib.git
     GIT_TAG v1.3.1
 )
+# Disable zlib's own test targets (example/minigzip) so ctest doesn't report
+# them as "Not Run" when it discovers them without the binaries.
+set(ZLIB_BUILD_TESTING OFF CACHE INTERNAL "" FORCE)
 FetchContent_MakeAvailable(zlib)
-# zlib's CMake builds example/minigzip executables with no toggle to disable;
-# exclude them from the default build so they don't compile on every build.
-set_target_properties(example minigzip PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 # zstd — has CMake in build/cmake/
 FetchContent_Declare(zstd
