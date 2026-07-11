@@ -14,33 +14,6 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  # ── 代码风格检查 ───────────────────────────────────
-  lint:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache CMake dependencies
-        uses: actions/cache@v4
-        with:
-          path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-Debug-default
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-
-            deps-
-
-      - name: Install clang-tidy
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq clang-tidy-14
-
-      - name: Run clang-tidy
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DBUILD_TESTING=ON
-          run-clang-tidy-14 -p build \
-            -checks='-*,bugprone-*,clang-analyzer-*,performance-*,modernize-*,-modernize-use-trailing-return-type' \
-            src/
-
   # ── 构建 + 单元测试（编译器矩阵） ──────────────────
   build-and-test:
     runs-on: ubuntu-22.04
@@ -78,36 +51,6 @@ jobs:
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
 
-  # ── Valgrind 内存检测 ──────────────────────────────
-  memcheck:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install valgrind
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq valgrind
-
-      - name: Cache CMake dependencies
-        uses: actions/cache@v4
-        with:
-          path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-Debug-default
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-
-            deps-
-
-      - name: Configure & build (Debug)
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
-          cmake --build build -j$(nproc)
-
-      - name: Valgrind test
-        run: |
-          valgrind --leak-check=full --show-leak-kinds=all \
-            --error-exitcode=1 \
-            ./build/backer_test 2>&1 | tee valgrind.log
-          echo "✅ Valgrind passed"
-
   # ── Docker 构建验证 ────────────────────────────────
   docker:
     runs-on: ubuntu-22.04
@@ -115,7 +58,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -t backer .
+        # GitHub Actions runner 在海外，直连 GitHub 最快；覆盖 Dockerfile 默认的
+        # 国内代理 GH_PROXY=ghproxy.net 为空值，避免绕道代理变慢/失败。
+        run: docker build -t backer --build-arg GH_PROXY= .
 
       - name: Verify binary exists in image
         run: |

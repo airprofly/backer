@@ -16,7 +16,7 @@
 | 3 | ✅ 元数据支持 (已实现) | 10 分 | [03-metadata.md](03-metadata.md) | ~600 行 | 3-5 天 |
 | 4 | ✅ 自定义筛选 (已实现) | 各 3 分 (×6) | [04-filtering.md](04-filtering.md) | ~700 行 | 4-6 天 |
 | 5 | ✅ Tar 打包 (已实现) | 各 10 分 (×2) | [05-packing.md](05-packing.md) | ~1200 行 | 7-10 天 |
-| 6 | 压缩解压 (gzip/zstd/lzma) | 各 10 分 (×3) | [06-compression.md](06-compression.md) | ~1000 行 | 5-7 天 |
+| 6 | ✅ 压缩解压 (已实现) | 各 10 分 (×3) | [06-compression.md](06-compression.md) | ~1000 行 | 5-7 天 |
 | 7 | 加密解密 (AES/SM4) | 各 10 分 (×2) | [07-encryption.md](07-encryption.md) | ~800 行 | 4-6 天 |
 | 8 | 图形界面 (GUI) | 10 分 | [08-gui.md](08-gui.md) | ~2000 行 | 1.5-2 周 |
 | 9 | 定时备份 | 10 分 | [09-scheduled-backup.md](09-scheduled-backup.md) | ~1000 行 | 5-7 天 |

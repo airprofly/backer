@@ -23,14 +23,23 @@ RUN set -eux; \
     curl -fsSL "${GH_PROXY}https://github.com/google/googletest/archive/refs/tags/v1.15.2.tar.gz" \
       -o /deps/gtest.tar.gz && \
     curl -fsSL "${GH_PROXY}https://github.com/richgel999/miniz/archive/refs/tags/3.1.2.tar.gz" \
-      -o /deps/miniz.tar.gz
+      -o /deps/miniz.tar.gz && \
+    curl -fsSL "${GH_PROXY}https://github.com/madler/zlib/archive/refs/tags/v1.3.1.tar.gz" \
+      -o /deps/zlib.tar.gz && \
+    curl -fsSL "${GH_PROXY}https://github.com/facebook/zstd/archive/refs/tags/v1.5.6.tar.gz" \
+      -o /deps/zstd.tar.gz && \
+    curl -fsSL "${GH_PROXY}https://github.com/tukaani-project/xz/archive/refs/tags/v5.6.3.tar.gz" \
+      -o /deps/lzma.tar.gz
 RUN set -eux; \
-    mkdir -p /deps/cli11 /deps/spdlog /deps/gtest && \
+    mkdir -p /deps/cli11 /deps/spdlog /deps/gtest /deps/zlib /deps/zstd /deps/lzma && \
     tar xzf /deps/cli11.tar.gz   -C /deps/cli11   --strip-components=1 && \
     tar xzf /deps/spdlog.tar.gz  -C /deps/spdlog  --strip-components=1 && \
     tar xzf /deps/gtest.tar.gz   -C /deps/gtest   --strip-components=1 && \
     mkdir -p /deps/miniz && \
     tar xzf /deps/miniz.tar.gz   -C /deps/miniz   --strip-components=1 && \
+    tar xzf /deps/zlib.tar.gz    -C /deps/zlib    --strip-components=1 && \
+    tar xzf /deps/zstd.tar.gz    -C /deps/zstd    --strip-components=1 && \
+    tar xzf /deps/lzma.tar.gz    -C /deps/lzma    --strip-components=1 && \
     rm /deps/*.tar.gz
 
 WORKDIR /src
@@ -45,7 +54,10 @@ RUN cmake -B build -DCMAKE_BUILD_TYPE=Release \
     -DFETCHCONTENT_SOURCE_DIR_CLI11=/deps/cli11 \
     -DFETCHCONTENT_SOURCE_DIR_SPDLOG=/deps/spdlog \
     -DFETCHCONTENT_SOURCE_DIR_MINIZ=/deps/miniz \
-    -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=/deps/gtest
+    -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=/deps/gtest \
+    -DFETCHCONTENT_SOURCE_DIR_ZLIB=/deps/zlib \
+    -DFETCHCONTENT_SOURCE_DIR_ZSTD=/deps/zstd \
+    -DFETCHCONTENT_SOURCE_DIR_LZMA=/deps/lzma
 
 # ── 层 3：增量编译 ──────────────────────────────────
 RUN cmake --build build -j$(nproc)

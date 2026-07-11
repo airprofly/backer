@@ -14,6 +14,7 @@
   - [筛选器（6 维度）](#筛选器6-维度)
   - [Tar 打包](#tar-打包)
   - [Zip 打包](#zip-打包)
+  - [压缩解压](#压缩解压)
 - [退出码](#退出码)
 - [Docker 使用](#docker-使用)
 
@@ -323,6 +324,57 @@ Zip 格式不原生支持特殊文件类型，Backer 通过在归档中嵌入元
 ./build/backer-cli backup data/source data/backup.zip --pack zip \
     --include-name "*.txt" --include-name "*.md"
 ```
+
+---
+
+### 压缩解压
+
+备份归档（`.tar` / `.zip`）后可叠加压缩以节省存储空间，还原时先解压再解包。支持三种算法：
+
+| 算法 | 选项值 | 文件后缀 | 级别范围 | 默认级别 | 特点 |
+|------|--------|----------|----------|----------|------|
+| gzip | `gzip` | `.gz` | 0–9 | 6 | 通用、解压快 |
+| zstd | `zstd` | `.zst` | 1–22 | 3 | 日常备份首选，速度快 |
+| LZMA | `lzma` | `.xz` | 0–9 | 6 | 压缩比最高，速度较慢 |
+
+> 压缩作用于**打包后的归档文件**（而非单个文件），因此需配合 `--pack` 使用。
+
+#### 命令
+
+```bash
+# 备份 → 打包 (tar) → 压缩 (gzip) 产出 data/backup.tar.gz
+./build/backer-cli backup data/source data/backup --pack tar --compress gzip
+
+# 指定压缩级别（1=最快, 9=最高压缩比）
+./build/backer-cli backup data/source data/backup --pack tar --compress lzma --compress-level 9
+
+# 还原：先解压 (gzip) 再解包 (tar)
+./build/backer-cli restore data/backup.tar.gz data/restore --pack tar --decompress gzip
+ 
+# 三种算法均可
+./build/backer-cli backup data/source data/backup --pack tar --compress zstd
+./build/backer-cli backup data/source data/backup --pack tar --compress lzma
+```
+
+#### 文件命名
+
+备份时自动追加后缀（避免与用户已有的扩展名重复）：
+
+```
+--pack tar --compress gzip  → data/backup.tar.gz
+--pack tar --compress zstd  → data/backup.tar.zst
+--pack tar --compress lzma  → data/backup.tar.xz
+```
+
+还原时 `--decompress` 读取压缩归档，解压到临时文件后交给解包器，完成后自动清理临时文件。
+
+#### 算法选型建议
+
+| 场景 | 推荐 | 理由 |
+|------|------|------|
+| 日常备份，追求速度 | `zstd` | 压缩/解压都极快，压缩比优秀 |
+| 通用兼容、跨工具交换 | `gzip` | 最广泛支持，与 `gunzip` 互通 |
+| 归档存储，最大化压缩 | `lzma` | 压缩比最高，但耗时与内存占用大 |
 
 ---
 

@@ -86,7 +86,7 @@ docker run --rm backer --help
 - ✅ **元数据保留** — 属主 (uid/gid)、权限 (含 setuid/setgid/sticky)、时间戳 (atime/mtime, 纳秒精度)
 - ✅ **灵活筛选** — 支持自定义包含/排除规则（路径/类型/名称/时间/尺寸/属主 6 维度）
 - ✅ **打包格式** — 自实现 Tar 格式，可选 Zip (miniz) 打包
-- 🔲 **压缩算法** — 支持 gzip / zstd / lzma 多级压缩
+- ✅ **压缩算法** — 支持 gzip / zstd / lzma 多级压缩（归档后压缩，还原前解压）
 - 🔲 **加密保护** — AES / SM4 (OpenSSL) 加密备份数据
 - 🔲 **图形界面** — Qt 6 桌面 GUI
 - 🔲 **实时监控** — inotify 文件变更实时备份
@@ -120,7 +120,7 @@ backer/
 │   ├── storage/              # ✅ 存储抽象层（本地文件系统）
 │   ├── filters/              # ✅ 筛选器（6 维度自定义规则）
 │   ├── pack/                 # ✅ 打包模块（Tar ustar + miniz Zip）
-│   ├── compress/   🔲       # 压缩模块
+│   ├── compress/   ✅       # 压缩模块（gzip/zstd/lzma 策略接口 + 工厂）
 │   ├── crypto/     🔲       # 加密模块
 │   ├── gui/        🔲       # Qt 6 图形界面
 │   ├── watch/      🔲       # inotify 实时监控
