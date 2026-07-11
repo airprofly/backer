@@ -5,6 +5,25 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <string_view>
+#include <unordered_set>
+
+namespace {
+/// Valid compression algorithm names.
+static constexpr std::string_view kValidAlgos[] = {"gzip", "zstd", "lzma"};
+
+/// Validate a --compress/--decompress algorithm value. @p action labels the
+/// error message ("compress" or "decompress"). Empty value is allowed (option
+/// not meaningfully set); returns an empty string on success.
+std::string validateCompressAlgo(std::string const& val, std::string_view action) {
+    if (val.empty()) return std::string{};
+    for (auto v : kValidAlgos) {
+        if (v == val) return std::string{};
+    }
+    return "Invalid " + std::string(action) + " algorithm '" + val +
+           "'. Use gzip, zstd, or lzma.";
+}
+} // namespace
 
 int main(int argc, char** argv)
 {
@@ -85,6 +104,17 @@ int main(int argc, char** argv)
                           "Pack format: tar (creates a single archive file)")
         ->type_name("FMT");
 
+    // ── Compress argument ─────────────────────────────────────────
+    std::string backupCompressAlgo;
+    int backupCompressLevel = 0;
+    backupCmd->add_option("--compress", backupCompressAlgo,
+                          "Compress algorithm: gzip, zstd, lzma")
+        ->type_name("ALGO")
+        ->check([](std::string const& val) { return validateCompressAlgo(val, "compress"); });
+    backupCmd->add_option("--compress-level", backupCompressLevel,
+                          "Compression level (1-9 for gzip/lzma, varies for zstd)")
+        ->type_name("LEVEL");
+
     // ════════════════════════════════════════════════════════════════
     // restore subcommand
     // ════════════════════════════════════════════════════════════════
@@ -108,6 +138,12 @@ int main(int argc, char** argv)
     restoreCmd->add_option("--pack", restorePackFormat,
                            "Pack format: tar (source is an archive to unpack)")
         ->type_name("FMT");
+
+    std::string restoreDecompressAlgo;
+    restoreCmd->add_option("--decompress", restoreDecompressAlgo,
+                           "Decompress algorithm: gzip, zstd, lzma")
+        ->type_name("ALGO")
+        ->check([](std::string const& val) { return validateCompressAlgo(val, "decompress"); });
 
     // --version
     app.set_version_flag("--version", std::string(BACKER_VERSION),
@@ -140,6 +176,10 @@ int main(int argc, char** argv)
         // Pack option
         opts.packFormat = std::move(backupPackFormat);
 
+        // Compress options
+        opts.compressAlgo = std::move(backupCompressAlgo);
+        opts.compressLevel = backupCompressLevel;
+
         return backer::cli::handleBackup(backupSource, backupDest, opts);
     }
     if (*restoreCmd) {
@@ -149,6 +189,9 @@ int main(int argc, char** argv)
 
         // Pack option
         opts.packFormat = std::move(restorePackFormat);
+
+        // Decompress option
+        opts.decompressAlgo = std::move(restoreDecompressAlgo);
 
         return backer::cli::handleRestore(restoreSource, restoreDest, opts);
     }

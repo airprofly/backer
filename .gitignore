@@ -3,6 +3,7 @@ assets/
 .claude/commands/info.md
 data/
 testdata/
+output
 
 
 # ================= latex =================
@@ -69,9 +70,6 @@ logs/
 *.iws
 *.iml
 *.ipr
-
-# VS Code
-.vscode/
 
 # Eclipse/STS
 .project

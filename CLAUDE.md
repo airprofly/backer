@@ -23,18 +23,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **禁止 `rm -rf build` 全量重编**：始终使用增量编译。若遇到 FetchContent 缓存问题，只清理具体依赖目录（如 `rm -rf build/_deps/spdlog*`），切勿删除整个 build 目录。
 - **增量编译流程**：修改源码后直接 `cmake --build build -j$(nproc)`，CMake 会自动检测变更重新编译。只在修改 `CMakeLists.txt` 或新增文件后才需要重新 `cmake -B build`（无需删除 build 目录）。
+- **依赖零系统化**：所有编译期依赖（CLI11、spdlog、Google Test、miniz、zlib/zstd/liblzma、OpenSSL、Qt、gRPC 等）一律通过 CMake 管理，**禁止依赖系统已安装的库**（不 `find_package` 系统库、不链接 `-l<syslib>`）。目标是 `git clone` 后只需 CMake + 编译器即可直接产出可执行软件，无需预先安装任何开发包。优先用 `FetchContent` 从源码拉取编译；**若该依赖有官方预编译产物（prebuilt binary）且平台/ABI 匹配，可直接拉取产物跳过编译以加速构建**（如 miniz、zlib 等纯库可通过 header-only 或预编译 .a/.so 引入）。性能分析（perf/gprof/gperftools）、内存检测（Valgrind）、lint（clang-tidy）等**非编译工具**不在此约束内，使用本机已安装的即可。
+> **⚠ FetchContent 依赖自带测试陷阱**：有些库（如 zlib）通过自己的 CMakeLists.txt 注册了测试目标（`example`/`minigzip`），即使 `EXCLUDE_FROM_ALL` 阻止了默认编译，ctest 仍会发现已注册的测试并报告 "Not Run"（视作失败）。**拉取这类依赖时，务必在 `FetchContent_MakeAvailable` 前关闭其测试选项**，例如 `set(ZLIB_BUILD_TESTING OFF CACHE INTERNAL "" FORCE)`。此坑在 CI（ctest 执行全部注册测试）中出现，本地增量 `cmake --build` 则无感。
 
 ```bash
 # 构建
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
-# 测试
+# 测试（ctest 使用 Mock，无需外部数据）
 ctest --test-dir build --output-on-failure            # 运行所有测试
 ./build/backer_test --gtest_filter="*BackupCore*"     # 指定测试
 
-# 使用
-bash scripts/setup-testdata.sh                        # 生成测试数据
+# 手动使用 CLI / 端到端（需要 setup-testdata.sh 生成真实数据）
 ./build/backer-cli backup data/source data/backup     # 备份
 ./build/backer-cli restore data/backup data/restore   # 还原
 bash scripts/test-backup-restore.sh                   # 端到端流程测试
@@ -63,9 +64,9 @@ volumes:
 | CLI 解析 | CLI11 v2.4.2 (header-only) |
 | 日志 | spdlog v1.14.1 |
 | 文件系统 | std::filesystem |
-| 测试 | Google Test v1.15.2 |
-| 代码检查 | cpplint（本地）+ clang-tidy-14（CI） |
-| 内存检测 | Valgrind (CI 自动校验) |
+| 测试 | Google Test v1.15.2（单元测试） + 端到端脚本（集成测试） |
+| 内存检测 | Valgrind（CI 自动校验） |
+| 性能分析 | perf（内核级采样）/ gprof（`-pg` 编译） |
 | 容器 | Docker（multi-stage：gcc:13-bookworm → slim，GH_PROXY 构建参数支持国内加速）+ Compose |
 | CI | GitHub Actions（clang-tidy lint / 双编译器矩阵构建测试 / Valgrind / Docker） |
 
@@ -85,13 +86,81 @@ volumes:
 | 网络备份 | gRPC + Protocol Buffers |
 | 增量备份 | 文件哈希比较 |
 
-## 测试要求
+## 测试体系
+
+### 测试分层
+
+| 层级 | 说明 | 工具/方式 |
+|------|------|----------|
+| 单元测试 | 对函数/类级别进行隔离测试 | Google Test (gtest) |
+| 集成测试 | 验证模块间协作（备份→打包→存储、还原→解包→写入） | Mock 文件系统 + gtest `TEST_P` / `TEST_F` |
+| 内存测试 | 检测内存泄漏、越界访问 | Valgrind (`--leak-check=full --show-leak-kinds=all`) |
+| 性能测试 | 识别热点函数、评估时间复杂度 | perf（内核级采样）/ gprof（`-pg` 编译）/ gperftools（CPU + Heap Profiler） |
+
+### 测试设计方法
 
 **所有逻辑代码必须有对应测试用例**，未覆盖不允许提交。
 
-- 单元测试用 Google Test，每模块一个测试文件，按函数/类组织 `TEST_F`
+| 方法 | 应用场景 | 示例 |
+|------|----------|------|
+| **等价类划分** | 输入空间较大时，选取代表性数据覆盖有效/无效等价类 | 文件尺寸筛选：0字节（有效）、1~1024B（有效）、>10MB（有效）、-1（无效） |
+| **边界值分析** | 在等价类边界上取值，捕捉常见错误 | 文件大小 0、1、MAX；路径深度 0、1、1024；过滤器数量 0、1、MAX |
+| **白盒测试** | 覆盖语句覆盖、分支覆盖、条件覆盖、路径覆盖 | 对 `if/else`、`switch`、循环边界编写显式用例 |
+
+### 单元测试规范
+
+- 使用 Google Test，每模块一个测试文件，按函数/类组织 `TEST_F`
 - 覆盖边界场景（空/大文件、特殊路径）和异常路径（权限不足、磁盘满、路径不存在）
 - 测试间隔离，临时目录在 `SetUp`/`TearDown` 中创建和清理
+- 对管道接口（Compressor、Encryptor、Packer）使用参数化测试 `TEST_P` 遍历不同算法策略
+
+### 集成测试规范
+
+- 验证完整备份→存储流程：目录遍历 → 筛选 → 元数据采集 → Tar 打包 → 落盘
+- 验证完整还原流程：Tar 解包 → 元数据恢复 → 文件写入 → 特殊文件重建
+- **使用 mock 文件系统**（如 gtest::TempPath / FakeFileSystem）模拟输入输出，确保测试间隔离且可在无外部数据的 CI 环境中运行
+- 端到端流程测试（Local/Docker 模式）由独立脚本 `bash scripts/test-backup-restore.sh` 负责
+
+### 运行命令
+
+详细测试命令见 [`.claude/commands/test-features.md`](.claude/commands/test-features.md)。
+
+> **输出目录约定**：运行日志（Valgrind 等）放 `logs/`；分析产物（perf.data、perf.txt、gmon.out、gprof.txt 等）放 `output/`。两目录均 `.gitignore` 忽略。
+
+简要参考：
+
+```bash
+# 运行全部单元测试（带详细输出）
+ctest --test-dir build --output-on-failure
+
+# 运行指定测试
+./build/backer_test --gtest_filter="*BackupCore*"
+
+# Valgrind 内存检测（必须通过，否则 CI 不合入）
+mkdir -p logs output && valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 \
+    ./build/backer_test 2>logs/valgrind.log
+
+# perf 内核级 CPU 采样（无需重新编译）
+perf record -g -o output/perf.data -- ./build/backer-cli
+perf report --stdio -i output/perf.data > output/perf.txt
+
+# gprof 性能分析（需 -pg 编译）
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DCMAKE_CXX_FLAGS="-pg"
+cmake --build build
+./build/backer-cli > /dev/null 2>&1 && mv gmon.out output/gmon.out
+gprof ./build/backer-cli output/gmon.out > output/gprof.txt
+```
+
+### CI 测试流水线（功能正确性 + Docker 构建验证，不含性能分析 / lint / Valgrind）
+
+CI 包含以下 job，全部通过才可合入：
+
+| Job | 内容 | 失败处理 |
+|-----|------|----------|
+| `build-and-test` | GCC-12 + Clang-14 双编译器构建 + 全量单元测试 | 阻断合入 |
+| `docker` | Docker multi-stage 构建验证 | 阻断合入 |
+
+> **说明**：clang-tidy、Valgrind、gprof/perf 均为本地工具。lint 由开发者提交前自行运行；内存检测在 `implement-feature.md` 中要求本地跑 Valgrind 输出到 `logs/valgrind.log`；性能分析产物输出到 `output/`（perf.data/perf.txt、gmon.out/gprof.txt）；三者均不适合在生产 CI 中运行。
 
 ## 代码规范
 
@@ -162,7 +231,7 @@ volumes:
 │   │   ├── 03-metadata.md             # ✅ 已完成
 │   │   ├── 04-filtering.md            # ✅ 已完成
 │   │   ├── 05-packing.md              # ✅ 已完成（Tar）
-│   │   ├── 06-compression.md
+│   │   ├── 06-compression.md         # ✅ 已完成（gzip/zstd/lzma）
 │   │   ├── 07-encryption.md
 │   │   ├── 08-gui.md
 │   │   ├── 09-scheduled-backup.md
@@ -196,7 +265,7 @@ volumes:
 │   │   └── local_storage.h/cpp # 本地文件系统实现
 │   ├── filters/    ✅          # 自定义筛选（路径/类型/名称/时间/尺寸/用户）
 │   ├── pack/       ✅          # 打包格式（自实现 Tar ustar + miniz Zip）
-│   ├── compress/   🚧          # 压缩（zlib / zstd / liblzma 策略接口）
+│   ├── compress/   ✅          # 压缩（gzip/zstd/lzma 策略接口 + 工厂懒注册，span 缓冲区接口）
 │   ├── crypto/     🚧          # 加密（AES / SM4 策略接口，基于 OpenSSL）
 │   ├── gui/        🚧          # Qt 6 Widgets 图形界面
 │   ├── watch/      🚧          # inotify 实时文件监控

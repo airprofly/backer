@@ -14,36 +14,29 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(FetchContent)
 
 # CLI11 ─ header-only CLI parser
-FetchContent_Declare(
-    cli11
+FetchContent_Declare(cli11
     GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
     GIT_TAG v2.4.2
 )
 FetchContent_MakeAvailable(cli11)
 
 # spdlog ─ fast logging library
-FetchContent_Declare(
-    spdlog
+FetchContent_Declare(spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
     GIT_TAG v1.14.1
 )
 FetchContent_MakeAvailable(spdlog)
 
 # miniz ─ zip library (single-file C library)
-FetchContent_Declare(
-    miniz
+FetchContent_Declare(miniz
     GIT_REPOSITORY https://github.com/richgel999/miniz.git
     GIT_TAG 3.1.2
 )
 FetchContent_GetProperties(miniz)
 if(NOT miniz_POPULATED)
     FetchContent_Populate(miniz)
-
-    # miniz 3.1.2+ 需要 miniz_export.h（原本由 CMake GenerateExportHeader 生成），
-    # 这里提供一个 stub 供静态库编译使用。
     file(WRITE "${miniz_SOURCE_DIR}/miniz_export.h"
         "#ifndef MINIZ_EXPORT\n#define MINIZ_EXPORT\n#endif\n")
-
     add_library(miniz STATIC
         "${miniz_SOURCE_DIR}/miniz.c"
         "${miniz_SOURCE_DIR}/miniz_tdef.c"
@@ -55,14 +48,61 @@ endif()
 # Google Test
 if(BUILD_TESTING)
     enable_testing()
-    FetchContent_Declare(
-        googletest
+    FetchContent_Declare(googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG v1.15.2
     )
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
 endif()
+
+# ── Compression libraries (all via FetchContent, no system deps) ──
+
+# zlib (gzip) — has standard CMakeLists.txt
+FetchContent_Declare(zlib
+    GIT_REPOSITORY https://github.com/madler/zlib.git
+    GIT_TAG v1.3.1
+)
+# Disable zlib's own test targets (example/minigzip) so ctest doesn't report
+# them as "Not Run" when it discovers them without the binaries.
+set(ZLIB_BUILD_TESTING OFF CACHE INTERNAL "" FORCE)
+FetchContent_MakeAvailable(zlib)
+
+# zstd — has CMake in build/cmake/
+FetchContent_Declare(zstd
+    GIT_REPOSITORY https://github.com/facebook/zstd.git
+    GIT_TAG v1.5.6
+)
+set(ZSTD_BUILD_PROGRAMS OFF CACHE INTERNAL "" FORCE)
+set(ZSTD_BUILD_CONTRIB OFF CACHE INTERNAL "" FORCE)
+set(ZSTD_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
+set(ZSTD_BUILD_DOC OFF CACHE INTERNAL "" FORCE)
+FetchContent_GetProperties(zstd)
+if(NOT zstd_POPULATED)
+    FetchContent_Populate(zstd)
+    add_subdirectory(${zstd_SOURCE_DIR}/build/cmake
+                     ${CMAKE_BINARY_DIR}/_deps/zstd_cmake_build
+                     EXCLUDE_FROM_ALL)
+endif()
+target_compile_definitions(libzstd_static PRIVATE ZSTD_LIB_DEPRECATED=0)
+
+# liblzma (XZ) — XZ Utils has native CMake support since v5.6.0.
+# FetchContent_MakeAvailable generates config.h and the liblzma target.
+# Dockerfile pre-downloads the release tarball and points
+# FETCHCONTENT_SOURCE_DIR_LZMA at it, bypassing the git clone.
+FetchContent_Declare(lzma
+    GIT_REPOSITORY https://github.com/tukaani-project/xz.git
+    GIT_TAG v5.6.3
+)
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE)
+set(XZ_BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE)
+set(XZ_ENABLE_XZ_DEC OFF CACHE INTERNAL "" FORCE)
+set(XZ_ENABLE_XZ OFF CACHE INTERNAL "" FORCE)
+set(XZ_ENABLE_LZMAINFO OFF CACHE INTERNAL "" FORCE)
+set(XZ_ENABLE_LZMADEC OFF CACHE INTERNAL "" FORCE)
+set(XZ_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
+set(XZ_BUILD_TESTING OFF CACHE INTERNAL "" FORCE)
+FetchContent_MakeAvailable(lzma)
 
 # ── Core Library ──────────────────────────────────────────
 add_library(backer_core
@@ -76,9 +116,26 @@ add_library(backer_core
     src/filters/criteria_filter.cpp
     src/pack/tar_packer.cpp
     src/pack/zip_packer.cpp
+    src/compress/build_compressor.cpp
+    src/compress/gzip_compressor.cpp
+    src/compress/zstd_compressor.cpp
+    src/compress/lzma_compressor.cpp
 )
 target_include_directories(backer_core PUBLIC src)
-target_link_libraries(backer_core PUBLIC spdlog::spdlog miniz)
+# liblzma's public header (lzma.h) is in api/ but exposed PRIVATE by xz CMake;
+# add it here so backer_core sources can include <lzma.h>.
+target_include_directories(backer_core PRIVATE ${lzma_SOURCE_DIR}/src/liblzma/api)
+# Compression libs are PRIVATE: compressor.h exposes only span/vector, no
+# zlib/zstd/lzma types leak through the Compressor interface.
+target_link_libraries(backer_core PUBLIC
+    spdlog::spdlog
+    miniz
+)
+target_link_libraries(backer_core PRIVATE
+    zlibstatic
+    libzstd_static
+    liblzma
+)
 
 # ── CLI Executable ────────────────────────────────────────
 add_executable(backer-cli
@@ -98,6 +155,8 @@ if(BUILD_TESTING)
         tests/filter/criteria_filter_test.cpp
         tests/pack/tar_packer_test.cpp
         tests/pack/zip_packer_test.cpp
+        tests/compress/compressor_test.cpp
+        tests/compress/compressor_factory_test.cpp
     )
     target_link_libraries(backer_test PRIVATE backer_core GTest::gtest_main)
     include(GoogleTest)

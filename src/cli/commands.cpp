@@ -1,4 +1,5 @@
 #include "cli/commands.h"
+#include "compress/build_compressor.h"
 #include "core/backup_engine.h"
 #include "core/restore_engine.h"
 #include "core/types.h"
@@ -10,8 +11,11 @@
 #include "pack/tar_packer.h"
 #include "pack/zip_packer.h"
 
+#include <algorithm>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <spdlog/spdlog.h>
 
@@ -192,6 +196,44 @@ std::unique_ptr<Packer> buildPacker(std::string const& format) {
     return nullptr;
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Helper: read + compress/decompress + write
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Read @p inFile, transform via @p method, write to @p outFile.
+/// Uses file_size()+single-read for efficiency (vs istreambuf_iterator).
+bool transformFile(std::filesystem::path const& inFile,
+                   std::filesystem::path const& outFile,
+                   Compressor& comp,
+                   Expected<void, ErrorCode> (Compressor::*method)(
+                       backer::span<char const>, std::vector<char>&),
+                   std::string_view action)
+{
+    std::ifstream in(inFile, std::ios::binary);
+    if (!in) return false;
+
+    std::error_code ec;
+    auto fsize = std::filesystem::file_size(inFile, ec);
+    if (ec) return false;
+
+    std::vector<char> inData(fsize ? fsize : 1);
+    in.read(inData.data(), static_cast<std::streamsize>(inData.size()));
+    if (!in && !in.eof()) return false;
+    inData.resize(static_cast<std::size_t>(in.gcount()));
+
+    std::vector<char> outData;
+    auto r = (comp.*method)(backer::span<char const>(inData.data(), inData.size()), outData);
+    if (!r.has_value()) {
+        spdlog::error("{} failed for {}", action, inFile.string());
+        return false;
+    }
+
+    std::ofstream out(outFile, std::ios::binary | std::ios::trunc);
+    if (!out) return false;
+    out.write(outData.data(), static_cast<std::streamsize>(outData.size()));
+    return static_cast<bool>(out);
+}
+
 } // anonymous namespace
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -242,22 +284,39 @@ int handleBackup(
     BackupEngine engine(std::move(fs));
     auto result = engine.backup(source, actualDest, filter.get(), packer.get());
 
-    if (result.success) {
-        auto const& s = result.stats;
-        std::cout
-            << "✓ Backup completed successfully\n"
-            << "  Archive: " << actualDest.string() << "\n"
-            << "  Files:   " << s.totalFiles << "\n"
-            << "  Dirs:    " << s.totalDirs << "\n"
-            << "  Size:    " << s.totalBytes << " bytes\n"
-            << "  Skipped: " << s.skipped << "\n"
-            << "  Time:    " << s.elapsed.count() << " ms\n";
-        return 0;
+    if (!result.success) {
+        std::cerr
+            << "✗ Backup failed: " << result.errorMessage << "\n";
+        return 1;
     }
 
-    std::cerr
-        << "✗ Backup failed: " << result.errorMessage << "\n";
-    return 1;
+    // ── Optional post-compression of the archive ───────────────────────
+    auto finalDest = actualDest;
+    if (!options.compressAlgo.empty()) {
+        auto comp = buildCompressor(options.compressAlgo, options.compressLevel);
+        if (!comp) {
+            std::cerr << "✗ Unknown compression algorithm: " << options.compressAlgo << "\n";
+            return 1;
+        }
+        finalDest += comp->suffix();
+        spdlog::info("Compressing with {} → {}", options.compressAlgo, finalDest.string());
+        if (!transformFile(actualDest, finalDest, *comp, &Compressor::compress, "Compression")) {
+            std::cerr << "✗ Compression failed\n";
+            return 1;
+        }
+        std::filesystem::remove(actualDest);
+    }
+
+    auto const& s = result.stats;
+    std::cout
+        << "✓ Backup completed successfully\n"
+        << "  Archive: " << finalDest.string() << "\n"
+        << "  Files:   " << s.totalFiles << "\n"
+        << "  Dirs:    " << s.totalDirs << "\n"
+        << "  Size:    " << s.totalBytes << " bytes\n"
+        << "  Skipped: " << s.skipped << "\n"
+        << "  Time:    " << s.elapsed.count() << " ms\n";
+    return 0;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -280,6 +339,26 @@ int handleRestore(
 
     auto fs = std::make_unique<LocalFsAbstraction>();
 
+    // ── Optional pre-decompression of the source archive ───────────────
+    auto actualSource = source;
+    if (!options.decompressAlgo.empty()) {
+        auto comp = buildCompressor(options.decompressAlgo, 0);
+        if (!comp) {
+            std::cerr << "✗ Unknown decompression algorithm: " << options.decompressAlgo << "\n";
+            return 1;
+        }
+        // Decompress to a temp file in the same directory as source
+        auto tempPath = source;
+        tempPath += ".decompressed";
+        spdlog::info("Decompressing {} ({}) → {}",
+                     source.string(), options.decompressAlgo, tempPath.string());
+        if (!transformFile(source, tempPath, *comp, &Compressor::decompress, "Decompression")) {
+            std::cerr << "✗ Decompression failed\n";
+            return 1;
+        }
+        actualSource = tempPath;
+    }
+
     // Build packer for archive mode
     auto packer = buildPacker(options.packFormat);
     if (packer) {
@@ -287,7 +366,12 @@ int handleRestore(
     }
 
     RestoreEngine engine(std::move(fs));
-    auto result = engine.restore(source, destination, packer.get());
+    auto result = engine.restore(actualSource, destination, packer.get());
+
+    // Clean up temp decompressed file if we created one
+    if (actualSource != source) {
+        std::filesystem::remove(actualSource);
+    }
 
     if (result.success) {
         auto const& s = result.stats;

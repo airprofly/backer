@@ -28,6 +28,10 @@ struct BackupOptions {
 
     // ── Pack options ──────────────────────────────────────────────────
     std::string packFormat;  // "tar" or empty
+
+    // ── Compress options ─────────────────────────────────────────────
+    std::string compressAlgo;  // "gzip", "zstd", "lzma" or empty
+    int compressLevel         = 0;  // 0 = default for algorithm
 };
 
 struct RestoreOptions {
@@ -36,6 +40,9 @@ struct RestoreOptions {
 
     // ── Pack options (for archive mode) ───────────────────────────────
     std::string packFormat;  // "tar" or empty — source is an archive
+
+    // ── Decompress options ───────────────────────────────────────────
+    std::string decompressAlgo;  // "gzip", "zstd", "lzma" or empty
 };
 
 /// Execute `backup` command: source → destination.
