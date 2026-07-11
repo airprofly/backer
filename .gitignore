@@ -16,13 +16,8 @@ build/*
 # =============== 构建产物 ===============
 install/
 target/ 
-CMakeCache.txt
 CMakeFiles/
-cmake_install.cmake
 Makefile
-*.cmake
-!CMakeLists.txt
-CTestTestfile.cmake
 _deps/
 
 # =============== 模型文件 ===============
