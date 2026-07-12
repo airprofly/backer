@@ -55,39 +55,94 @@ jobs:
           name: linux-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-linux-x86_64.tar.gz
 
-  # ── macOS 构建 ──────────────────────────────────────
-  macos-build:
-    runs-on: macos-14
+  # ── Linux ARM64 构建 ─────────────────────────────────
+  linux-arm64-build:
+    runs-on: ubuntu-24.04-arm64
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Qt6 & OpenGL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qt6-base-dev libgl1-mesa-dev
 
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
-          path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos
+          path: |
+            build/_deps
+            build/_deps/qt6_prebuilt
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-linux-arm64
           restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos-
-            deps-${{ hashFiles('CMakeLists.txt') }}-macos-
-            deps-macos-
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-linux-
+            deps-${{ hashFiles('CMakeLists.txt') }}-linux-
+            deps-linux-
 
       - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=OFF
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON
 
       - name: Build
-        run: cmake --build build -j$(sysctl -n hw.logicalcpu)
+        run: cmake --build build -j$(nproc)
 
       - name: Package
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
           cp build/backer-cli   dist/backer-cli
+          cp build/backer-gui   dist/backer-gui
+          cp LICENSE            dist/
+          cd dist
+          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-linux-arm64.tar.gz \
+            backer-cli backer-gui LICENSE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-artifacts
+          path: ${{ env.PROJECT_NAME }}-v*-linux-arm64.tar.gz
+
+  # ── macOS x86_64 构建 ────────────────────────────────
+  macos-build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenSSL
+        run: |
+          brew install openssl
+          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/_deps
+            build/_deps/qt6_prebuilt
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos
+          restore-keys: |
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos-
+            deps-${{ hashFiles('CMakeLists.txt') }}-macos-
+            deps-macos-
+
+      - name: Configure CMake (with GUI + CLI)
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON
+
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.logicalcpu)
+
+      - name: Package (CLI + GUI)
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          mkdir -p dist
+          cp build/backer-cli   dist/backer-cli
+          cp build/backer-gui   dist/backer-gui
           cp LICENSE            dist/
           cd dist
           tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-x86_64.tar.gz \
-            backer-cli LICENSE
+            backer-cli backer-gui LICENSE
 
       - uses: actions/upload-artifact@v4
         with:
@@ -100,34 +155,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install OpenSSL
+        run: |
+          brew install openssl
+          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
+
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
-          path: build/_deps
+          path: |
+            build/_deps
+            build/_deps/qt6_prebuilt
           key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos-arm64
           restore-keys: |
             deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos-arm64-
             deps-${{ hashFiles('CMakeLists.txt') }}-macos-arm64-
             deps-macos-arm64-
 
-      - name: Configure CMake
+      - name: Configure CMake (with GUI + CLI, arm64)
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=OFF \
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON \
                         -DCMAKE_OSX_ARCHITECTURES=arm64
 
       - name: Build
         run: cmake --build build -j$(sysctl -n hw.logicalcpu)
 
-      - name: Package
+      - name: Package (CLI + GUI)
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
           cp build/backer-cli   dist/backer-cli
+          cp build/backer-gui   dist/backer-gui
           cp LICENSE            dist/
           cd dist
           tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-arm64.tar.gz \
-            backer-cli LICENSE
+            backer-cli backer-gui LICENSE
 
       - uses: actions/upload-artifact@v4
         with:
@@ -206,44 +269,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install OpenSSL (ARM64)
+      - name: Install vcpkg & OpenSSL (ARM64)
         run: |
-          choco install openssl -y --no-progress
-          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL" | Out-File -FilePath $env:GITHUB_ENV -Append
+          git clone --depth 1 https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          & C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          & C:\vcpkg\vcpkg install "openssl:arm64-windows" --recurse
+          echo "OPENSSL_ROOT_DIR=C:\vcpkg\installed\arm64-windows" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
-          path: build/_deps
+          path: |
+            build/_deps
+            build/_deps/qt6_prebuilt
+            C:\vcpkg\installed
           key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-arm64
           restore-keys: |
             deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-
             deps-${{ hashFiles('CMakeLists.txt') }}-windows-
             deps-windows-
 
-      - name: Configure CMake (cross-compile ARM64)
+      - name: Configure CMake (cross-compile ARM64, with GUI)
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-                        -DBUILD_TESTING=OFF `
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON `
                         -DCMAKE_GENERATOR_PLATFORM=ARM64
 
       - name: Build
         run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
 
-      - name: Package (with OpenSSL DLLs)
+      - name: Package (CLI + GUI + OpenSSL DLLs)
         run: |
           $VERSION = "${{ github.ref_name }}".Substring(1)
           New-Item -ItemType Directory -Path dist -Force
 
           Copy-Item "build/${{ env.BUILD_TYPE }}/backer-cli.exe" dist/
+          Copy-Item "build/${{ env.BUILD_TYPE }}/backer-gui.exe" dist/
 
-          # Bundle OpenSSL runtime DLLs (ARM64)
-          $osslDir = if (Test-Path "C:\Program Files\OpenSSL\bin") { `
-            "C:\Program Files\OpenSSL\bin" `
-          } elseif (Test-Path "C:\Program Files\OpenSSL-Win64\bin") { `
-            "C:\Program Files\OpenSSL-Win64\bin" `
-          } else { "" }
-          if ($osslDir) {
+          # Bundle ARM64 OpenSSL DLLs from vcpkg
+          $osslDir = "C:\vcpkg\installed\arm64-windows\bin"
+          if (Test-Path $osslDir) {
             Get-ChildItem $osslDir -Filter "libcrypto*.dll" | Copy-Item -Destination dist/
             Get-ChildItem $osslDir -Filter "libssl*.dll" | Copy-Item -Destination dist/
           }
@@ -262,6 +327,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - linux-build
+      - linux-arm64-build
       - macos-build
       - macos-arm64-build
       - windows-x64-build
