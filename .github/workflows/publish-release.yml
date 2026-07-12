@@ -16,20 +16,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Qt6 & OpenGL (required by Qt6Widgets)
+      - name: Install Qt6
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq qt6-base-dev libgl1-mesa-dev
+          sudo apt-get install -y -qq qt6-base-dev
 
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
           path: build/_deps
           key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-linux
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-linux-
-            deps-${{ hashFiles('CMakeLists.txt') }}-linux-
-            deps-linux-
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
 
       - name: Configure CMake
         run: |
@@ -55,47 +52,36 @@ jobs:
           name: linux-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-linux-x86_64.tar.gz
 
-  # ── macOS x86_64 构建 ────────────────────────────────
+  # ── macOS 构建 ──────────────────────────────────────
   macos-build:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install OpenSSL
-        run: |
-          brew install openssl
-          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
-
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            build/_deps
-            build/_deps/qt6_prebuilt
+          path: build/_deps
           key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos-
-            deps-${{ hashFiles('CMakeLists.txt') }}-macos-
-            deps-macos-
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
 
-      - name: Configure CMake (with GUI + CLI)
+      - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON
+                        -DBUILD_TESTING=OFF
 
       - name: Build
         run: cmake --build build -j$(sysctl -n hw.logicalcpu)
 
-      - name: Package (CLI + GUI)
+      - name: Package
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
           cp build/backer-cli   dist/backer-cli
-          cp build/backer-gui   dist/backer-gui
           cp LICENSE            dist/
           cd dist
           tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-x86_64.tar.gz \
-            backer-cli backer-gui LICENSE
+            backer-cli LICENSE
 
       - uses: actions/upload-artifact@v4
         with:
@@ -108,50 +94,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install OpenSSL
-        run: |
-          brew install openssl
-          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
-
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            build/_deps
-            build/_deps/qt6_prebuilt
+          path: build/_deps
           key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos-arm64
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos-arm64-
-            deps-${{ hashFiles('CMakeLists.txt') }}-macos-arm64-
-            deps-macos-arm64-
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
 
-      - name: Configure CMake (with GUI + CLI, arm64)
+      - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON \
+                        -DBUILD_TESTING=OFF \
                         -DCMAKE_OSX_ARCHITECTURES=arm64
 
       - name: Build
         run: cmake --build build -j$(sysctl -n hw.logicalcpu)
 
-      - name: Package (CLI + GUI)
+      - name: Package
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
           cp build/backer-cli   dist/backer-cli
-          cp build/backer-gui   dist/backer-gui
           cp LICENSE            dist/
           cd dist
           tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-arm64.tar.gz \
-            backer-cli backer-gui LICENSE
+            backer-cli LICENSE
 
       - uses: actions/upload-artifact@v4
         with:
           name: macos-arm64-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-macos-arm64.tar.gz
 
-  # ── Windows x86_64 构建 ──────────────────────────────
-  windows-x64-build:
+  # ── Windows 构建 ────────────────────────────────────
+  windows-build:
     runs-on: windows-2022
     defaults:
       run:
@@ -159,121 +134,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install OpenSSL
-        run: |
-          choco install openssl -y --no-progress
-          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL" | Out-File -FilePath $env:GITHUB_ENV -Append
-
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            build/_deps
-            build/_deps/qt6_prebuilt
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-x64
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-
-            deps-${{ hashFiles('CMakeLists.txt') }}-windows-
-            deps-windows-
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
 
-      - name: Configure CMake (with GUI + CLI)
+      - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON
+                        -DBUILD_TESTING=OFF
 
       - name: Build
-        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
+        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS
 
-      - name: Package (with OpenSSL DLLs + GUI)
+      - name: Package
         run: |
           $VERSION = "${{ github.ref_name }}".Substring(1)
           New-Item -ItemType Directory -Path dist -Force
-
-          # Copy executables (CLI + GUI)
-          Copy-Item "build/${{ env.BUILD_TYPE }}/backer-cli.exe" dist/
-          Copy-Item "build/${{ env.BUILD_TYPE }}/backer-gui.exe" dist/
-
-          # Bundle OpenSSL runtime DLLs
-          $osslDir = if (Test-Path "C:\Program Files\OpenSSL\bin") { `
-            "C:\Program Files\OpenSSL\bin" `
-          } elseif (Test-Path "C:\Program Files\OpenSSL-Win64\bin") { `
-            "C:\Program Files\OpenSSL-Win64\bin" `
-          } else { "" }
-          if ($osslDir) {
-            Get-ChildItem $osslDir -Filter "libcrypto*.dll" | Copy-Item -Destination dist/
-            Get-ChildItem $osslDir -Filter "libssl*.dll" | Copy-Item -Destination dist/
-          }
-
+          Copy-Item build/${{ env.BUILD_TYPE }}/backer-cli.exe dist/
           Copy-Item LICENSE dist/
           Compress-Archive -Path dist/* -DestinationPath `
             "${{ env.PROJECT_NAME }}-v${VERSION}-windows-x86_64.zip" -Force
 
       - uses: actions/upload-artifact@v4
         with:
-          name: windows-x64-artifacts
+          name: windows-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-windows-x86_64.zip
-
-  # ── Windows ARM64 构建（交叉编译） ──────────────────
-  windows-arm64-build:
-    runs-on: windows-2022
-    defaults:
-      run:
-        shell: pwsh
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install vcpkg & OpenSSL (ARM64)
-        run: |
-          git clone --depth 1 https://github.com/Microsoft/vcpkg.git C:\vcpkg
-          & C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
-          & C:\vcpkg\vcpkg install "openssl:arm64-windows" --recurse
-          echo "OPENSSL_ROOT_DIR=C:\vcpkg\installed\arm64-windows" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-      - name: Cache CMake dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/_deps
-            build/_deps/qt6_prebuilt
-            C:\vcpkg\installed
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-arm64
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-
-            deps-${{ hashFiles('CMakeLists.txt') }}-windows-
-            deps-windows-
-
-      - name: Configure CMake (cross-compile ARM64, with GUI)
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON `
-                        -DCMAKE_GENERATOR_PLATFORM=ARM64
-
-      - name: Build
-        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
-
-      - name: Package (CLI + GUI + OpenSSL DLLs)
-        run: |
-          $VERSION = "${{ github.ref_name }}".Substring(1)
-          New-Item -ItemType Directory -Path dist -Force
-
-          Copy-Item "build/${{ env.BUILD_TYPE }}/backer-cli.exe" dist/
-          Copy-Item "build/${{ env.BUILD_TYPE }}/backer-gui.exe" dist/
-
-          # Bundle ARM64 OpenSSL DLLs from vcpkg
-          $osslDir = "C:\vcpkg\installed\arm64-windows\bin"
-          if (Test-Path $osslDir) {
-            Get-ChildItem $osslDir -Filter "libcrypto*.dll" | Copy-Item -Destination dist/
-            Get-ChildItem $osslDir -Filter "libssl*.dll" | Copy-Item -Destination dist/
-          }
-
-          Copy-Item LICENSE dist/
-          Compress-Archive -Path dist/* -DestinationPath `
-            "${{ env.PROJECT_NAME }}-v${VERSION}-windows-arm64.zip" -Force
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows-arm64-artifacts
-          path: ${{ env.PROJECT_NAME }}-v*-windows-arm64.zip
 
   # ── 创建 GitHub Release 并上传所有构建产物 ─────────
   release:
@@ -282,8 +170,7 @@ jobs:
       - linux-build
       - macos-build
       - macos-arm64-build
-      - windows-x64-build
-      - windows-arm64-build
+      - windows-build
     permissions:
       contents: write
     steps:

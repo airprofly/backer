@@ -161,27 +161,20 @@ cmake --build build
 gprof ./build/backer-cli output/gmon.out > output/gprof.txt
 ```
 
-### CI/CD 原则
-
-- **全平台架构覆盖**：publish 流水线必须覆盖所有主流 OS×架构组合——Linux x86_64、macOS x86_64 + ARM64、Windows x86_64 + ARM64，任一缺少即阻断发布。Linux ARM64 因缺乏 CI runner 支持不在此列。
-- **CLI+GUI 双产物**：每个平台架构组合都须同时产出 CLI 和 GUI 可执行文件（受限于交叉编译工具链的除外，须显式说明原因）。
-- **运行时自包含**：所有运行时依赖（OpenSSL DLL/dylib、Qt 框架等）必须随包分发，确保用户下载解压即可直接运行，不得依赖系统预装库。
-
 ### CI 测试流水线（三平台构建测试 + Docker 验证，不含性能分析 / lint / Valgrind）
 
 CI 包含以下 job，全部通过才可合入：
 
 | Job | Runner | 内容 | 失败处理 |
 |-----|--------|------|----------|
-| `linux-build` | ubuntu-22.04 | GCC-12 + Clang-14 双编译器矩阵构建（CLI+GUI）+ 全量单元测试 | 阻断合入 |
-| `macos-build` | macos-14 (ARM64) | AppleClang 构建（CLI+GUI）+ 全量单元测试 | 阻断合入 |
-| `windows-build` | windows-2022 | MSVC 构建（CLI+GUI）+ 全量单元测试 | 阻断合入 |
-| `windows-arm64-build` | windows-2022 (交叉) | MSVC ARM64 交叉编译构建验证（CLI+GUI，仅构建） | 阻断合入 |
+| `linux-build` | ubuntu-22.04 | GCC-12 + Clang-14 双编译器矩阵构建 + 全量单元测试 | 阻断合入 |
+| `macos-build` | macos-14 (ARM64) | AppleClang 构建 + 全量单元测试 | 阻断合入 |
+| `windows-build` | windows-2022 | MSVC 构建 + 全量单元测试 | 阻断合入 |
 | `docker` | ubuntu-22.04 | Docker multi-stage 构建验证 | 阻断合入 |
 
 > **说明**：clang-tidy、Valgrind、gprof/perf 均为本地工具，不在 CI 中运行。
 >
-> **缓存策略**：`build/_deps` 及 `build/_deps/qt6_prebuilt` 目录通过 `actions/cache@v4` 跨运行缓存。缓存 key 包含 `runner.os` 标签防止跨平台缓存污染——macOS 不会错误恢复 Linux 构建的依赖缓存。
+> **缓存策略**：`build/_deps` 目录通过 `actions/cache@v4` 跨运行缓存。缓存 key 包含 `runner.os` 标签防止跨平台缓存污染——macOS 不会错误恢复 Linux 构建的依赖缓存。
 
 ## 代码规范
 
