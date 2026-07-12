@@ -177,10 +177,13 @@ jobs:
           vcpkg install openssl:x64-windows-static
           echo "OPENSSL_ROOT_DIR=C:\vcpkg\installed\x64-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Install Qt6 via aqtinstall
-        run: |
-          pip install aqtinstall
-          python -m aqt install-qt windows desktop 6.5.0 win64_msvc2019_64 -O C:\Qt6
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.5.0'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
 
       - name: Cache CMake dependencies
         uses: actions/cache@v4
@@ -193,7 +196,6 @@ jobs:
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
                         -DBUILD_TESTING=OFF -DBUILD_GUI=ON `
-                        -DQt6_DIR=C:/Qt6/6.5.0/msvc2019_64 `
                         -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
                         -DVCPKG_TARGET_TRIPLET=x64-windows-static
 
