@@ -131,8 +131,12 @@ jobs:
 
       - name: Install vcpkg & OpenSSL (ARM64)
         run: |
-          git clone --depth 1 https://github.com/Microsoft/vcpkg.git C:\vcpkg
-          & C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          if (-not (Test-Path "C:\vcpkg")) {
+            git clone --depth 1 https://github.com/Microsoft/vcpkg.git C:\vcpkg
+            & C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          } else {
+            Write-Host "vcpkg already installed at C:\vcpkg"
+          }
           & C:\vcpkg\vcpkg install "openssl:arm64-windows" --recurse
           echo "OPENSSL_ROOT_DIR=C:\vcpkg\installed\arm64-windows" | Out-File -FilePath $env:GITHUB_ENV -Append
 
