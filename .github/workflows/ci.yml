@@ -92,7 +92,7 @@ jobs:
       - name: Install OpenSSL
         run: |
           choco install openssl -y --no-progress
-          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL-Win64" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: pwsh
 
       - name: Cache CMake dependencies
