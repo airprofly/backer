@@ -25,13 +25,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-linux
-          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ runner.os }}
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-${{ runner.os }}-
 
       - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON \
+                        -DQT6_AUTO_DOWNLOAD=OFF
 
       - name: Build
         run: cmake --build build -j$(nproc)
@@ -41,34 +42,53 @@ jobs:
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
           cp build/backer-cli   dist/backer-cli
-          cp build/backer-gui   dist/backer-gui
           cp LICENSE            dist/
-          cd dist
-          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-linux-x86_64.tar.gz \
-            backer-cli backer-gui LICENSE
+          # GUI is optional — only include if built successfully
+          if [ -f build/backer-gui ]; then
+            cp build/backer-gui dist/backer-gui
+            cd dist
+            tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-linux-x86_64.tar.gz \
+              backer-cli backer-gui LICENSE
+          else
+            echo "::warning::backer-gui not built, packaging CLI only"
+            cd dist
+            tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-linux-x86_64.tar.gz \
+              backer-cli LICENSE
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-linux-x86_64.tar.gz
 
-  # ── macOS 构建 ──────────────────────────────────────
+  # ── macOS 构建（ARM64） ──────────────────────────────
   macos-build:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install OpenSSL
+        run: |
+          brew install openssl
+          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
+
+      - name: Install Qt6
+        run: |
+          brew install qt@6
+          echo "Qt6_DIR=$(brew --prefix qt@6)" >> $GITHUB_ENV
+
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos
-          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ runner.os }}
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-${{ runner.os }}-
 
       - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=OFF
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON \
+                        -DQT6_AUTO_DOWNLOAD=OFF
 
       - name: Build
         run: cmake --build build -j$(sysctl -n hw.logicalcpu)
@@ -78,10 +98,11 @@ jobs:
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
           cp build/backer-cli   dist/backer-cli
+          cp build/backer-gui   dist/backer-gui
           cp LICENSE            dist/
           cd dist
           tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-x86_64.tar.gz \
-            backer-cli LICENSE
+            backer-cli backer-gui LICENSE
 
       - uses: actions/upload-artifact@v4
         with:
@@ -94,18 +115,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install OpenSSL
+        run: |
+          brew install openssl
+          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
+
+      - name: Install Qt6
+        run: |
+          brew install qt@6
+          echo "Qt6_DIR=$(brew --prefix qt@6)" >> $GITHUB_ENV
+
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos-arm64
-          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ runner.os }}-arm64
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-${{ runner.os }}-
 
       - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=OFF \
-                        -DCMAKE_OSX_ARCHITECTURES=arm64
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON \
+                        -DCMAKE_OSX_ARCHITECTURES=arm64 \
+                        -DQT6_AUTO_DOWNLOAD=OFF
 
       - name: Build
         run: cmake --build build -j$(sysctl -n hw.logicalcpu)
@@ -115,17 +147,18 @@ jobs:
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
           cp build/backer-cli   dist/backer-cli
+          cp build/backer-gui   dist/backer-gui
           cp LICENSE            dist/
           cd dist
           tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-arm64.tar.gz \
-            backer-cli LICENSE
+            backer-cli backer-gui LICENSE
 
       - uses: actions/upload-artifact@v4
         with:
           name: macos-arm64-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-macos-arm64.tar.gz
 
-  # ── Windows 构建 ────────────────────────────────────
+  # ── Windows 构建（Qt6 GUI + OpenSSL） ───────────────
   windows-build:
     runs-on: windows-2022
     defaults:
@@ -134,26 +167,48 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install OpenSSL
+        run: |
+          choco install openssl -y --no-progress
+          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.5.0'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+          cache: 'true'
+
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows
-          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ runner.os }}
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-${{ runner.os }}-
 
       - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-                        -DBUILD_TESTING=OFF
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON `
+                        -DQT6_AUTO_DOWNLOAD=OFF
 
       - name: Build
-        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS
+        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
 
       - name: Package
         run: |
           $VERSION = "${{ github.ref_name }}".Substring(1)
           New-Item -ItemType Directory -Path dist -Force
           Copy-Item build/${{ env.BUILD_TYPE }}/backer-cli.exe dist/
+          if (Test-Path "build/${{ env.BUILD_TYPE }}/backer-gui.exe") {
+            Copy-Item build/${{ env.BUILD_TYPE }}/backer-gui.exe dist/
+            windeployqt dist/backer-gui.exe
+            if ($LASTEXITCODE -ne 0) { Write-Warning "windeployqt exited with $LASTEXITCODE"; $global:LASTEXITCODE = 0 }
+          }
+          Copy-Item "C:\Program Files\OpenSSL\bin\libcrypto-4-x64.dll" dist/
+          Copy-Item "C:\Program Files\OpenSSL\bin\libssl-4-x64.dll" dist/
           Copy-Item LICENSE dist/
           Compress-Archive -Path dist/* -DestinationPath `
             "${{ env.PROJECT_NAME }}-v${VERSION}-windows-x86_64.zip" -Force
@@ -185,6 +240,18 @@ jobs:
             cp "$f" assets/
           done
           ls -lh assets/
+
+      - name: Delete existing release and tag if present
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+            echo "Release ${{ github.ref_name }} already exists, deleting..."
+            gh release delete "${{ github.ref_name }}" --yes --cleanup-tag=true
+          elif git ls-remote --tags origin "${{ github.ref_name }}" | grep -q "${{ github.ref_name }}"; then
+            echo "Tag ${{ github.ref_name }} exists without release, deleting tag..."
+            git push --delete origin "${{ github.ref_name }}" || true
+          fi
 
       - name: Create Release
         uses: ncipollo/release-action@v1
