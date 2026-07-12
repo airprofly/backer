@@ -36,7 +36,6 @@ cmake --build build -j$(nproc)
 cmake -B build -DBUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ./build/backer-gui                                    # 启动图形界面
-
 # 测试（ctest 使用 Mock，无需外部数据）
 ctest --test-dir build --output-on-failure            # 运行所有测试
 ./build/backer_test --gtest_filter="*BackupCore*"     # 指定测试
