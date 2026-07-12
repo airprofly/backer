@@ -177,6 +177,18 @@ int main(int argc, char** argv)
                            "Decryption password (omit for interactive prompt)")
         ->type_name("PASSWORD");
 
+    // ════════════════════════════════════════════════════════════════
+    // schedule subcommand
+    // ════════════════════════════════════════════════════════════════
+    auto* scheduleCmd = app.add_subcommand("schedule", "Manage scheduled backup jobs");
+    // prefix_command captures all remaining args (including --flags) as-is
+    scheduleCmd->prefix_command(true);
+
+    // ════════════════════════════════════════════════════════════════
+    // daemon subcommand
+    // ════════════════════════════════════════════════════════════════
+    auto* daemonCmd = app.add_subcommand("daemon", "Run the backup scheduler daemon");
+
     // --version
     app.set_version_flag("--version", std::string(BACKER_VERSION),
                          "Show version information");
@@ -234,6 +246,12 @@ int main(int argc, char** argv)
         opts.password    = std::move(restorePassword);
 
         return backer::cli::handleRestore(restoreSource, restoreDest, opts);
+    }
+    if (*scheduleCmd) {
+        return backer::cli::handleSchedule(scheduleCmd->remaining());
+    }
+    if (*daemonCmd) {
+        return backer::cli::handleDaemon();
     }
 
     return EXIT_FAILURE;

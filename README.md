@@ -18,7 +18,7 @@ Backer 是计算机组成与体系结构/软件工程课程项目，基于 **C++
 
 依赖通过 **CMake FetchContent** 自动拉取（CLI11 v2.4.2、spdlog v1.14.1、GTest v1.15.2），无需手动安装。加密功能依赖系统 OpenSSL（`libssl-dev`，通过 `find_package` 接入）。
 
-**当前状态**：已完成核心备份/还原、特殊文件、元数据保留、自定义筛选（6 维度）、Tar/Zip 打包、gzip/zstd/lzma 压缩、AES-256-GCM/SM4-CBC 加密及 Qt 6 图形界面。后续将通过管道架构扩展实时监控、定时调度及网络备份等功能。
+**当前状态**：已完成核心备份/还原、特殊文件、元数据保留、自定义筛选（6 维度）、Tar/Zip 打包、gzip/zstd/lzma 压缩、AES-256-GCM/SM4-CBC 加密、Qt 6 图形界面及**定时备份（Cron 调度 + 数据淘汰）**。后续将通过管道架构扩展实时监控及网络备份等功能。
 
 ## 🔧 构建与运行
 
@@ -96,7 +96,7 @@ docker run --rm backer --help
 - ✅ **加密保护** — AES-256-GCM / SM4-CBC (OpenSSL EVP) 加密备份数据
 - ✅ **图形界面** — Qt 6 桌面 GUI，macOS 简约风格
 - 🔲 **实时监控** — inotify 文件变更实时备份
-- 🔲 **定时任务** — timerfd + cron 表达式灵活调度
+- ✅ **定时备份** — Cron 表达式调度 + 快照数据淘汰
 - 🔲 **网络备份** — gRPC + Protocol Buffers 远程备份
 
 ## 📁 项目结构
@@ -130,6 +130,7 @@ backer/
 │   ├── compress/   ✅       # 压缩模块（gzip/zstd/lzma 策略接口 + 工厂）
 │   ├── crypto/     ✅       # 加密模块（AES-256-GCM / SM4-CBC，基于 OpenSSL EVP）
 │   ├── gui/        ✅       # Qt 6 图形界面（自动下载 Qt6）
+│   ├── scheduler/  ✅       # 定时备份（cron 调度 + 数据淘汰）
 │   ├── watch/      🔲       # inotify 实时监控
 │   └── network/    🔲       # gRPC 网络备份
 ├── tests/                    # 📝 Google Test 单元测试
