@@ -241,13 +241,16 @@ jobs:
           done
           ls -lh assets/
 
-      - name: Delete existing release if present
+      - name: Delete existing release and tag if present
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
             echo "Release ${{ github.ref_name }} already exists, deleting..."
-            gh release delete "${{ github.ref_name }}" --yes --cleanup-tag=false
+            gh release delete "${{ github.ref_name }}" --yes --cleanup-tag=true
+          elif git ls-remote --tags origin "${{ github.ref_name }}" | grep -q "${{ github.ref_name }}"; then
+            echo "Tag ${{ github.ref_name }} exists without release, deleting tag..."
+            git push --delete origin "${{ github.ref_name }}" || true
           fi
 
       - name: Create Release
