@@ -121,13 +121,13 @@ TEST(CcronexprTest, NeverFires) {
 
 TEST(SnapshotPathTest, ProducesTimestampedName) {
     auto path = BackupScheduler::makeSnapshotPath("/tmp/backups");
-    auto str  = path.string();
 
-    // Should start with the base path
+    // Use generic_string for cross-platform path checking (forward slashes everywhere)
+    auto str = path.generic_string();
     EXPECT_TRUE(str.find("/tmp/backups/") == 0)
         << "Path should be under base: " << str;
 
-    // Should end with YYYYMMDD_HHMMSS (15 chars)
+    // Filename should be YYYYMMDD_HHMMSS (15 chars)
     auto filename = path.filename().string();
     EXPECT_EQ(15, filename.size());
     EXPECT_EQ('_', filename[8]);
