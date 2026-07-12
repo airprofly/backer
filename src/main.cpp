@@ -181,9 +181,8 @@ int main(int argc, char** argv)
     // schedule subcommand
     // ════════════════════════════════════════════════════════════════
     auto* scheduleCmd = app.add_subcommand("schedule", "Manage scheduled backup jobs");
-    // Capture remaining args as a string vector
-    std::vector<std::string> scheduleArgs;
-    scheduleCmd->add_option("args", scheduleArgs, "Subcommand and arguments")->type_name("ARGS");
+    // prefix_command captures all remaining args (including --flags) as-is
+    scheduleCmd->prefix_command(true);
 
     // ════════════════════════════════════════════════════════════════
     // daemon subcommand
@@ -249,7 +248,7 @@ int main(int argc, char** argv)
         return backer::cli::handleRestore(restoreSource, restoreDest, opts);
     }
     if (*scheduleCmd) {
-        return backer::cli::handleSchedule(scheduleArgs);
+        return backer::cli::handleSchedule(scheduleCmd->remaining());
     }
     if (*daemonCmd) {
         return backer::cli::handleDaemon();

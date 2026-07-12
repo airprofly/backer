@@ -2,11 +2,11 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <charconv>
 #include <chrono>
 #include <cstring>
 #include <ctime>
 #include <iomanip>
-#include <regex>
 #include <sstream>
 #include <spdlog/spdlog.h>
 #include <system_error>
@@ -27,8 +27,10 @@ RetentionPolicy::parseTimestamp(std::string const& name) {
     std::tm tm{};
 
     auto safeStoi = [](std::string const& s) -> int {
-        try { return std::stoi(s); }
-        catch (...) { return -1; }
+        int val = 0;
+        auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), val);
+        if (ec != std::errc{}) return -1;
+        return val;
     };
 
     tm.tm_year = safeStoi(name.substr(0, 4)) - 1900;
@@ -93,8 +95,7 @@ RetentionPolicy::selectForRemoval(
         return {};
     }
 
-    // Build (path, timestamp) pairs sorted oldest-first (already sorted
-    // by the caller / scanSnapshots, but be defensive).
+    // Build (path, timestamp) pairs and sort oldest-first.
     struct SnapshotInfo {
         std::filesystem::path path;
         std::chrono::system_clock::time_point timestamp;
@@ -109,36 +110,30 @@ RetentionPolicy::selectForRemoval(
         infos.push_back({p, *ts});
     }
 
-    // Sort oldest-first (ascending timestamp)
     std::sort(infos.begin(), infos.end(),
               [](auto const& a, auto const& b) {
                   return a.timestamp < b.timestamp;
               });
 
-    // Apply count-based retention: mark all but the N most recent.
-    std::vector<bool> remove(infos.size(), false);
+    // Count-based: skip the N most recent from removal.
+    std::size_t skipCount = 0;
     if (config.maxSnapshots > 0 && infos.size() > static_cast<std::size_t>(config.maxSnapshots)) {
-        std::size_t keep = static_cast<std::size_t>(config.maxSnapshots);
-        for (std::size_t i = 0; i < infos.size() - keep; ++i) {
-            remove[i] = true;
-        }
+        skipCount = infos.size() - static_cast<std::size_t>(config.maxSnapshots);
     }
 
-    // Apply age-based retention: mark snapshots older than N days.
+    // Age-based cutoff.
+    auto cutoff = std::chrono::system_clock::time_point::min();
     if (config.retentionDays > 0) {
-        auto cutoff = std::chrono::system_clock::now()
-                    - std::chrono::hours(24 * config.retentionDays);
-        for (std::size_t i = 0; i < infos.size(); ++i) {
-            if (infos[i].timestamp < cutoff) {
-                remove[i] = true;
-            }
-        }
+        cutoff = std::chrono::system_clock::now()
+               - std::chrono::hours(24 * config.retentionDays);
     }
 
-    // Collect paths marked for removal.
+    // Collect paths for removal: a snapshot is removed if it violates
+    // either constraint (count OR age).
     std::vector<std::filesystem::path> toRemove;
+    toRemove.reserve(infos.size());
     for (std::size_t i = 0; i < infos.size(); ++i) {
-        if (remove[i]) {
+        if (i < skipCount || infos[i].timestamp < cutoff) {
             toRemove.push_back(std::move(infos[i].path));
         }
     }

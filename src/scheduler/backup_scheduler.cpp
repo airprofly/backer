@@ -36,16 +36,6 @@ std::string generateJobId() {
     return os.str();
 }
 
-/// Convert system_clock::time_point to time_t for ccronexpr.
-std::time_t toTimeT(std::chrono::system_clock::time_point tp) {
-    return std::chrono::system_clock::to_time_t(tp);
-}
-
-/// Convert time_t to system_clock::time_point.
-std::chrono::system_clock::time_point fromTimeT(std::time_t t) {
-    return std::chrono::system_clock::from_time_t(t);
-}
-
 } // anonymous namespace
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -78,13 +68,13 @@ BackupScheduler::calcNextFire(
         return std::chrono::system_clock::time_point::min();
     }
 
-    std::time_t next = cron_next(&expr, toTimeT(from));
+    std::time_t next = cron_next(&expr, std::chrono::system_clock::to_time_t(from));
     if (next == -1) {
         spdlog::warn("Cron expression '{}' will never fire again", cronExpr);
         return std::chrono::system_clock::time_point::max();
     }
 
-    return fromTimeT(next);
+    return std::chrono::system_clock::from_time_t(next);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

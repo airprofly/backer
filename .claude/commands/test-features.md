@@ -18,9 +18,18 @@
 
 只测试受代码修改影响的功能，未修改的功能不测试，除非特别指明。
 
+## 测试副作用清理
+
+所有测试执行后必须恢复原状，不得在工作目录中残留任何测试产物。中间文件一律放入指定目录：
+
+- 运行日志 → `logs/`
+- 分析产物（profile data、perf.data、gmon.out 等）→ `output/`
+
+上述两目录已 `.gitignore` 忽略。工作目录及源码树中不得出现任何测试生成的文件。
+
 ## 手动 CLI / 端到端测试要求
 
-1. **隔离**：执行前执行 `rm -rf data/backup data/restore` 清理上一组结果
+1. **隔离**：执行前执行 `rm -rf data/backup data/restore` 清理上一组结果；执行完成后同样清理本次产物，恢复原状
 2. **执行**：运行命令，同时捕获 stdout 和 stderr
 3. **验证**：
    - 检查 CLI 输出中的成功/失败状态及统计信息（Files/Dirs/Size）
@@ -74,6 +83,6 @@ perf report --stdio -i output/perf.data > output/perf.txt
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DCMAKE_EXE_LINKER_FLAGS="-ltcmalloc_minimal"
 cmake --build build
-CPUPROFILE=./profile.out ./build/backer-cli > /dev/null 2>&1
-pprof --callgraph ./build/backer_cli profile.out > logs/gperftools.txt
+CPUPROFILE=output/profile.out ./build/backer-cli > /dev/null 2>&1
+pprof --callgraph ./build/backer-cli output/profile.out > logs/gperftools.txt
 ```

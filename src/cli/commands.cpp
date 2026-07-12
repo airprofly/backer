@@ -754,14 +754,14 @@ int handleSchedule(std::vector<std::string> const& args) {
         }
         auto jobs = std::move(existing.value());
 
-        auto it = std::remove_if(jobs.begin(), jobs.end(),
-                                 [&](ScheduleJob const& j) { return j.id == args[1]; });
+        auto it = std::find_if(jobs.begin(), jobs.end(),
+                               [&](ScheduleJob const& j) { return j.id == args[1]; });
         if (it == jobs.end()) {
             std::cerr << "✗ Job '" << args[1] << "' not found\n";
             return 1;
         }
 
-        jobs.erase(it, jobs.end());
+        jobs.erase(it);
         store.save(jobs);
         std::cout << "✓ Removed job '" << args[1] << "'\n";
         return 0;

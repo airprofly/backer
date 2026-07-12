@@ -66,43 +66,23 @@ std::chrono::system_clock::time_point isoToTime(std::string const& s) {
 
 // ── JSON serialisation ──────────────────────────────────────────────────────
 
-void writeJsonString(std::ostream& os, std::string const& val, int indent) {
-    os << std::string(indent, ' ') << '"' << jsonEscape(val) << '"';
-}
-
-void writeJsonBool(std::ostream& os, bool val, int indent) {
-    os << std::string(indent, ' ') << (val ? "true" : "false");
-}
-
-void writeJsonInt(std::ostream& os, int val, int indent) {
-    os << std::string(indent, ' ') << val;
-}
-
 void serializeJob(std::ostream& os, ScheduleJob const& job, int indent) {
     os << std::string(indent, ' ') << "{\n";
 
     auto e = [&](int i) { return std::string(indent + 2, ' '); };
-    auto comma = [i = 0]() mutable { return i++ ? ",\n" : "\n"; };
 
-    int f = 0;
-    os << e(1) << '"' << "id"       << "\": " << '"' << jsonEscape(job.id)             << '"'; f++;
-    os << ",\n" << e(1) << '"' << "name"     << "\": " << '"' << jsonEscape(job.name)           << '"'; f++;
-    os << ",\n" << e(1) << '"' << "cron"     << "\": " << '"' << jsonEscape(job.cronExpression) << '"'; f++;
-    os << ",\n" << e(1) << '"' << "source"   << "\": " << '"' << jsonEscape(job.source.string()) << '"'; f++;
-    os << ",\n" << e(1) << '"' << "dest"     << "\": " << '"' << jsonEscape(job.destination.string()) << '"'; f++;
-    os << ",\n" << e(1) << '"' << "enabled"  << "\": " << (job.enabled ? "true" : "false"); f++;
+    os << e(1) << '"' << "id"       << "\": " << '"' << jsonEscape(job.id)             << '"';
+    os << ",\n" << e(1) << '"' << "name"     << "\": " << '"' << jsonEscape(job.name)           << '"';
+    os << ",\n" << e(1) << '"' << "cron"     << "\": " << '"' << jsonEscape(job.cronExpression) << '"';
+    os << ",\n" << e(1) << '"' << "source"   << "\": " << '"' << jsonEscape(job.source.string()) << '"';
+    os << ",\n" << e(1) << '"' << "dest"     << "\": " << '"' << jsonEscape(job.destination.string()) << '"';
+    os << ",\n" << e(1) << '"' << "enabled"  << "\": " << (job.enabled ? "true" : "false");
 
     // options object
     os << ",\n" << e(1) << '"' << "options" << "\": {\n";
     auto const& o = job.options;
     int of = 0;
     auto ek = [&](int i) { return std::string(indent + 4, ' '); };
-    #define OPT_FIELD(name, field) \
-        if (of++) os << ",\n"; \
-        os << ek(2) << '"' << (name) << "\": " << '"' << jsonEscape(o.field) << '"'
-    #define OPT_FIELD_INT(name, field) \
-        if (of++) os << ",\n"; \
-        os << ek(2) << '"' << (name) << "\": " << o.field
 
     if (!o.compressAlgo.empty())    { if (of++) os << ",\n"; os << ek(2) << '"' << "compress"    << "\": " << '"' << jsonEscape(o.compressAlgo) << '"'; }
     if (o.compressLevel != 0)       { if (of++) os << ",\n"; os << ek(2) << '"' << "compressLevel"  << "\": " << o.compressLevel; }
@@ -114,8 +94,6 @@ void serializeJob(std::ostream& os, ScheduleJob const& job, int indent) {
     if (!o.preserveMetadata)        { if (of++) os << ",\n"; os << ek(2) << '"' << "noMetadata"  << "\": true"; }
     if (!o.handleSpecial)           { if (of++) os << ",\n"; os << ek(2) << '"' << "skipSpecial" << "\": true"; }
 
-    #undef OPT_FIELD
-    #undef OPT_FIELD_INT
     if (!of) os << ek(2) << '"' << "empty" << "\": true";
     os << '\n' << ek(1) << "}"; // close options
 
