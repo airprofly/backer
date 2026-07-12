@@ -63,20 +63,25 @@ jobs:
           brew install openssl
           echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
 
+      - name: Install Qt6
+        run: |
+          brew install qt@6
+          echo "Qt6_DIR=$(brew --prefix qt@6)" >> $GITHUB_ENV
+
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macOS
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ runner.os }}
           restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macOS-
-            deps-${{ hashFiles('CMakeLists.txt') }}-macOS-
-            deps-macOS-
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ runner.os }}-
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ runner.os }}-
 
       - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=ON
+                        -DBUILD_TESTING=ON -DBUILD_GUI=ON \
+                        -DQT6_AUTO_DOWNLOAD=OFF
 
       - name: Build
         run: cmake --build build -j$(sysctl -n hw.logicalcpu)
@@ -96,20 +101,29 @@ jobs:
           echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: pwsh
 
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.5.0'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+          cache: 'true'
+
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Windows
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ runner.os }}
           restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Windows-
-            deps-${{ hashFiles('CMakeLists.txt') }}-Windows-
-            deps-Windows-
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ runner.os }}-
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ runner.os }}-
 
       - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-                        -DBUILD_TESTING=ON
+                        -DBUILD_TESTING=ON -DBUILD_GUI=ON `
+                        -DQT6_AUTO_DOWNLOAD=OFF
 
       - name: Build
         run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
