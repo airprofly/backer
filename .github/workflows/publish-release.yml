@@ -55,47 +55,32 @@ jobs:
           name: linux-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-linux-x86_64.tar.gz
 
-  # ── Linux ARM64 构建 ─────────────────────────────────
+  # ── Linux ARM64 构建（Docker QEMU 多架构） ──────────
   linux-arm64-build:
-    runs-on: ubuntu-24.04-arm64
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Qt6 & OpenGL
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build ARM64 binary and export
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq qt6-base-dev libgl1-mesa-dev
-
-      - name: Cache CMake dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/_deps
-            build/_deps/qt6_prebuilt
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-linux-arm64
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-linux-
-            deps-${{ hashFiles('CMakeLists.txt') }}-linux-
-            deps-linux-
-
-      - name: Configure CMake
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON
-
-      - name: Build
-        run: cmake --build build -j$(nproc)
+          docker buildx build \
+            --platform linux/arm64 \
+            --build-arg GH_PROXY= \
+            --output type=local,dest=dist-arm64 \
+            .
 
       - name: Package
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
-          cp build/backer-cli   dist/backer-cli
-          cp build/backer-gui   dist/backer-gui
-          cp LICENSE            dist/
+          cp dist-arm64/usr/local/bin/backer dist/backer-cli
+          cp LICENSE dist/
           cd dist
           tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-linux-arm64.tar.gz \
-            backer-cli backer-gui LICENSE
+            backer-cli LICENSE
 
       - uses: actions/upload-artifact@v4
         with:
