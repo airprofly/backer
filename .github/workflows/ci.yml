@@ -51,7 +51,41 @@ jobs:
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
 
-  # ── macOS 构建 ──────────────────────────────────────
+  # ── Linux ARM64 构建 + 单元测试 ─────────────────────
+  linux-arm64-build:
+    runs-on: ubuntu-24.04-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6 & OpenGL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qt6-base-dev libgl1-mesa-dev
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/_deps
+            build/_deps/qt6_prebuilt
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Linux-arm64
+          restore-keys: |
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Linux-
+            deps-${{ hashFiles('CMakeLists.txt') }}-Linux-
+            deps-Linux-
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                        -DBUILD_TESTING=ON -DBUILD_GUI=ON
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure
+
+  # ── macOS 构建（含 GUI 编译验证） ──────────────────
   macos-build:
     runs-on: macos-14
     steps:
@@ -65,17 +99,19 @@ jobs:
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
-          path: build/_deps
+          path: |
+            build/_deps
+            build/_deps/qt6_prebuilt
           key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macOS
           restore-keys: |
             deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macOS-
             deps-${{ hashFiles('CMakeLists.txt') }}-macOS-
             deps-macOS-
 
-      - name: Configure CMake
+      - name: Configure CMake (with GUI)
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=ON
+                        -DBUILD_TESTING=ON -DBUILD_GUI=ON
 
       - name: Build
         run: cmake --build build -j$(sysctl -n hw.logicalcpu)
@@ -83,7 +119,7 @@ jobs:
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
 
-  # ── Windows 构建 ────────────────────────────────────
+  # ── Windows 构建（含 GUI 编译验证） ────────────────
   windows-build:
     runs-on: windows-2022
     steps:
@@ -98,23 +134,63 @@ jobs:
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
-          path: build/_deps
+          path: |
+            build/_deps
+            build/_deps/qt6_prebuilt
           key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Windows
           restore-keys: |
             deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Windows-
             deps-${{ hashFiles('CMakeLists.txt') }}-Windows-
             deps-Windows-
 
-      - name: Configure CMake
+      - name: Configure CMake (with GUI)
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-                        -DBUILD_TESTING=ON
+                        -DBUILD_TESTING=ON -DBUILD_GUI=ON
 
       - name: Build
         run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
 
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure -C ${{ env.BUILD_TYPE }}
+
+  # ── Windows ARM64 构建验证（交叉编译，仅构建） ────
+  windows-arm64-build:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install vcpkg & OpenSSL (ARM64)
+        run: |
+          git clone --depth 1 https://github.com/Microsoft/vcpkg.git C:\vcpkg
+          & C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          & C:\vcpkg\vcpkg install "openssl:arm64-windows" --recurse
+          echo "OPENSSL_ROOT_DIR=C:\vcpkg\installed\arm64-windows" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/_deps
+            build/_deps/qt6_prebuilt
+            C:\vcpkg\installed
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Windows-arm64
+          restore-keys: |
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Windows-
+            deps-${{ hashFiles('CMakeLists.txt') }}-Windows-
+            deps-Windows-
+
+      - name: Configure CMake (cross-compile ARM64, with GUI)
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON `
+                        -DCMAKE_GENERATOR_PLATFORM=ARM64
+
+      - name: Build
+        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
 
   # ── Docker 构建验证 ────────────────────────────────
   docker:
