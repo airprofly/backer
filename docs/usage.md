@@ -17,6 +17,8 @@
   - [Zip 打包](#zip-打包)
   - [压缩解压](#压缩解压)
   - [加密解密](#加密解密)
+- [定时备份（计划任务）](#定时备份计划任务)
+- [守护进程模式](#守护进程模式)
 - [退出码](#退出码)
 - [Docker 使用](#docker-使用)
 
@@ -495,6 +497,126 @@ Confirm encryption password:      # 确认（仅加密时）
 | 内存清理 | 密钥使用后通过 `OPENSSL_cleanse` 清零 |
 | 日志安全 | 密码/密钥永不被日志记录 |
 | 错误密码检测 | 认证标签不通过不输出任何解密数据 |
+
+---
+
+### 定时备份（计划任务）
+
+用户通过 cron 表达式配置周期性备份任务，支持数据淘汰策略管理历史快照。
+
+**命令形式**
+
+```text
+backer schedule list                              # 列出所有任务
+backer schedule add <name> <cron> <source> <dest> [OPTIONS]   # 添加任务
+backer schedule remove <id>                       # 删除任务
+backer schedule enable <id>                       # 启用任务
+backer schedule disable <id>                      # 禁用任务
+```
+
+**相关选项（`schedule add`）**
+
+| 选项 | 说明 | 示例值 |
+|------|------|--------|
+| `--compress <ALGO>` | 压缩算法 | `gzip`, `zstd`, `lzma` |
+| `--compress-level <N>` | 压缩级别 | `1`–`9` |
+| `--encrypt <ALGO>` | 加密算法 | `aes256`, `sm4` |
+| `--password <PWD>` | 加密密码 | — |
+| `--pack <FMT>` | 打包格式 | `tar` |
+| `--retain-count <N>` | 保留最近 N 个快照 | `30` |
+| `--retain-days <N>` | 保留 N 天内的快照 | `7` |
+| `--no-metadata` | 不保留元数据 | — |
+| `--skip-special` | 跳过特殊文件 | — |
+
+**Cron 表达式支持格式**
+
+| 格式 | 类型 | 示例 |
+|------|------|------|
+| 标准 5 字段 | `分 时 日 月 周` | `0 2 * * *`（每天凌晨 2 点） |
+| 带秒 6 字段 | `秒 分 时 日 月 周` | `0 30 9 * * 1-5`（工作日 9:30） |
+| 步进 | `*/15 * * * *` | 每 15 分钟 |
+| 范围 | `0 9-18 * * *` | 每小时 0 分，9–18 点 |
+
+> 调度器自动检测表达式字段数（5 或 6），开发者无需关注格式差异。
+
+**示例**
+
+```bash
+# 添加每日凌晨 2 点的备份任务，保留最近 30 个快照
+./build/backer-cli schedule add "每日备份" "0 2 * * *" /home/user/data /backup/daily \
+    --compress zstd --retain-count 30
+
+# 添加工作日 9 点的备份任务
+./build/backer-cli schedule add "工作日报备" "0 9 * * 1-5" /home/user/project /backup/project
+
+# 列出所有任务
+./build/backer-cli schedule list
+
+# 删除任务
+./build/backer-cli schedule remove job_每日备份
+
+# 禁用任务（暂不执行但不删除）
+./build/backer-cli schedule disable job_每日备份
+```
+
+**数据淘汰策略**
+
+| 策略 | 选项 | 说明 |
+|------|------|------|
+| 按数量 | `--retain-count <N>` | 仅保留最近 N 个快照，超出则删除最旧的 |
+| 按时长 | `--retain-days <N>` | 删除 N 天之前的快照 |
+| 混合 | 两者同时使用 | 同时满足两个条件的快照才会被删除 |
+
+淘汰由 `backer daemon` 在执行备份后自动触发，扫描任务目标目录下命名格式为 `YYYYMMDD_HHMMSS` 的子目录进行清理。
+
+---
+
+### 守护进程模式
+
+`backer daemon` 启动后台调度循环，加载所有已配置的定时任务并按计划执行备份。
+
+```bash
+# 启动守护进程（阻塞，按 Ctrl+C 停止）
+./build/backer-cli daemon
+```
+
+守护进程启动后：
+
+1. 加载 `~/.config/backer/schedule.json` 中的任务配置
+2. 计算每个启用的任务的下次触发时间
+3. 等待最近的任务触发
+4. 任务触发时：
+   - 在目标目录下创建带时间戳的快照子目录（`YYYYMMDD_HHMMSS`）
+   - 执行完整备份流程（含打包、压缩、加密等配置）
+   - 根据 `--retain-count` / `--retain-days` 淘汰过期快照
+5. 重新计算下次触发时间，进入等待循环
+6. 按 `Ctrl+C` 安全停止
+
+**持久化配置**
+
+任务配置存储在 `~/.config/backer/schedule.json`，手动编辑时注意保持 JSON 格式正确：
+
+```json
+{
+  "jobs": [
+    {
+      "id": "job_每日备份",
+      "name": "每日备份",
+      "cron": "0 2 * * *",
+      "source": "/home/user/data",
+      "destination": "/backup/daily",
+      "options": {
+        "compress": "zstd",
+        "retainCount": 30
+      },
+      "enabled": true,
+      "createdAt": "2026-07-12T10:00:00Z"
+    }
+  ]
+}
+```
+
+> 建议通过 `backer schedule` 命令管理任务而非直接编辑 JSON 文件。
 
 ---
 

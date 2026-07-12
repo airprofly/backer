@@ -196,4 +196,6 @@ tests/scheduler/
 
 - 代码行数：~1000 行（含测试）
 - 开发周期：5-7 天
-- 依赖：ccronexpr (单头文件), `<sys/timerfd.h>`, `<sys/epoll.h>`
+- 依赖：ccronexpr (单头文件, FetchContent)
+
+> **状态**：✅ 已完成 (2026-07-12)

@@ -62,6 +62,22 @@ if(BUILD_GUI)
     include(cmake/FetchQt6.cmake)
 endif()
 
+# ── ccronexpr (cron expression parser, single-header C library) ──
+FetchContent_Declare(ccronexpr
+    GIT_REPOSITORY https://github.com/staticlibs/ccronexpr.git
+    GIT_TAG 5d7e772df34aadc938f1246ebe2551b9c1c19012
+    UPDATE_DISCONNECTED ON
+)
+FetchContent_GetProperties(ccronexpr)
+if(NOT ccronexpr_POPULATED)
+    FetchContent_Populate(ccronexpr)
+    # Copy both source and header files to src/scheduler/ for building.
+    file(COPY
+         ${ccronexpr_SOURCE_DIR}/ccronexpr.h
+         ${ccronexpr_SOURCE_DIR}/ccronexpr.c
+         DESTINATION ${CMAKE_SOURCE_DIR}/src/scheduler/)
+endif()
+
 # ── Compression libraries (all via FetchContent, no system deps) ──
 
 # zlib (gzip) — has standard CMakeLists.txt
@@ -132,6 +148,10 @@ add_library(backer_core
     src/crypto/key_derivation.cpp
     src/crypto/openssl_encryptor.cpp
     src/crypto/build_encryptor.cpp
+    src/scheduler/ccronexpr.c
+    src/scheduler/backup_scheduler.cpp
+    src/scheduler/schedule_store.cpp
+    src/scheduler/retention_policy.cpp
 )
 target_include_directories(backer_core PUBLIC src)
 # liblzma's public header (lzma.h) is in api/ but exposed PRIVATE by xz CMake;
@@ -149,6 +169,9 @@ target_link_libraries(backer_core PRIVATE
     libzstd_static
     liblzma
 )
+
+# ccronexpr needs local-time mode for cron expressions in the user's timezone
+target_compile_definitions(backer_core PRIVATE $<$<COMPILE_LANGUAGE:C>:CRON_USE_LOCAL_TIME=1>)
 
 # ── CLI Executable ────────────────────────────────────────
 add_executable(backer-cli
@@ -172,6 +195,9 @@ if(BUILD_TESTING)
         tests/compress/compressor_factory_test.cpp
         tests/crypto/openssl_encryptor_test.cpp
         tests/crypto/encryptor_factory_test.cpp
+        tests/scheduler/ccronexpr_test.cpp
+        tests/scheduler/retention_policy_test.cpp
+        tests/scheduler/backup_scheduler_test.cpp
     )
     target_link_libraries(backer_test PRIVATE backer_core GTest::gtest_main)
     include(GoogleTest)

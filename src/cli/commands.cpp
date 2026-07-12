@@ -11,6 +11,9 @@
 #include "pack/packer.h"
 #include "pack/tar_packer.h"
 #include "pack/zip_packer.h"
+#include "scheduler/backup_scheduler.h"
+#include "scheduler/retention_policy.h"
+#include "scheduler/schedule_store.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -611,6 +614,284 @@ int handleRestore(
     std::cerr
         << "✗ Restore failed: " << result.errorMessage << "\n";
     return 1;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// handleSchedule
+// ══════════════════════════════════════════════════════════════════════════════
+
+int handleSchedule(std::vector<std::string> const& args) {
+    if (args.empty()) {
+        std::cerr << "Usage:\n"
+                  << "  backer schedule list\n"
+                  << "  backer schedule add <name> <cron> <source> <dest> [options]\n"
+                  << "  backer schedule remove <id>\n"
+                  << "  backer schedule enable <id>\n"
+                  << "  backer schedule disable <id>\n";
+        return 1;
+    }
+
+    ScheduleStore store;
+
+    auto const& cmd = args[0];
+
+    // ── list ─────────────────────────────────────────────────────────
+    if (cmd == "list") {
+        auto loaded = store.load();
+        if (!loaded.has_value()) {
+            std::cerr << "✗ Failed to load schedule config\n";
+            return 1;
+        }
+
+        auto jobs = loaded.value();
+        if (jobs.empty()) {
+            std::cout << "No scheduled jobs.\n";
+            return 0;
+        }
+
+        std::cout << "Scheduled backup jobs:\n";
+        for (auto const& job : jobs) {
+            std::cout << "  [" << job.id << "] "
+                      << job.name
+                      << " (" << (job.enabled ? "enabled" : "disabled") << ")\n"
+                      << "       Cron: " << job.cronExpression << "\n"
+                      << "       From: " << job.source.string() << "\n"
+                      << "       To:   " << job.destination.string() << "\n";
+        }
+        return 0;
+    }
+
+    // ── add ──────────────────────────────────────────────────────────
+    if (cmd == "add") {
+        if (args.size() < 4) {
+            std::cerr << "Usage: backer schedule add <name> <cron> <source> <dest>\n"
+                      << "  Optional: --compress <algo> --encrypt <algo> --password <pw>\n"
+                      << "            --pack <fmt> --retain-count <N> --retain-days <N>\n";
+            return 1;
+        }
+
+        ScheduleJob job;
+        job.name           = args[1];
+        job.cronExpression = args[2];
+        job.source         = args[3];
+        job.destination    = args[4];
+        job.enabled        = true;
+        job.createdAt      = std::chrono::system_clock::now();
+
+        // Parse optional flags
+        for (std::size_t i = 5; i < args.size(); ++i) {
+            if (args[i] == "--compress" && i + 1 < args.size())
+                job.options.compressAlgo = args[++i];
+            else if (args[i] == "--compress-level" && i + 1 < args.size())
+                job.options.compressLevel = std::stoi(args[++i]);
+            else if (args[i] == "--encrypt" && i + 1 < args.size())
+                job.options.encryptAlgo = args[++i];
+            else if (args[i] == "--password" && i + 1 < args.size())
+                job.options.password = args[++i];
+            else if (args[i] == "--pack" && i + 1 < args.size())
+                job.options.packFormat = args[++i];
+            else if (args[i] == "--retain-count" && i + 1 < args.size())
+                job.options.retainCount = std::stoi(args[++i]);
+            else if (args[i] == "--retain-days" && i + 1 < args.size())
+                job.options.retainDays = std::stoi(args[++i]);
+            else if (args[i] == "--no-metadata")
+                job.options.preserveMetadata = false;
+            else if (args[i] == "--skip-special")
+                job.options.handleSpecial = false;
+            else {
+                std::cerr << "✗ Unknown option: " << args[i] << "\n";
+                return 1;
+            }
+        }
+
+        // Load existing jobs, add the new one, save back
+        auto existing = store.load();
+        if (!existing.has_value()) {
+            std::cerr << "✗ Failed to load schedule config\n";
+            return 1;
+        }
+        auto jobs = std::move(existing.value());
+
+        // Assign a short ID based on name
+        job.id = "job_" + job.name;
+        // Replace spaces with underscores for the ID
+        for (auto& c : job.id) {
+            if (c == ' ') c = '_';
+        }
+        // Make unique by appending a counter if needed
+        std::string baseId = job.id;
+        int counter = 0;
+        auto idExists = [&](std::string const& id) {
+            for (auto const& j : jobs) if (j.id == id) return true;
+            return false;
+        };
+        while (idExists(job.id)) {
+            job.id = baseId + "_" + std::to_string(++counter);
+        }
+
+        jobs.push_back(std::move(job));
+        auto saveResult = store.save(jobs);
+        if (!saveResult.has_value()) {
+            std::cerr << "✗ Failed to save schedule config\n";
+            return 1;
+        }
+
+        std::cout << "✓ Added scheduled job '" << args[1] << "' (ID: " << jobs.back().id << ")\n";
+        return 0;
+    }
+
+    // ── remove ───────────────────────────────────────────────────────
+    if (cmd == "remove" || cmd == "rm") {
+        if (args.size() < 2) {
+            std::cerr << "Usage: backer schedule remove <id>\n";
+            return 1;
+        }
+
+        auto existing = store.load();
+        if (!existing.has_value()) {
+            std::cerr << "✗ Failed to load schedule config\n";
+            return 1;
+        }
+        auto jobs = std::move(existing.value());
+
+        auto it = std::remove_if(jobs.begin(), jobs.end(),
+                                 [&](ScheduleJob const& j) { return j.id == args[1]; });
+        if (it == jobs.end()) {
+            std::cerr << "✗ Job '" << args[1] << "' not found\n";
+            return 1;
+        }
+
+        jobs.erase(it, jobs.end());
+        store.save(jobs);
+        std::cout << "✓ Removed job '" << args[1] << "'\n";
+        return 0;
+    }
+
+    // ── enable / disable ─────────────────────────────────────────────
+    if (cmd == "enable" || cmd == "disable") {
+        if (args.size() < 2) {
+            std::cerr << "Usage: backer schedule " << cmd << " <id>\n";
+            return 1;
+        }
+
+        bool enabled = (cmd == "enable");
+        auto existing = store.load();
+        if (!existing.has_value()) {
+            std::cerr << "✗ Failed to load schedule config\n";
+            return 1;
+        }
+        auto jobs = std::move(existing.value());
+
+        bool found = false;
+        for (auto& j : jobs) {
+            if (j.id == args[1]) {
+                j.enabled = enabled;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            std::cerr << "✗ Job '" << args[1] << "' not found\n";
+            return 1;
+        }
+
+        store.save(jobs);
+        std::cout << "✓ Job '" << args[1] << "' " << (enabled ? "enabled" : "disabled") << "\n";
+        return 0;
+    }
+
+    std::cerr << "✗ Unknown schedule subcommand: " << cmd << "\n";
+    return 1;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// handleDaemon
+// ══════════════════════════════════════════════════════════════════════════════
+
+int handleDaemon() {
+    ScheduleStore store;
+    auto loaded = store.load();
+    if (!loaded.has_value()) {
+        std::cerr << "✗ Failed to load schedule config: "
+                  << toString(loaded.error()) << "\n";
+        return 1;
+    }
+
+    auto jobs = std::move(loaded.value());
+    if (jobs.empty()) {
+        std::cout << "No scheduled jobs configured. "
+                  << "Use 'backer schedule add' first.\n";
+        return 1;
+    }
+
+    std::cout << "Starting backup daemon with " << jobs.size() << " job(s)\n";
+
+    // Build the executor callback: convert ScheduleJob → handleBackup call
+    BackupScheduler::BackupExecutor executor =
+        [](ScheduleJob const& job) -> bool {
+            // Create a timestamped snapshot path
+            auto snapshotDir = BackupScheduler::makeSnapshotPath(job.destination);
+
+            spdlog::info("[Daemon] Running job '{}': {} → {}",
+                         job.name, job.source.string(), snapshotDir.string());
+
+            // Build BackupOptions from the job's settings
+            BackupOptions opts;
+            opts.compressAlgo      = job.options.compressAlgo;
+            opts.compressLevel     = job.options.compressLevel;
+            opts.encryptAlgo       = job.options.encryptAlgo;
+            opts.password          = job.options.password;
+            opts.packFormat        = job.options.packFormat;
+            opts.preserveMetadata  = job.options.preserveMetadata;
+            opts.handleSpecial     = job.options.handleSpecial;
+
+            int rc = handleBackup(job.source, snapshotDir, opts);
+
+            if (rc != 0) {
+                spdlog::error("[Daemon] Job '{}' failed with exit code {}", job.id, rc);
+                return false;
+            }
+
+            // ── Retention cleanup ────────────────────────────────────
+            if (job.options.retainCount > 0 || job.options.retainDays > 0) {
+                RetentionConfig config;
+                config.maxSnapshots  = job.options.retainCount;
+                config.retentionDays = job.options.retainDays;
+
+                RetentionPolicy policy;
+                auto snapshots = policy.scanSnapshots(job.destination);
+                auto toRemove  = policy.selectForRemoval(snapshots, config);
+
+                for (auto const& oldPath : toRemove) {
+                    std::error_code ec;
+                    std::filesystem::remove_all(oldPath, ec);
+                    if (ec) {
+                        spdlog::warn("[Daemon] Failed to remove old snapshot {}: {}",
+                                     oldPath.string(), ec.message());
+                    } else {
+                        spdlog::info("[Daemon] Removed old snapshot: {}", oldPath.string());
+                    }
+                }
+            }
+
+            return true;
+        };
+
+    BackupScheduler scheduler(executor);
+
+    for (auto& job : jobs) {
+        auto result = scheduler.addJob(job);
+        if (!result.has_value()) {
+            spdlog::error("Failed to add job '{}': {}", job.name,
+                          toString(result.error()));
+        }
+    }
+
+    // Blocking event loop
+    scheduler.run();
+
+    return 0;
 }
 
 } // namespace backer::cli

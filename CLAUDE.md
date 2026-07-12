@@ -250,7 +250,7 @@ CI 包含以下 job，全部通过才可合入：
 │   │   ├── 06-compression.md         # ✅ 已完成（gzip/zstd/lzma）
 │   │   ├── 07-encryption.md
 │   │   ├── 08-gui.md                 # ✅ 已完成（Qt 6 Widget）
-│   │   ├── 09-scheduled-backup.md
+│   │   ├── 09-scheduled-backup.md   # ✅ 已完成
 │   │   ├── 10-realtime-backup.md
 │   │   └── 11-network-backup.md
 │   ├── reportDetails.md        # 报告提交要求
@@ -263,7 +263,7 @@ CI 包含以下 job，全部通过才可合入：
 ├── src/                        # 全部业务源码
 │   ├── main.cpp                # 程序入口，初始化 CLI 并派发命令
 │   ├── cli/
-│   │   ├── commands.h          # CLI 命令类声明（backup/restore）
+│   │   ├── commands.h          # CLI 命令类声明（backup/restore/schedule/daemon）
 │   │   └── commands.cpp        # CLI 命令实现
 │   ├── core/                   # ✅ 备份/还原引擎——中心调度逻辑
 │   │   ├── backup_engine.h/cpp # 备份引擎（含筛选+打包支持）
@@ -285,9 +285,10 @@ CI 包含以下 job，全部通过才可合入：
 │   ├── compress/   ✅          # 压缩（gzip/zstd/lzma 策略接口 + 工厂懒注册，span 缓冲区接口）
 │   ├── crypto/     ✅          # 加密（AES-256-GCM / SM4-CBC，基于 OpenSSL EVP）
 │   ├── gui/        ✅          # Qt 6 Widgets 图形界面（自动下载 Qt6）
+│   ├── scheduler/  ✅          # 定时备份（ccronexpr + BackupScheduler + 持久化 + 淘汰策略）
 │   ├── watch/      🚧          # inotify 实时文件监控
 │   └── network/    🚧          # gRPC 网络备份
-├── tests/
+├── tests/                     # Google Test 单元测试
 ├── scripts/                    # 辅助脚本（setup-testdata.sh, test-backup-restore.sh）
 └── data/                       # 🧪 脚本生成的测试数据（.gitignore，不含于仓库）
     ├── source/                 # 源目录（setup-testdata.sh 生成）

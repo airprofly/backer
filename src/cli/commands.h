@@ -1,5 +1,7 @@
 #pragma once
 
+#include "scheduler/backup_scheduler.h"
+
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -64,5 +66,14 @@ int handleBackup(std::filesystem::path const& source,
 int handleRestore(std::filesystem::path const& source,
                   std::filesystem::path const& destination,
                   RestoreOptions const& options = {});
+
+// ── Schedule / Daemon ─────────────────────────────────────────────────────
+
+/// Schedule subcommand dispatch.
+/// argv is the remaining args after "schedule" is consumed.
+int handleSchedule(std::vector<std::string> const& args);
+
+/// Execute `daemon` command: load saved jobs and run the scheduler loop.
+int handleDaemon();
 
 } // namespace backer::cli
