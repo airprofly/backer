@@ -3,8 +3,8 @@ variable "TAG" {
 }
 
 variable "REGISTRY" {
-  default = ""
-  description = "Container registry (e.g. ghcr.io/airprofly/backer). Empty = Docker Hub."
+  default = "ghcr.io/airprofly/backer"
+  description = "Container registry. Defaults to GitHub Container Registry."
 }
 
 variable "GH_PROXY" {
@@ -15,8 +15,8 @@ variable "GH_PROXY" {
 target "default" {
   dockerfile = "Dockerfile"
   tags = [
-    "${REGISTRY != "" ? REGISTRY : "backer"}:${TAG}",
-    "${REGISTRY != "" ? REGISTRY : "backer"}:latest"
+    "${REGISTRY}:${TAG}",
+    "${REGISTRY}:latest"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   args = {
