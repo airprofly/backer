@@ -70,10 +70,14 @@ private:
     QCheckBox* enableSizeFilter_{nullptr};
     QSpinBox* sizeMin_{nullptr};
     QSpinBox* sizeMax_{nullptr};
-    QComboBox* sizeUnit_{nullptr};
+    QComboBox* sizeUnitMin_{nullptr};
+    QComboBox* sizeUnitMax_{nullptr};
 
     // ── Owner ───────────────────────────────────────────────
     QLineEdit* owner_{nullptr};
+
+    /// Look up byte multiplier for a size-unit combobox index.
+    static qint64 unitMultiplier(int index) noexcept;
 
     QDialogButtonBox* buttonBox_{nullptr};
 };

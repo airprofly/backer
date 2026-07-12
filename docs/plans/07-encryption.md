@@ -65,19 +65,19 @@ EncryptorFactory (根据算法名创建)
 
 ## 实施步骤
 
-| 步骤 | 内容 | 产出 |
-|------|------|------|
-| 1. Encryptor 接口 | 定义 `encrypt()` / `decrypt()` 缓冲区接口 | `encryptor.h` |
-| 2. EncryptorFactory | 工厂类注册机制 | `encryptor_factory.h/cpp` |
-| 3. 密钥派生 | PBKDF2 (密码→密钥) | `key_derivation.h/cpp` |
-| 4. 加密头部格式 | 序列化/反序列化加密参数 | `encrypted_format.h/cpp` |
-| 5. AES-256-GCM 实现 | OpenSSL EVP 封装 | `openssl_encryptor.cpp` |
-| 6. SM4 实现 (可选) | OpenSSL 3.x EVP SM4 封装 | `openssl_encryptor.cpp` |
-| 7. 密码输入 | 交互式 (不回显) + `--password` 参数 | `commands.cpp` |
-| 8. 密码确认 | 加密时要求输入两次密码 | `commands.cpp` |
-| 9. 解密验证 | 解密时验证 Magic + 认证标签 | `openssl_encryptor.cpp` |
-| 10. CLI 集成 | `--encrypt aes`, `--password` | `commands.cpp` |
-| 11. 单元测试 | 加密→解密→验证原始数据 | 测试文件 |
+| 步骤 | 内容 | 产出 | 状态 |
+|------|------|------|------|
+| 1. Encryptor 接口 | 定义 `encrypt()` / `decrypt()` 缓冲区接口 | `encryptor.h` | ✅ |
+| 2. EncryptorFactory | 工厂类注册机制 | `build_encryptor.h/cpp` | ✅ |
+| 3. 密钥派生 | PBKDF2 (密码→密钥) | `key_derivation.h/cpp` | ✅ |
+| 4. 加密头部格式 | 序列化/反序列化加密参数 | `encrypted_format.h` | ✅ |
+| 5. AES-256-GCM 实现 | OpenSSL EVP 封装 | `openssl_encryptor.cpp` | ✅ |
+| 6. SM4 实现 (可选) | OpenSSL 3.x EVP SM4-CBC 封装 | `openssl_encryptor.cpp` | ✅ |
+| 7. 密码输入 | 交互式 (不回显) + `--password` 参数 | `commands.cpp` | ✅ |
+| 8. 密码确认 | 加密时要求输入两次密码 | `commands.cpp` | ✅ |
+| 9. 解密验证 | 解密时验证 Magic + 认证标签 | `openssl_encryptor.cpp` | ✅ |
+| 10. CLI 集成 | `--encrypt aes256/sm4`, `--password` | `main.cpp`, `commands.cpp` | ✅ |
+| 11. 单元测试 | 加密→解密→验证原始数据 | `tests/crypto/` | ✅ |
 
 ## 关键接口
 

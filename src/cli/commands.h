@@ -32,6 +32,10 @@ struct BackupOptions {
     // ── Compress options ─────────────────────────────────────────────
     std::string compressAlgo;  // "gzip", "zstd", "lzma" or empty
     int compressLevel         = 0;  // 0 = default for algorithm
+
+    // ── Encrypt options ──────────────────────────────────────────────
+    std::string encryptAlgo;  // "aes256", "sm4" or empty
+    std::string password;     // encryption password (empty = prompt)
 };
 
 struct RestoreOptions {
@@ -43,6 +47,10 @@ struct RestoreOptions {
 
     // ── Decompress options ───────────────────────────────────────────
     std::string decompressAlgo;  // "gzip", "zstd", "lzma" or empty
+
+    // ── Decrypt options ──────────────────────────────────────────────
+    std::string decryptAlgo;  // "aes256", "sm4" or empty
+    std::string password;     // decryption password (empty = prompt)
 };
 
 /// Execute `backup` command: source → destination.

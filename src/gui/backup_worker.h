@@ -1,16 +1,6 @@
 #pragma once
 
 #include "cli/commands.h"
-#include "compress/build_compressor.h"
-#include "core/backup_engine.h"
-#include "core/restore_engine.h"
-#include "core/types.h"
-#include "filters/criteria_filter.h"
-#include "filters/filter.h"
-#include "fs/fs_abstraction.h"
-#include "fs/platform.h"
-#include "pack/tar_packer.h"
-#include "pack/zip_packer.h"
 
 #include <QObject>
 #include <QString>

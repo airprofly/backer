@@ -2,9 +2,7 @@
 
 #include <QDebug>
 
-#include <chrono>
 #include <cstdint>
-#include <thread>
 
 namespace backer::gui {
 
@@ -132,19 +130,6 @@ void BackupWorker::run()
         requestInterruption();
         emit finished(false, QStringLiteral("操作已取消")); // "操作已取消"
         return;
-    }
-
-    // --- Stage 3: Finalizing (90% - 100%) ---
-    for (int p = 90; p <= 100; p += 2) {
-        if (cancelled_) {
-            requestInterruption();
-            emit finished(false,
-                          QStringLiteral("操作已取消"));
-            return;
-        }
-        emit progressUpdated(p, QStringLiteral("正在完成..."), // "正在完成..."
-                             filesTotal, filesTotal, bytesTotal, bytesTotal);
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
 
     // --- Completion ---

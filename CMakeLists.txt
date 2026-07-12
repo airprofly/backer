@@ -126,6 +126,9 @@ add_library(backer_core
     src/compress/gzip_compressor.cpp
     src/compress/zstd_compressor.cpp
     src/compress/lzma_compressor.cpp
+    src/crypto/key_derivation.cpp
+    src/crypto/openssl_encryptor.cpp
+    src/crypto/build_encryptor.cpp
 )
 target_include_directories(backer_core PUBLIC src)
 # liblzma's public header (lzma.h) is in api/ but exposed PRIVATE by xz CMake;
@@ -141,7 +144,11 @@ target_link_libraries(backer_core PRIVATE
     zlibstatic
     libzstd_static
     liblzma
+    OpenSSL::Crypto
 )
+
+# ── OpenSSL (system library — no CMake FetchContent available) ──
+find_package(OpenSSL REQUIRED)
 
 # ── CLI Executable ────────────────────────────────────────
 add_executable(backer-cli
@@ -163,6 +170,8 @@ if(BUILD_TESTING)
         tests/pack/zip_packer_test.cpp
         tests/compress/compressor_test.cpp
         tests/compress/compressor_factory_test.cpp
+        tests/crypto/openssl_encryptor_test.cpp
+        tests/crypto/encryptor_factory_test.cpp
     )
     target_link_libraries(backer_test PRIVATE backer_core GTest::gtest_main)
     include(GoogleTest)
