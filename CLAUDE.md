@@ -161,6 +161,12 @@ cmake --build build
 gprof ./build/backer-cli output/gmon.out > output/gprof.txt
 ```
 
+### CI/CD 原则
+
+- **全平台架构覆盖**：publish 流水线必须覆盖所有主流 OS×架构组合——Linux x86_64 + ARM64、macOS x86_64 + ARM64、Windows x86_64 + ARM64，任一缺少即阻断发布。
+- **CLI+GUI 双产物**：每个平台架构组合都须同时产出 CLI 和 GUI 可执行文件（受限于交叉编译工具链的除外，须显式说明原因）。
+- **运行时自包含**：所有运行时依赖（OpenSSL DLL/dylib、Qt 框架等）必须随包分发，确保用户下载解压即可直接运行，不得依赖系统预装库。
+
 ### CI 测试流水线（三平台构建测试 + Docker 验证，不含性能分析 / lint / Valgrind）
 
 CI 包含以下 job，全部通过才可合入：
