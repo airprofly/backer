@@ -110,6 +110,9 @@ set(XZ_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
 set(XZ_BUILD_TESTING OFF CACHE INTERNAL "" FORCE)
 FetchContent_MakeAvailable(lzma)
 
+# ── OpenSSL (system library — no CMake FetchContent available) ──
+find_package(OpenSSL REQUIRED)
+
 # ── Core Library ──────────────────────────────────────────
 add_library(backer_core
     src/core/backup_engine.cpp
@@ -139,16 +142,13 @@ target_include_directories(backer_core PRIVATE ${lzma_SOURCE_DIR}/src/liblzma/ap
 target_link_libraries(backer_core PUBLIC
     spdlog::spdlog
     miniz
+    OpenSSL::Crypto
 )
 target_link_libraries(backer_core PRIVATE
     zlibstatic
     libzstd_static
     liblzma
-    OpenSSL::Crypto
 )
-
-# ── OpenSSL (system library — no CMake FetchContent available) ──
-find_package(OpenSSL REQUIRED)
 
 # ── CLI Executable ────────────────────────────────────────
 add_executable(backer-cli
