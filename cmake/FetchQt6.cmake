@@ -70,7 +70,7 @@ endif()
 # ── Detect platform for aqtinstall ────────────────────────────────────
 if(WIN32)
     set(_aqt_platform "windows")
-    set(_aqt_arch "win64_msvc2022_64")
+    set(_aqt_arch "win64_msvc2019_64")
 elseif(APPLE)
     set(_aqt_platform "mac")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
