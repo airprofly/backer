@@ -8,6 +8,7 @@
 
 - [构建](#构建)
 - [功能详解](#功能详解)
+  - [图形界面（GUI）](#图形界面gui)
   - [目录镜像备份](#目录镜像备份)
   - [特殊文件处理](#特殊文件处理)
   - [元数据保留](#元数据保留)
@@ -23,7 +24,12 @@
 ## 构建
 
 ```bash
+# CLI 版本（无外部依赖）
 cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+
+# GUI 版本（自动下载 Qt6 预编译二进制，无需系统库）
+cmake -B build -DBUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ```
 
@@ -324,6 +330,32 @@ Zip 格式不原生支持特殊文件类型，Backer 通过在归档中嵌入元
 ./build/backer-cli backup data/source data/backup.zip --pack zip \
     --include-name "*.txt" --include-name "*.md"
 ```
+
+---
+
+### 图形界面（GUI）
+
+Backer 提供基于 Qt 6 的图形用户界面，macOS 简约风格，功能等价于 CLI 的所有备份/还原操作。
+
+#### 构建
+
+```bash
+# 自动下载 Qt6 预编译二进制（首次需联网，数分钟）
+cmake -B build -DBUILD_GUI=ON
+cmake --build build -j$(nproc)
+./build/backer-gui
+```
+
+启动后先显示启动画面（盾牌+箭头插图），随后进入主界面。
+
+#### 功能说明
+
+| 页面 | 功能 |
+|------|------|
+| 备份 | 选择源/目标目录，配置打包/压缩/加密选项，可视化筛选条件编辑，实时进度条和日志 |
+| 还原 | 选择备份源（文件或目录），配置解压/解包选项，保留元数据/特殊文件选项 |
+| 定时任务 | 添加/编辑/删除定时备份任务（Cron 表达式），空状态插图引导，任务列表管理 |
+| 设置 | 默认路径、默认压缩/加密偏好、日志级别、并发线程数，通过 QSettings 持久化 |
 
 ---
 

@@ -90,12 +90,12 @@ readMetadata(std::filesystem::path const& path)
     meta.ownerId       = static_cast<uint32_t>(st.st_uid);
     meta.groupId       = static_cast<uint32_t>(st.st_gid);
     meta.permissions   = static_cast<uint32_t>(st.st_mode & static_cast<mode_t>(07777));
-    meta.accessTimeSec  = st.st_atim.tv_sec;
-    meta.accessTimeNsec = st.st_atim.tv_nsec;
-    meta.modifyTimeSec  = st.st_mtim.tv_sec;
-    meta.modifyTimeNsec = st.st_mtim.tv_nsec;
-    meta.changeTimeSec  = st.st_ctim.tv_sec;
-    meta.changeTimeNsec = st.st_ctim.tv_nsec;
+    meta.accessTimeSec  = BACKER_STAT_ATIME(st).tv_sec;
+    meta.accessTimeNsec = BACKER_STAT_ATIME(st).tv_nsec;
+    meta.modifyTimeSec  = BACKER_STAT_MTIME(st).tv_sec;
+    meta.modifyTimeNsec = BACKER_STAT_MTIME(st).tv_nsec;
+    meta.changeTimeSec  = BACKER_STAT_CTIME(st).tv_sec;
+    meta.changeTimeNsec = BACKER_STAT_CTIME(st).tv_nsec;
     return meta;
 #else
     // Non-POSIX: use std::filesystem for basic info
