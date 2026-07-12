@@ -14,7 +14,10 @@ variable "GH_PROXY" {
 
 target "default" {
   dockerfile = "Dockerfile"
-  tags = ["${REGISTRY != "" ? REGISTRY : "backer"}:${TAG}"]
+  tags = [
+    "${REGISTRY != "" ? REGISTRY : "backer"}:${TAG}",
+    "${REGISTRY != "" ? REGISTRY : "backer"}:latest"
+  ]
   platforms = ["linux/amd64", "linux/arm64"]
   args = {
     GH_PROXY = GH_PROXY
