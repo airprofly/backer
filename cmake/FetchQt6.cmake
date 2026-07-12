@@ -1,7 +1,7 @@
 # FetchQt6.cmake — Qt6 自动下载模块
 #
 # 完全自包含：当 BUILD_GUI=ON 且 Qt6 未安装时，自动通过 aqtinstall
-# 从 Qt 官方源下载 Linux x86_64 预编译二进制，无需系统库。
+# 从 Qt 官方源下载预编译二进制（Linux / Windows / macOS），无需系统库。
 #
 # 控制变量:
 #   QT6_AUTO_DOWNLOAD  — BOOL，允许自动下载（默认 ON）
@@ -67,16 +67,43 @@ if(NOT _pip_ret EQUAL 0)
     return()
 endif()
 
+# ── Detect platform for aqtinstall ────────────────────────────────────
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(_qt_host "linux")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|ARM64")
+        set(_qt_arch "linux_arm64_gcc")
+    else()
+        set(_qt_arch "gcc_64")
+    endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(_qt_host "windows")
+    if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64")
+        set(_qt_arch "win64_msvc2022_arm64")
+    else()
+        set(_qt_arch "win64_msvc2022_64")
+    endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(_qt_host "mac")
+    if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+        set(_qt_arch "macos_arm64")
+    else()
+        set(_qt_arch "macos")
+    endif()
+else()
+    message(WARNING "FetchQt6: unsupported platform ${CMAKE_SYSTEM_NAME}")
+    return()
+endif()
+
 # ── Download Qt6 prebuilt binaries ────────────────────────────────────
 set(_qt_dir "${CMAKE_BINARY_DIR}/_deps/qt6_prebuilt")
 file(MAKE_DIRECTORY "${_qt_dir}")
 
-message(STATUS "FetchQt6: downloading Qt ${QT6_VERSION} (gcc_64)...")
+message(STATUS "FetchQt6: downloading Qt ${QT6_VERSION} (${_qt_arch})...")
 message(STATUS "FetchQt6:   target: ${_qt_dir}")
 message(STATUS "FetchQt6:   this may take several minutes...")
 
 execute_process(COMMAND ${_python} -m aqt install-qt
-    linux desktop "${QT6_VERSION}" gcc_64
+    ${_qt_host} desktop "${QT6_VERSION}" ${_qt_arch}
     -O "${_qt_dir}" --modules qtbase
     OUTPUT_VARIABLE _aqt_out ERROR_VARIABLE _aqt_err
     RESULT_VARIABLE _aqt_ret TIMEOUT 600)
@@ -87,7 +114,7 @@ if(NOT _aqt_ret EQUAL 0)
     return()
 endif()
 
-set(Qt6_DIR "${_qt_dir}/${QT6_VERSION}/gcc_64"
+set(Qt6_DIR "${_qt_dir}/${QT6_VERSION}/${_qt_arch}"
     CACHE PATH "Path to downloaded Qt6" FORCE)
 message(STATUS "FetchQt6: Qt6 downloaded to ${Qt6_DIR}")
 
