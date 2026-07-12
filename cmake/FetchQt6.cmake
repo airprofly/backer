@@ -13,7 +13,7 @@
 
 # ── 选项 ──────────────────────────────────────────────────────────────
 option(QT6_AUTO_DOWNLOAD "Auto-download Qt6 prebuilt binaries when not found" ON)
-set(QT6_VERSION "6.5.0" CACHE STRING "Qt6 version to download")
+set(QT6_VERSION "6.8.1" CACHE STRING "Qt6 version to download")
 mark_as_advanced(QT6_AUTO_DOWNLOAD QT6_VERSION)
 
 # ── 查找已存在的 Qt6 ─────────────────────────────────────────────────
@@ -58,7 +58,13 @@ endif()
 # ── Bootstrap pip (if not already available) ──────────────────────────
 execute_process(COMMAND ${_python} -m ensurepip --upgrade
     OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE _ensure_ret)
-execute_process(COMMAND ${_python} -m pip install --user aqtinstall
+# macOS Python 3.12+ 默认 PEP 668（externally-managed-environment），
+# 需要 --break-system-packages 允许 pip 安装。
+set(_pip_extra "")
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(_pip_extra "--break-system-packages")
+endif()
+execute_process(COMMAND ${_python} -m pip install --user ${_pip_extra} aqtinstall
     OUTPUT_VARIABLE _pip_out ERROR_VARIABLE _pip_err
     RESULT_VARIABLE _pip_ret OUTPUT_STRIP_TRAILING_WHITESPACE)
 

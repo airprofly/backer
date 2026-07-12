@@ -44,11 +44,17 @@ jobs:
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
           cp build/backer-cli   dist/backer-cli
-          cp build/backer-gui   dist/backer-gui
           cp LICENSE            dist/
+          if [ -f build/backer-gui ]; then
+            cp build/backer-gui   dist/backer-gui
+            GUI_FILE="backer-gui"
+          else
+            echo "⚠️  backer-gui not built — Qt6 unavailable; skipping GUI"
+            GUI_FILE=""
+          fi
           cd dist
-          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-linux-x86_64.tar.gz \
-            backer-cli backer-gui LICENSE
+          files="backer-cli LICENSE ${GUI_FILE}"
+          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-linux-x86_64.tar.gz $files
 
       - uses: actions/upload-artifact@v4
         with:
@@ -91,11 +97,18 @@ jobs:
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
           cp build/backer-cli   dist/backer-cli
-          cp build/backer-gui   dist/backer-gui
           cp LICENSE            dist/
+          # Copy GUI binary if built (requires Qt6)
+          if [ -f build/backer-gui ]; then
+            cp build/backer-gui   dist/backer-gui
+            GUI_FILE="backer-gui"
+          else
+            echo "⚠️  backer-gui not built — Qt6 unavailable; skipping GUI"
+            GUI_FILE=""
+          fi
           cd dist
-          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-x86_64.tar.gz \
-            backer-cli backer-gui LICENSE
+          files="backer-cli LICENSE ${GUI_FILE}"
+          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-x86_64.tar.gz $files
 
       - uses: actions/upload-artifact@v4
         with:
@@ -139,11 +152,17 @@ jobs:
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
           cp build/backer-cli   dist/backer-cli
-          cp build/backer-gui   dist/backer-gui
           cp LICENSE            dist/
+          if [ -f build/backer-gui ]; then
+            cp build/backer-gui   dist/backer-gui
+            GUI_FILE="backer-gui"
+          else
+            echo "⚠️  backer-gui not built — Qt6 unavailable; skipping GUI"
+            GUI_FILE=""
+          fi
           cd dist
-          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-arm64.tar.gz \
-            backer-cli backer-gui LICENSE
+          files="backer-cli LICENSE ${GUI_FILE}"
+          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-arm64.tar.gz $files
 
       - uses: actions/upload-artifact@v4
         with:
@@ -189,9 +208,16 @@ jobs:
           $VERSION = "${{ github.ref_name }}".Substring(1)
           New-Item -ItemType Directory -Path dist -Force
 
-          # Copy executables (CLI + GUI)
+          # Copy CLI executable
           Copy-Item "build/${{ env.BUILD_TYPE }}/backer-cli.exe" dist/
-          Copy-Item "build/${{ env.BUILD_TYPE }}/backer-gui.exe" dist/
+
+          # Copy GUI binary if built (requires Qt6)
+          $guiPath = "build/${{ env.BUILD_TYPE }}/backer-gui.exe"
+          if (Test-Path $guiPath) {
+            Copy-Item $guiPath dist/
+          } else {
+            Write-Host "⚠️  backer-gui.exe not built — Qt6 unavailable; skipping GUI"
+          }
 
           # Bundle OpenSSL runtime DLLs
           $osslDir = if (Test-Path "C:\Program Files\OpenSSL\bin") { `
@@ -257,7 +283,14 @@ jobs:
           New-Item -ItemType Directory -Path dist -Force
 
           Copy-Item "build/${{ env.BUILD_TYPE }}/backer-cli.exe" dist/
-          Copy-Item "build/${{ env.BUILD_TYPE }}/backer-gui.exe" dist/
+
+          # Copy GUI binary if built (requires Qt6)
+          $guiPath = "build/${{ env.BUILD_TYPE }}/backer-gui.exe"
+          if (Test-Path $guiPath) {
+            Copy-Item $guiPath dist/
+          } else {
+            Write-Host "⚠️  backer-gui.exe not built — Qt6 unavailable; skipping GUI"
+          }
 
           # Bundle ARM64 OpenSSL DLLs from vcpkg
           $osslDir = "C:\vcpkg\installed\arm64-windows\bin"
