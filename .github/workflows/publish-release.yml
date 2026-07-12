@@ -207,6 +207,8 @@ jobs:
             windeployqt dist/backer-gui.exe
             if ($LASTEXITCODE -ne 0) { Write-Warning "windeployqt exited with $LASTEXITCODE"; $global:LASTEXITCODE = 0 }
           }
+          Copy-Item "C:\Program Files\OpenSSL\bin\libcrypto-3-x64.dll" dist/
+          Copy-Item "C:\Program Files\OpenSSL\bin\libssl-3-x64.dll" dist/
           Copy-Item LICENSE dist/
           Compress-Archive -Path dist/* -DestinationPath `
             "${{ env.PROJECT_NAME }}-v${VERSION}-windows-x86_64.zip" -Force
