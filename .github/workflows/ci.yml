@@ -112,6 +112,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Docker image
+        # GitHub Actions runner 在海外，直连 GitHub 最快；覆盖 Dockerfile 默认的
+        # 国内代理 GH_PROXY=ghproxy.net 为空值，避免绕道代理变慢/失败。
         run: docker build -t backer --build-arg GH_PROXY= .
 
       - name: Verify binary exists in image

@@ -20,7 +20,7 @@
 
 ## 手动 CLI / 端到端测试要求
 
-1. **隔离**：执行前执行 `rm -rf data/restore` 清理上一组结果
+1. **隔离**：执行前执行 `rm -rf data/backup data/restore` 清理上一组结果
 2. **执行**：运行命令，同时捕获 stdout 和 stderr
 3. **验证**：
    - 检查 CLI 输出中的成功/失败状态及统计信息（Files/Dirs/Size）
