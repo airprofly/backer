@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/airprofly/backer:latest
+    # image 由 docker-bake.hcl 控制（推送到 ghcr.io）
     container_name: backer
     entrypoint: ["/usr/local/bin/backer"]
     command: ["--help"]
