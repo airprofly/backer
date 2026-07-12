@@ -134,8 +134,8 @@ jobs:
           name: macos-arm64-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-macos-arm64.tar.gz
 
-  # ── Windows 构建 ────────────────────────────────────
-  windows-build:
+  # ── Windows x86_64 构建 ──────────────────────────────
+  windows-x64-build:
     runs-on: windows-2022
     defaults:
       run:
@@ -143,37 +143,119 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install OpenSSL
+        run: |
+          choco install openssl -y --no-progress
+          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
-          path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows
+          path: |
+            build/_deps
+            build/_deps/qt6_prebuilt
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-x64
           restore-keys: |
             deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-
             deps-${{ hashFiles('CMakeLists.txt') }}-windows-
             deps-windows-
 
-      - name: Configure CMake
+      - name: Configure CMake (with GUI + CLI)
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-                        -DBUILD_TESTING=OFF
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON
 
       - name: Build
         run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
 
-      - name: Package
+      - name: Package (with OpenSSL DLLs + GUI)
         run: |
           $VERSION = "${{ github.ref_name }}".Substring(1)
           New-Item -ItemType Directory -Path dist -Force
-          Copy-Item build/${{ env.BUILD_TYPE }}/backer-cli.exe dist/
+
+          # Copy executables (CLI + GUI)
+          Copy-Item "build/${{ env.BUILD_TYPE }}/backer-cli.exe" dist/
+          Copy-Item "build/${{ env.BUILD_TYPE }}/backer-gui.exe" dist/
+
+          # Bundle OpenSSL runtime DLLs
+          $osslDir = if (Test-Path "C:\Program Files\OpenSSL\bin") { `
+            "C:\Program Files\OpenSSL\bin" `
+          } elseif (Test-Path "C:\Program Files\OpenSSL-Win64\bin") { `
+            "C:\Program Files\OpenSSL-Win64\bin" `
+          } else { "" }
+          if ($osslDir) {
+            Get-ChildItem $osslDir -Filter "libcrypto*.dll" | Copy-Item -Destination dist/
+            Get-ChildItem $osslDir -Filter "libssl*.dll" | Copy-Item -Destination dist/
+          }
+
           Copy-Item LICENSE dist/
           Compress-Archive -Path dist/* -DestinationPath `
             "${{ env.PROJECT_NAME }}-v${VERSION}-windows-x86_64.zip" -Force
 
       - uses: actions/upload-artifact@v4
         with:
-          name: windows-artifacts
+          name: windows-x64-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-windows-x86_64.zip
+
+  # ── Windows ARM64 构建（交叉编译） ──────────────────
+  windows-arm64-build:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenSSL (ARM64)
+        run: |
+          choco install openssl -y --no-progress
+          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-arm64
+          restore-keys: |
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-
+            deps-${{ hashFiles('CMakeLists.txt') }}-windows-
+            deps-windows-
+
+      - name: Configure CMake (cross-compile ARM64)
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+                        -DBUILD_TESTING=OFF `
+                        -DCMAKE_GENERATOR_PLATFORM=ARM64
+
+      - name: Build
+        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
+
+      - name: Package (with OpenSSL DLLs)
+        run: |
+          $VERSION = "${{ github.ref_name }}".Substring(1)
+          New-Item -ItemType Directory -Path dist -Force
+
+          Copy-Item "build/${{ env.BUILD_TYPE }}/backer-cli.exe" dist/
+
+          # Bundle OpenSSL runtime DLLs (ARM64)
+          $osslDir = if (Test-Path "C:\Program Files\OpenSSL\bin") { `
+            "C:\Program Files\OpenSSL\bin" `
+          } elseif (Test-Path "C:\Program Files\OpenSSL-Win64\bin") { `
+            "C:\Program Files\OpenSSL-Win64\bin" `
+          } else { "" }
+          if ($osslDir) {
+            Get-ChildItem $osslDir -Filter "libcrypto*.dll" | Copy-Item -Destination dist/
+            Get-ChildItem $osslDir -Filter "libssl*.dll" | Copy-Item -Destination dist/
+          }
+
+          Copy-Item LICENSE dist/
+          Compress-Archive -Path dist/* -DestinationPath `
+            "${{ env.PROJECT_NAME }}-v${VERSION}-windows-arm64.zip" -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64-artifacts
+          path: ${{ env.PROJECT_NAME }}-v*-windows-arm64.zip
 
   # ── 创建 GitHub Release 并上传所有构建产物 ─────────
   release:
@@ -182,7 +264,8 @@ jobs:
       - linux-build
       - macos-build
       - macos-arm64-build
-      - windows-build
+      - windows-x64-build
+      - windows-arm64-build
     permissions:
       contents: write
     steps:
