@@ -67,16 +67,36 @@ if(NOT _pip_ret EQUAL 0)
     return()
 endif()
 
+# ── Detect platform for aqtinstall ────────────────────────────────────
+if(WIN32)
+    set(_aqt_platform "windows")
+    set(_aqt_arch "win64_msvc2022_64")
+elseif(APPLE)
+    set(_aqt_platform "mac")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+        set(_aqt_arch "macos_arm64")
+    else()
+        set(_aqt_arch "macos_x64")
+    endif()
+else()
+    set(_aqt_platform "linux")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+        set(_aqt_arch "gcc_arm64")
+    else()
+        set(_aqt_arch "gcc_64")
+    endif()
+endif()
+
 # ── Download Qt6 prebuilt binaries ────────────────────────────────────
 set(_qt_dir "${CMAKE_BINARY_DIR}/_deps/qt6_prebuilt")
 file(MAKE_DIRECTORY "${_qt_dir}")
 
-message(STATUS "FetchQt6: downloading Qt ${QT6_VERSION} (gcc_64)...")
+message(STATUS "FetchQt6: downloading Qt ${QT6_VERSION} (${_aqt_arch})...")
 message(STATUS "FetchQt6:   target: ${_qt_dir}")
 message(STATUS "FetchQt6:   this may take several minutes...")
 
 execute_process(COMMAND ${_python} -m aqt install-qt
-    linux desktop "${QT6_VERSION}" gcc_64
+    ${_aqt_platform} desktop "${QT6_VERSION}" ${_aqt_arch}
     -O "${_qt_dir}" --modules qtbase
     OUTPUT_VARIABLE _aqt_out ERROR_VARIABLE _aqt_err
     RESULT_VARIABLE _aqt_ret TIMEOUT 600)
@@ -87,7 +107,7 @@ if(NOT _aqt_ret EQUAL 0)
     return()
 endif()
 
-set(Qt6_DIR "${_qt_dir}/${QT6_VERSION}/gcc_64"
+set(Qt6_DIR "${_qt_dir}/${QT6_VERSION}/${_aqt_arch}"
     CACHE PATH "Path to downloaded Qt6" FORCE)
 message(STATUS "FetchQt6: Qt6 downloaded to ${Qt6_DIR}")
 
