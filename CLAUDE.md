@@ -174,7 +174,7 @@ CI 包含以下 job，全部通过才可合入：
 | Job | Runner | 内容 | 失败处理 |
 |-----|--------|------|----------|
 | `linux-build` | ubuntu-22.04 | GCC-12 + Clang-14 双编译器矩阵构建（CLI+GUI）+ 全量单元测试 | 阻断合入 |
-| `linux-arm64-build` | ubuntu-24.04-arm64 | GCC 构建（CLI+GUI）+ 全量单元测试 | 阻断合入 |
+| `linux-arm64-build` | ubuntu-22.04 (QEMU) | Docker QEMU 多架构构建验证（CLI 仅），编译 `linux/arm64` 目标 | 阻断合入 |
 | `macos-build` | macos-14 (ARM64) | AppleClang 构建（CLI+GUI）+ 全量单元测试 | 阻断合入 |
 | `windows-build` | windows-2022 | MSVC 构建（CLI+GUI）+ 全量单元测试 | 阻断合入 |
 | `windows-arm64-build` | windows-2022 (交叉) | MSVC ARM64 交叉编译构建验证（CLI+GUI，仅构建） | 阻断合入 |
