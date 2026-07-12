@@ -176,6 +176,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
+          cache: 'true'
 
       - name: Cache CMake dependencies
         uses: actions/cache@v4
