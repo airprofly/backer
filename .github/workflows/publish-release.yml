@@ -200,7 +200,7 @@ jobs:
           Copy-Item build/${{ env.BUILD_TYPE }}/backer-cli.exe dist/
           if (Test-Path "build/${{ env.BUILD_TYPE }}/backer-gui.exe") {
             Copy-Item build/${{ env.BUILD_TYPE }}/backer-gui.exe dist/
-            & "$env:Qt6_DIR\..\..\..\..\bin\windeployqt.exe" dist/backer-gui.exe
+            windeployqt dist/backer-gui.exe
           }
           Copy-Item LICENSE dist/
           Compress-Archive -Path dist/* -DestinationPath `
