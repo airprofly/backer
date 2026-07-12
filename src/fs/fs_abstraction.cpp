@@ -11,10 +11,12 @@
 #include <system_error>
 
 #if BACKER_PLATFORM_POSIX
-    #include <sys/stat.h> // lstat, S_IS*
+    #include <sys/stat.h> // lstat, S_IS*, mode_t
     #if defined(__linux__)
         #include <sys/sysmacros.h> // major(), minor()
     #endif
+#else
+    #include <sys/stat.h> // mode_t (MSVC / MinGW)
 #endif
 
 namespace backer {
