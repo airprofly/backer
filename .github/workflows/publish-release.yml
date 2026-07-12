@@ -180,7 +180,7 @@ jobs:
       - name: Install Qt6 via aqtinstall
         run: |
           pip install aqtinstall
-          python -m aqt install-qt windows desktop 6.5.0 win64_msvc2019_64 -O C:\Qt6 --modules qtbase
+          python -m aqt install-qt windows desktop 6.5.0 win64_msvc2019_64 -O C:\Qt6
 
       - name: Cache CMake dependencies
         uses: actions/cache@v4

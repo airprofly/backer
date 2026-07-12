@@ -97,7 +97,7 @@ message(STATUS "FetchQt6:   this may take several minutes...")
 
 execute_process(COMMAND ${_python} -m aqt install-qt
     ${_aqt_platform} desktop "${QT6_VERSION}" ${_aqt_arch}
-    -O "${_qt_dir}" --modules qtbase
+    -O "${_qt_dir}"
     OUTPUT_VARIABLE _aqt_out ERROR_VARIABLE _aqt_err
     RESULT_VARIABLE _aqt_ret TIMEOUT 600)
 
