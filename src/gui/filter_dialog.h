@@ -78,7 +78,6 @@ private:
 
     /// Look up byte multiplier for a size-unit combobox index.
     static qint64 unitMultiplier(int index) noexcept;
-
     QDialogButtonBox* buttonBox_{nullptr};
 };
 

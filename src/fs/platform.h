@@ -17,3 +17,16 @@
 #else
     #define BACKER_PLATFORM_WINDOWS 0
 #endif
+
+// Cross‑platform stat timestamp field access.
+//   Linux:   st_atim.tv_sec / st_atim.tv_nsec
+//   macOS:   st_atimespec.tv_sec / st_atimespec.tv_nsec
+#if defined(__APPLE__) && defined(__MACH__)
+    #define BACKER_STAT_ATIME(st) (st).st_atimespec
+    #define BACKER_STAT_MTIME(st) (st).st_mtimespec
+    #define BACKER_STAT_CTIME(st) (st).st_ctimespec
+#else
+    #define BACKER_STAT_ATIME(st) (st).st_atim
+    #define BACKER_STAT_MTIME(st) (st).st_mtim
+    #define BACKER_STAT_CTIME(st) (st).st_ctim
+#endif

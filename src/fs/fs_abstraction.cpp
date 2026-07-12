@@ -11,10 +11,12 @@
 #include <system_error>
 
 #if BACKER_PLATFORM_POSIX
-    #include <sys/stat.h> // lstat, S_IS*
+    #include <sys/stat.h> // lstat, S_IS*, mode_t
     #if defined(__linux__)
         #include <sys/sysmacros.h> // major(), minor()
     #endif
+#else
+    #include <sys/stat.h> // mode_t (MSVC / MinGW)
 #endif
 
 namespace backer {
@@ -66,12 +68,12 @@ FileEntry makeFileEntry(
     fe.metadata.ownerId       = static_cast<uint32_t>(st.st_uid);
     fe.metadata.groupId       = static_cast<uint32_t>(st.st_gid);
     fe.metadata.permissions   = static_cast<uint32_t>(st.st_mode & static_cast<mode_t>(07777));
-    fe.metadata.accessTimeSec  = st.st_atim.tv_sec;
-    fe.metadata.accessTimeNsec = st.st_atim.tv_nsec;
-    fe.metadata.modifyTimeSec  = st.st_mtim.tv_sec;
-    fe.metadata.modifyTimeNsec = st.st_mtim.tv_nsec;
-    fe.metadata.changeTimeSec  = st.st_ctim.tv_sec;
-    fe.metadata.changeTimeNsec = st.st_ctim.tv_nsec;
+    fe.metadata.accessTimeSec  = BACKER_STAT_ATIME(st).tv_sec;
+    fe.metadata.accessTimeNsec = BACKER_STAT_ATIME(st).tv_nsec;
+    fe.metadata.modifyTimeSec  = BACKER_STAT_MTIME(st).tv_sec;
+    fe.metadata.modifyTimeNsec = BACKER_STAT_MTIME(st).tv_nsec;
+    fe.metadata.changeTimeSec  = BACKER_STAT_CTIME(st).tv_sec;
+    fe.metadata.changeTimeNsec = BACKER_STAT_CTIME(st).tv_nsec;
 
     // Size (regular files only)
     if (fe.type == FileType::kRegular) {
@@ -279,18 +281,18 @@ LocalFsAbstraction::write(
     }
 
     case FileType::kFifo: {
-        mode_t mode = data.size() >= sizeof(mode_t)
-                          ? *reinterpret_cast<mode_t const*>(data.data())
-                          : 0644;
-        return createFifo(path, static_cast<uint32_t>(mode));
+        uint32_t mode = data.size() >= sizeof(uint32_t)
+                            ? *reinterpret_cast<uint32_t const*>(data.data())
+                            : 0644;
+        return createFifo(path, mode);
     }
 
     case FileType::kBlockDevice:
     case FileType::kCharDevice: {
-        mode_t mode = data.size() >= sizeof(mode_t)
-                          ? *reinterpret_cast<mode_t const*>(data.data())
-                          : 0644;
-        return createDevice(path, type, 0, 0, static_cast<uint32_t>(mode));
+        uint32_t mode = data.size() >= sizeof(uint32_t)
+                            ? *reinterpret_cast<uint32_t const*>(data.data())
+                            : 0644;
+        return createDevice(path, type, 0, 0, mode);
     }
 
     default:

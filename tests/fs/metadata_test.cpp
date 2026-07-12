@@ -135,8 +135,8 @@ TEST_F(MetadataTest, RestoreTimestamps) {
 
     struct stat st;
     ASSERT_EQ(::stat(filePath.c_str(), &st), 0);
-    EXPECT_EQ(st.st_atim.tv_sec, 1234567890);
-    EXPECT_EQ(st.st_mtim.tv_sec, 1234567890);
+    EXPECT_EQ(BACKER_STAT_ATIME(st).tv_sec, 1234567890);
+    EXPECT_EQ(BACKER_STAT_MTIME(st).tv_sec, 1234567890);
 }
 
 TEST_F(MetadataTest, RestoreSetuidBit) {
@@ -181,8 +181,11 @@ TEST_F(MetadataTest, ReadMetadataSymlink) {
     ASSERT_TRUE(meta.has_value());
 
     // readMetadata uses lstat, so it sees the symlink itself
-    // Symlink permissions are 0777 on Linux
-    EXPECT_EQ(meta.value().permissions & 07777, 0777u);
+    // Symlink permissions differ by platform:
+    //   Linux:   0777
+    //   macOS:   0755
+    auto const perms = meta.value().permissions & 07777;
+    EXPECT_TRUE(perms == 0777u || perms == 0755u);
 }
 
 #endif // BACKER_PLATFORM_POSIX

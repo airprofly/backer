@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-数据备份软件——计算机组成与体系结构/软件工程课程项目，基于 C++17 在 Linux 平台开发。支持目录树的备份与还原，以及特殊文件、元数据、压缩加密、GUI、实时/定时/网络备份等扩展功能。
+数据备份软件——计算机组成与体系结构/软件工程课程项目，基于 C++17 跨平台（Linux / macOS / Windows）开发。支持目录树的备份与还原，以及特殊文件、元数据、压缩加密、GUI、实时/定时/网络备份等扩展功能。
 
 ## 文档导航
 
@@ -24,6 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **禁止 `rm -rf build` 全量重编**：始终使用增量编译。若遇到 FetchContent 缓存问题，只清理具体依赖目录（如 `rm -rf build/_deps/spdlog*`），切勿删除整个 build 目录。
 - **增量编译流程**：修改源码后直接 `cmake --build build -j$(nproc)`，CMake 会自动检测变更重新编译。只在修改 `CMakeLists.txt` 或新增文件后才需要重新 `cmake -B build`（无需删除 build 目录）。
 - **依赖零系统化**：所有编译期依赖（CLI11、spdlog、Google Test、miniz、zlib/zstd/liblzma、OpenSSL、Qt、gRPC 等）一律通过 CMake 管理，**禁止依赖系统已安装的库**（不 `find_package` 系统库、不链接 `-l<syslib>`）。目标是 `git clone` 后只需 CMake + 编译器即可直接产出可执行软件，无需预先安装任何开发包。优先用 `FetchContent` 从源码拉取编译；**若该依赖有官方预编译产物（prebuilt binary）且平台/ABI 匹配，可直接拉取产物跳过编译以加速构建**（如 miniz、zlib 等纯库可通过 header-only 或预编译 .a/.so 引入）。性能分析（perf/gprof/gperftools）、内存检测（Valgrind）、lint（clang-tidy）等**非编译工具**不在此约束内，使用本机已安装的即可。
+- **跨平台开发**：项目在 CI 中对 Linux（GCC/Clang）、macOS（AppleClang）、Windows（MSVC）三平台执行编译+测试。编写 POSIX 专用代码时使用 `#if BACKER_PLATFORM_POSIX` 保护（见 [`src/fs/platform.h`](src/fs/platform.h)），确保 Windows 编译不触及 POSIX 符号。平台抽象层的 POSIX 类型（如 `mode_t`）须在 Windows include paths 中有对应定义。
 > **⚠ FetchContent 依赖自带测试陷阱**：有些库（如 zlib）通过自己的 CMakeLists.txt 注册了测试目标（`example`/`minigzip`），即使 `EXCLUDE_FROM_ALL` 阻止了默认编译，ctest 仍会发现已注册的测试并报告 "Not Run"（视作失败）。**拉取这类依赖时，务必在 `FetchContent_MakeAvailable` 前关闭其测试选项**，例如 `set(ZLIB_BUILD_TESTING OFF CACHE INTERNAL "" FORCE)`。此坑在 CI（ctest 执行全部注册测试）中出现，本地增量 `cmake --build` 则无感。
 > **注意**：加密功能依赖系统 OpenSSL（通过 `find_package(OpenSSL REQUIRED)` 接入，不是 FetchContent）。构建前需安装 `libssl-dev`（Ubuntu）或 `openssl-devel`（Fedora）。
 
@@ -38,6 +39,7 @@ cmake --build build -j$(nproc)
 cmake -B build -DBUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ./build/backer-gui                                    # 启动图形界面
+
 
 # 测试（ctest 使用 Mock，无需外部数据）
 ctest --test-dir build --output-on-failure            # 运行所有测试
@@ -67,16 +69,16 @@ volumes:
 
 | 层面 | 技术 |
 |------|------|
-| 语言 | C++17 (GCC 9+ / Clang 12+) |
+| 语言 | C++17 (GCC 12+ / Clang 14+ / AppleClang 15+ / MSVC 19.44+) |
 | 构建 | CMake 3.16+ (FetchContent 自动拉取依赖) |
 | CLI 解析 | CLI11 v2.4.2 (header-only) |
 | 日志 | spdlog v1.14.1 |
 | 文件系统 | std::filesystem |
 | 测试 | Google Test v1.15.2（单元测试） + 端到端脚本（集成测试） |
-| 内存检测 | Valgrind（CI 自动校验） |
+| 内存检测 | Valgrind（Linux 本地工具，不在 CI 中运行） |
 | 性能分析 | perf（内核级采样）/ gprof（`-pg` 编译） |
 | 容器 | Docker（multi-stage：gcc:13-bookworm → slim，GH_PROXY 构建参数支持国内加速）+ Compose |
-| CI | GitHub Actions（clang-tidy lint / 双编译器矩阵构建测试 / Valgrind / Docker） |
+| CI | GitHub Actions（Linux GCC+Clang / macOS AppleClang / Windows MSVC 三平台构建测试 + Docker 验证） |
 
 ### 扩展功能选型
 
@@ -159,16 +161,20 @@ cmake --build build
 gprof ./build/backer-cli output/gmon.out > output/gprof.txt
 ```
 
-### CI 测试流水线（功能正确性 + Docker 构建验证，不含性能分析 / lint / Valgrind）
+### CI 测试流水线（三平台构建测试 + Docker 验证，不含性能分析 / lint / Valgrind）
 
 CI 包含以下 job，全部通过才可合入：
 
-| Job | 内容 | 失败处理 |
-|-----|------|----------|
-| `build-and-test` | GCC-12 + Clang-14 双编译器构建 + 全量单元测试 | 阻断合入 |
-| `docker` | Docker multi-stage 构建验证 | 阻断合入 |
+| Job | Runner | 内容 | 失败处理 |
+|-----|--------|------|----------|
+| `linux-build` | ubuntu-22.04 | GCC-12 + Clang-14 双编译器矩阵构建 + 全量单元测试 | 阻断合入 |
+| `macos-build` | macos-14 (ARM64) | AppleClang 构建 + 全量单元测试 | 阻断合入 |
+| `windows-build` | windows-2022 | MSVC 构建 + 全量单元测试 | 阻断合入 |
+| `docker` | ubuntu-22.04 | Docker multi-stage 构建验证 | 阻断合入 |
 
-> **说明**：clang-tidy、Valgrind、gprof/perf 均为本地工具。lint 由开发者提交前自行运行；内存检测在 `implement-feature.md` 中要求本地跑 Valgrind 输出到 `logs/valgrind.log`；性能分析产物输出到 `output/`（perf.data/perf.txt、gmon.out/gprof.txt）；三者均不适合在生产 CI 中运行。
+> **说明**：clang-tidy、Valgrind、gprof/perf 均为本地工具，不在 CI 中运行。
+>
+> **缓存策略**：`build/_deps` 目录通过 `actions/cache@v4` 跨运行缓存。缓存 key 包含 `runner.os` 标签防止跨平台缓存污染——macOS 不会错误恢复 Linux 构建的依赖缓存。
 
 ## 代码规范
 
@@ -218,7 +224,7 @@ CI 包含以下 job，全部通过才可合入：
 ├── LICENSE                     # Apache 2.0 许可证
 ├── .github/
 │   └── workflows/
-│       └── ci.yml              # GitHub Actions CI（clang-tidy / 双编译器构建测试 / Valgrind / Docker）
+│       └── ci.yml              # GitHub Actions CI（Linux/macOS/Windows 三平台构建测试 + Docker 验证）
 ├── .claude/
 │   ├── commands/
 │   │   ├── update-info.md      # 本项目专用的 /update-info 命令

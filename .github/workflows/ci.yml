@@ -35,10 +35,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ matrix.compiler.cc }}
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Linux-${{ matrix.compiler.cc }}
           restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-
-            deps-
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Linux-${{ matrix.compiler.cc }}-
+            deps-${{ hashFiles('CMakeLists.txt') }}-Linux-
+            deps-Linux-
 
       - name: Configure CMake
         run: >
@@ -63,10 +64,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macOS
           restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-
-            deps-
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macOS-
+            deps-${{ hashFiles('CMakeLists.txt') }}-macOS-
+            deps-macOS-
 
       - name: Configure CMake
         run: |
@@ -89,10 +91,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Windows
           restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-
-            deps-
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Windows-
+            deps-${{ hashFiles('CMakeLists.txt') }}-Windows-
+            deps-Windows-
 
       - name: Configure CMake
         run: |
@@ -100,7 +103,7 @@ jobs:
                         -DBUILD_TESTING=ON
 
       - name: Build
-        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS
+        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
 
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure -C ${{ env.BUILD_TYPE }}
