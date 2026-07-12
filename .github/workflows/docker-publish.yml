@@ -33,7 +33,6 @@ jobs:
           REGISTRY: ghcr.io/${{ github.repository }}
         run: |
           docker buildx bake \
-            --set "default.tags=${REGISTRY}:${TAG}" \
             --push \
             default
 
