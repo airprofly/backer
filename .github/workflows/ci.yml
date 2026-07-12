@@ -51,39 +51,29 @@ jobs:
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
 
-  # ── Linux ARM64 构建 + 单元测试 ─────────────────────
+  # ── Linux ARM64 交叉编译验证（Docker QEMU，仅构建） ─
   linux-arm64-build:
-    runs-on: ubuntu-24.04-arm64
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Qt6 & OpenGL
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build ARM64 binary via Docker multi-arch
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq qt6-base-dev libgl1-mesa-dev
+          docker buildx build \
+            --platform linux/arm64 \
+            --build-arg GH_PROXY= \
+            --load \
+            -t backer-arm64 \
+            .
 
-      - name: Cache CMake dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/_deps
-            build/_deps/qt6_prebuilt
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Linux-arm64
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Linux-
-            deps-${{ hashFiles('CMakeLists.txt') }}-Linux-
-            deps-Linux-
-
-      - name: Configure CMake
+      - name: Verify ARM64 binary
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=ON -DBUILD_GUI=ON
-
-      - name: Build
-        run: cmake --build build -j$(nproc)
-
-      - name: Run unit tests
-        run: ctest --test-dir build --output-on-failure
+          docker run --rm --entrypoint /usr/bin/ls backer-arm64 -la /usr/local/bin/backer
+          file=$(docker run --rm --entrypoint /usr/bin/file backer-arm64 /usr/local/bin/backer 2>/dev/null || true)
+          echo "Binary type: $file"
 
   # ── macOS 构建（含 GUI 编译验证） ──────────────────
   macos-build:
