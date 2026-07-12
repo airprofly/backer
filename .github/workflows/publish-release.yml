@@ -55,53 +55,6 @@ jobs:
           name: linux-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-linux-x86_64.tar.gz
 
-  # ── Linux ARM64 构建 ─────────────────────────────────
-  linux-arm64-build:
-    runs-on: ubuntu-24.04-arm64
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Qt6 & OpenGL
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq qt6-base-dev libgl1-mesa-dev
-
-      - name: Cache CMake dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/_deps
-            build/_deps/qt6_prebuilt
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-linux-arm64
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-linux-
-            deps-${{ hashFiles('CMakeLists.txt') }}-linux-
-            deps-linux-
-
-      - name: Configure CMake
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON
-
-      - name: Build
-        run: cmake --build build -j$(nproc)
-
-      - name: Package
-        run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          mkdir -p dist
-          cp build/backer-cli   dist/backer-cli
-          cp build/backer-gui   dist/backer-gui
-          cp LICENSE            dist/
-          cd dist
-          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-linux-arm64.tar.gz \
-            backer-cli backer-gui LICENSE
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-arm64-artifacts
-          path: ${{ env.PROJECT_NAME }}-v*-linux-arm64.tar.gz
-
   # ── macOS x86_64 构建 ────────────────────────────────
   macos-build:
     runs-on: macos-14
@@ -327,7 +280,6 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - linux-build
-      - linux-arm64-build
       - macos-build
       - macos-arm64-build
       - windows-x64-build

@@ -51,40 +51,6 @@ jobs:
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
 
-  # ── Linux ARM64 构建 + 单元测试 ─────────────────────
-  linux-arm64-build:
-    runs-on: ubuntu-24.04-arm64
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Qt6 & OpenGL
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq qt6-base-dev libgl1-mesa-dev
-
-      - name: Cache CMake dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/_deps
-            build/_deps/qt6_prebuilt
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Linux-arm64
-          restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Linux-
-            deps-${{ hashFiles('CMakeLists.txt') }}-Linux-
-            deps-Linux-
-
-      - name: Configure CMake
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                        -DBUILD_TESTING=ON -DBUILD_GUI=ON
-
-      - name: Build
-        run: cmake --build build -j$(nproc)
-
-      - name: Run unit tests
-        run: ctest --test-dir build --output-on-failure
-
   # ── macOS 构建（含 GUI 编译验证） ──────────────────
   macos-build:
     runs-on: macos-14
