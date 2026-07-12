@@ -155,7 +155,7 @@ jobs:
           name: macos-arm64-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-macos-arm64.tar.gz
 
-  # ── Windows 构建（静态 OpenSSL + Qt6 GUI） ───────────
+  # ── Windows 构建（Qt6 GUI + OpenSSL） ───────────────
   windows-build:
     runs-on: windows-2022
     defaults:
@@ -164,18 +164,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache vcpkg binaries
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.LOCALAPPDATA }}\vcpkg\archives
-          key: vcpkg-${{ env.BUILD_TYPE }}-windows-${{ hashFiles('CMakeLists.txt') }}
-          restore-keys: |
-            vcpkg-${{ env.BUILD_TYPE }}-windows-
-
-      - name: Install static OpenSSL via vcpkg
+      - name: Install OpenSSL
         run: |
-          vcpkg install openssl:x64-windows-static
-          echo "OPENSSL_ROOT_DIR=C:\vcpkg\installed\x64-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Append
+          choco install openssl -y --no-progress
+          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
@@ -189,15 +181,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-static
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows
           restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
 
       - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON `
-                        -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
-                        -DVCPKG_TARGET_TRIPLET=x64-windows-static
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON
 
       - name: Build
         run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
@@ -209,6 +199,7 @@ jobs:
           Copy-Item build/${{ env.BUILD_TYPE }}/backer-cli.exe dist/
           if (Test-Path "build/${{ env.BUILD_TYPE }}/backer-gui.exe") {
             Copy-Item build/${{ env.BUILD_TYPE }}/backer-gui.exe dist/
+            & "$env:Qt6_DIR\..\..\..\..\bin\windeployqt.exe" dist/backer-gui.exe
           }
           Copy-Item LICENSE dist/
           Compress-Archive -Path dist/* -DestinationPath `
