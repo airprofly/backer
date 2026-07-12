@@ -1,5 +1,7 @@
 #include "scheduler/schedule_store.h"
 
+#include "fs/platform.h"
+
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
@@ -60,7 +62,11 @@ std::chrono::system_clock::time_point isoToTime(std::string const& s) {
     tm.tm_year -= 1900;
     tm.tm_mon  -= 1;
     tm.tm_isdst = 0; // UTC
+#if BACKER_PLATFORM_WINDOWS
+    auto t = _mkgmtime(&tm);
+#else
     auto t = timegm(&tm);
+#endif
     return std::chrono::system_clock::from_time_t(t);
 }
 

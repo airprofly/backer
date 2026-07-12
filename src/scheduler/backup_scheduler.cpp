@@ -1,6 +1,7 @@
 #include "scheduler/backup_scheduler.h"
 
 #include "core/error_code.h"
+#include "fs/platform.h"
 
 #include <algorithm>
 #include <chrono>
