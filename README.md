@@ -96,7 +96,7 @@ docker run --rm backer --help
 - ✅ **加密保护** — AES-256-GCM / SM4-CBC (OpenSSL EVP) 加密备份数据
 - ✅ **图形界面** — Qt 6 桌面 GUI，macOS 简约风格
 - 🔲 **实时监控** — inotify 文件变更实时备份
-- 🔲 **定时任务** — timerfd + cron 表达式灵活调度
+- ✅ **定时备份** — Cron 表达式调度 + 快照数据淘汰
 - 🔲 **网络备份** — gRPC + Protocol Buffers 远程备份
 
 ## 📁 项目结构
@@ -130,6 +130,7 @@ backer/
 │   ├── compress/   ✅       # 压缩模块（gzip/zstd/lzma 策略接口 + 工厂）
 │   ├── crypto/     ✅       # 加密模块（AES-256-GCM / SM4-CBC，基于 OpenSSL EVP）
 │   ├── gui/        ✅       # Qt 6 图形界面（自动下载 Qt6）
+│   ├── scheduler/  ✅       # 定时备份（cron 调度 + 数据淘汰）
 │   ├── watch/      🔲       # inotify 实时监控
 │   └── network/    🔲       # gRPC 网络备份
 ├── tests/                    # 📝 Google Test 单元测试

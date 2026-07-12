@@ -91,7 +91,7 @@ volumes:
 | 压缩 | zlib / zstd / liblzma |
 | 加密 | OpenSSL (AES/SM4) |
 | GUI | Qt 6 (Widget) |
-| 定时备份 | timerfd + ccronexpr |
+| 定时备份 | ccronexpr + condition_variable (跨平台) |
 | 实时备份 | inotify + 事件队列 |
 | 网络备份 | gRPC + Protocol Buffers |
 | 增量备份 | 文件哈希比较 |
@@ -216,84 +216,34 @@ CI 包含以下 job，全部通过才可合入：
 - 只有含多个子项的目录才保持展开
 
 ```
-├── CMakeLists.txt              # 根构建配置（含测试目标生成）
+├── CMakeLists.txt              # 根构建配置（FetchContent 管理全部依赖）
 ├── Dockerfile                  # Multi-stage 构建（gcc:13-bookworm → slim）
-├── docker-compose.yml          # Compose 编排（含数据卷挂载）
-├── .dockerignore               # 构建上下文精简（排除 docs/ testdata/ 等）
-├── .gitignore                  # Git 忽略规则
-├── LICENSE                     # Apache 2.0 许可证
-├── .github/
-│   └── workflows/
-│       └── ci.yml              # GitHub Actions CI（Linux/macOS/Windows 三平台构建测试 + Docker 验证）
-├── .claude/
-│   ├── commands/
-│   │   ├── update-info.md      # 本项目专用的 /update-info 命令
-│   │   ├── implement-feature.md # 新功能实现流水线
-│   │   ├── test-features.md     # 功能测试流程
-│   │   └── git/
-│   │       ├── create-branch.md # /git:create-branch 命令
-│   │       └── git-commit.md    # /git:git-commit 命令
-│   └── settings.local.json     # 本地 Claude 权限等配置
-├── cmake/
-│   └── FetchQt6.cmake          # Qt6 自动下载模块（aqtinstall）
-├── .vscode/
-│   └── c_cpp_properties.json   # VS Code C/C++ 配置（路径/标准）
+├── docker-compose.yml          # Compose 编排
+├── .github/workflows/          # CI: Linux/macOS/Windows 三平台 + Docker
+├── .claude/commands/           # Claude 命令（实现/测试/更新/Git 等）
+├── cmake/                      # CMake 模块（FetchQt6）
 ├── docs/
-│   ├── architecture-design.md  # 分层架构 + 管道模式设计
-│   ├── plans/
-│   │   ├── README.md           # 分阶段实现路线图（01～11）
-│   │   ├── 01-core-backup-restore.md  # ✅ 已完成
-│   │   ├── 02-special-files.md        # ✅ 已完成
-│   │   ├── 03-metadata.md             # ✅ 已完成
-│   │   ├── 04-filtering.md            # ✅ 已完成
-│   │   ├── 05-packing.md              # ✅ 已完成（Tar）
-│   │   ├── 06-compression.md         # ✅ 已完成（gzip/zstd/lzma）
-│   │   ├── 07-encryption.md
-│   │   ├── 08-gui.md                 # ✅ 已完成（Qt 6 Widget）
-│   │   ├── 09-scheduled-backup.md   # ✅ 已完成
-│   │   ├── 10-realtime-backup.md
-│   │   └── 11-network-backup.md
-│   ├── reportDetails.md        # 报告提交要求
+│   ├── architecture-design.md  # 分层架构 + 管道模式
+│   ├── plans/                  # 分阶段实现路线图（01～11）
 │   ├── requirements.md         # 需求规格说明
-│   └── technology-selection.md # 技术选型论证
-├── scripts/                    # 辅助脚本
-│   ├── setup-qt6.sh            # 手动下载 Qt6 预编译二进制
-│   ├── setup-testdata.sh       # 生成测试数据（data/source/）
-│   └── test-backup-restore.sh  # 端到端备份/还原流程测试（交互式）
+│   └── usage.md                # 功能使用说明
 ├── src/                        # 全部业务源码
-│   ├── main.cpp                # 程序入口，初始化 CLI 并派发命令
-│   ├── cli/
-│   │   ├── commands.h          # CLI 命令类声明（backup/restore/schedule/daemon）
-│   │   └── commands.cpp        # CLI 命令实现
-│   ├── core/                   # ✅ 备份/还原引擎——中心调度逻辑
-│   │   ├── backup_engine.h/cpp # 备份引擎（含筛选+打包支持）
-│   │   ├── restore_engine.h/cpp# 还原引擎（含打包解包支持）
-│   │   ├── types.h             # 核心数据类型（FileType/Metadata/FileEntry）
-│   │   ├── error_code.h        # 错误码枚举（0x00~0x03 分类）
-│   │   └── expected.h          # std::expected 替代（C++17 polyfill）
-│   ├── fs/                     # ✅ 文件系统抽象层
-│   │   ├── fs_abstraction.h/cpp# 文件读写、目录遍历、元数据、特殊文件
-│   │   ├── metadata.h/cpp      # 元数据读取/恢复/JSON 序列化
-│   │   ├── path_mapper.h/cpp   # 路径映射（相对/绝对转换）
-│   │   ├── platform.h          # 平台检测（POSIX/Windows）
-│   │   └── special_file.h/cpp  # 特殊文件检测与创建（symlink/FIFO/device）
+│   ├── main.cpp                # CLI 入口
+│   ├── cli/                    # ✅ CLI 命令（backup/restore/schedule/daemon）
+│   ├── core/                   # ✅ 备份/还原引擎（中心调度）
+│   ├── fs/                     # ✅ 文件系统抽象（含元数据 + 特殊文件）
 │   ├── storage/                # ✅ 存储抽象层
-│   │   ├── storage.h           # 存储接口（纯虚类）
-│   │   └── local_storage.h/cpp # 本地文件系统实现
-│   ├── filters/    ✅          # 自定义筛选（路径/类型/名称/时间/尺寸/用户）
-│   ├── pack/       ✅          # 打包格式（自实现 Tar ustar + miniz Zip）
-│   ├── compress/   ✅          # 压缩（gzip/zstd/lzma 策略接口 + 工厂懒注册，span 缓冲区接口）
-│   ├── crypto/     ✅          # 加密（AES-256-GCM / SM4-CBC，基于 OpenSSL EVP）
-│   ├── gui/        ✅          # Qt 6 Widgets 图形界面（自动下载 Qt6）
-│   ├── scheduler/  ✅          # 定时备份（ccronexpr + BackupScheduler + 持久化 + 淘汰策略）
-│   ├── watch/      🚧          # inotify 实时文件监控
+│   ├── filters/                # ✅ 6 维度筛选器
+│   ├── pack/                   # ✅ Tar ustar + Zip 打包
+│   ├── compress/               # ✅ gzip/zstd/lzma 压缩
+│   ├── crypto/                 # ✅ AES/SM4 加密（OpenSSL EVP）
+│   ├── gui/                    # ✅ Qt 6 图形界面
+│   ├── scheduler/              # ✅ 定时备份（ccronexpr）
+│   ├── watch/      🚧          # inotify 实时监控
 │   └── network/    🚧          # gRPC 网络备份
-├── tests/                     # Google Test 单元测试
-├── scripts/                    # 辅助脚本（setup-testdata.sh, test-backup-restore.sh）
-└── data/                       # 🧪 脚本生成的测试数据（.gitignore，不含于仓库）
-    ├── source/                 # 源目录（setup-testdata.sh 生成）
-    ├── backup/                 # 备份输出
-    └── restore/                # 还原目标
+├── tests/                      # Google Test 单元测试
+├── scripts/                    # 辅助脚本
+└── data/                       # 🧪 测试数据（.gitignore）
 ```
 
 > ✅ = 已完成；🚧 = 已规划但尚未实现的模块
