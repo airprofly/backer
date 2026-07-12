@@ -103,7 +103,7 @@ jobs:
                         -DBUILD_TESTING=ON
 
       - name: Build
-        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS
+        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
 
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure -C ${{ env.BUILD_TYPE }}

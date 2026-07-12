@@ -135,8 +135,8 @@ TEST_F(MetadataTest, RestoreTimestamps) {
 
     struct stat st;
     ASSERT_EQ(::stat(filePath.c_str(), &st), 0);
-    EXPECT_EQ(st.st_atim.tv_sec, 1234567890);
-    EXPECT_EQ(st.st_mtim.tv_sec, 1234567890);
+    EXPECT_EQ(BACKER_STAT_ATIME(st).tv_sec, 1234567890);
+    EXPECT_EQ(BACKER_STAT_MTIME(st).tv_sec, 1234567890);
 }
 
 TEST_F(MetadataTest, RestoreSetuidBit) {
