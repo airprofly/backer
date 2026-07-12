@@ -51,30 +51,6 @@ jobs:
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
 
-  # ── Linux ARM64 交叉编译验证（Docker QEMU，仅构建） ─
-  linux-arm64-build:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Build ARM64 binary via Docker multi-arch
-        run: |
-          docker buildx build \
-            --platform linux/arm64 \
-            --build-arg GH_PROXY= \
-            --load \
-            -t backer-arm64 \
-            .
-
-      - name: Verify ARM64 binary
-        run: |
-          docker run --rm --entrypoint /usr/bin/ls backer-arm64 -la /usr/local/bin/backer
-          file=$(docker run --rm --entrypoint /usr/bin/file backer-arm64 /usr/local/bin/backer 2>/dev/null || true)
-          echo "Binary type: $file"
-
   # ── macOS 构建（含 GUI 编译验证） ──────────────────
   macos-build:
     runs-on: macos-14

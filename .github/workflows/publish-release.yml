@@ -55,38 +55,6 @@ jobs:
           name: linux-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-linux-x86_64.tar.gz
 
-  # ── Linux ARM64 构建（Docker QEMU 多架构） ──────────
-  linux-arm64-build:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Build ARM64 binary and export
-        run: |
-          docker buildx build \
-            --platform linux/arm64 \
-            --build-arg GH_PROXY= \
-            --output type=local,dest=dist-arm64 \
-            .
-
-      - name: Package
-        run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          mkdir -p dist
-          cp dist-arm64/usr/local/bin/backer dist/backer-cli
-          cp LICENSE dist/
-          cd dist
-          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-linux-arm64.tar.gz \
-            backer-cli LICENSE
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-arm64-artifacts
-          path: ${{ env.PROJECT_NAME }}-v*-linux-arm64.tar.gz
-
   # ── macOS x86_64 构建 ────────────────────────────────
   macos-build:
     runs-on: macos-14
@@ -312,7 +280,6 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - linux-build
-      - linux-arm64-build
       - macos-build
       - macos-arm64-build
       - windows-x64-build
