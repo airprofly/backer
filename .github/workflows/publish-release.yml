@@ -164,16 +164,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install static OpenSSL via vcpkg
+      - name: Install dependencies via vcpkg
         run: |
-          vcpkg install openssl:x64-windows-static
+          vcpkg install openssl:x64-windows-static qtbase:x64-windows-static
           echo "OPENSSL_ROOT_DIR=C:\vcpkg\installed\x64-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Install Qt6 via aqtinstall
-        run: |
-          pip install aqtinstall
-          python -m aqt install-qt windows desktop 6.5.0 win64_msvc2022_64 -O C:\Qt6 --modules qtbase
-          echo "Qt6_DIR=C:\Qt6\6.5.0\msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Cache vcpkg installed packages
+        uses: actions/cache@v4
+        with:
+          path: C:\vcpkg\installed
+          key: vcpkg-${{ env.BUILD_TYPE }}-windows-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: |
+            vcpkg-${{ env.BUILD_TYPE }}-windows-
 
       - name: Cache CMake dependencies
         uses: actions/cache@v4
