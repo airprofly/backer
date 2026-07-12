@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ── Options ───────────────────────────────────────────────
 option(BUILD_TESTING "Build unit tests" ON)
+option(BUILD_GUI "Build Qt6 GUI application (requires Qt6)" OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ── Dependencies (via FetchContent) ───────────────────────
@@ -54,6 +55,11 @@ if(BUILD_TESTING)
     )
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
+endif()
+
+# ── GUI (Qt6) — optional, requires Qt6 prebuilt or system install ────
+if(BUILD_GUI)
+    include(cmake/FetchQt6.cmake)
 endif()
 
 # ── Compression libraries (all via FetchContent, no system deps) ──
@@ -161,4 +167,64 @@ if(BUILD_TESTING)
     target_link_libraries(backer_test PRIVATE backer_core GTest::gtest_main)
     include(GoogleTest)
     gtest_discover_tests(backer_test)
+endif()
+
+# ── GUI Executable ─────────────────────────────────────────────
+# Requires Qt6. Set BUILD_GUI=ON and provide Qt6_DIR or install Qt6.
+#   bash scripts/setup-qt6.sh
+#   export Qt6_DIR=<install-dir>/6.5.0/gcc_64
+#   cmake -B build -DBUILD_GUI=ON -DQt6_DIR=$Qt6_DIR
+if(BUILD_GUI AND HAVE_QT6)
+    set(GUI_SOURCES
+        src/gui/main.cpp
+        src/gui/main_window.cpp
+        src/gui/gui_style.cpp
+        src/cli/commands.cpp
+        src/gui/backup_tab.cpp
+        src/gui/restore_tab.cpp
+        src/gui/schedule_tab.cpp
+        src/gui/settings_tab.cpp
+        src/gui/backup_worker.cpp
+        src/gui/progress_widget.cpp
+        src/gui/log_widget.cpp
+        src/gui/filter_dialog.cpp
+    )
+    set(GUI_HEADERS
+        src/gui/main_window.h
+        src/gui/gui_style.h
+        src/gui/backup_tab.h
+        src/gui/restore_tab.h
+        src/gui/schedule_tab.h
+        src/gui/settings_tab.h
+        src/gui/backup_worker.h
+        src/gui/progress_widget.h
+        src/gui/log_widget.h
+        src/gui/filter_dialog.h
+    )
+    set(GUI_RESOURCES
+        src/gui/resources/app.qrc
+    )
+
+    add_executable(backer-gui ${GUI_SOURCES} ${GUI_HEADERS} ${GUI_RESOURCES})
+    target_compile_definitions(backer-gui PRIVATE BACKER_VERSION="${PROJECT_VERSION}")
+    target_include_directories(backer-gui PRIVATE src)
+    target_link_libraries(backer-gui PRIVATE
+        backer_core
+        Qt6::Core
+        Qt6::Widgets
+    )
+
+    # Qt6 自动处理 MOC/uic/rcc
+    set_target_properties(backer-gui PROPERTIES
+        AUTOMOC ON
+        AUTORCC ON
+    )
+
+    message(STATUS "GUI: ✅ Enabled (backer-gui target created)")
+elseif(BUILD_GUI AND NOT HAVE_QT6)
+    message(WARNING "GUI: ⚠ BUILD_GUI=ON but Qt6 not found. "
+                    "Set Qt6_DIR or install Qt6 to build the GUI. "
+                    "See: bash scripts/setup-qt6.sh")
+else()
+    message(STATUS "GUI: OFF (set BUILD_GUI=ON and provide Qt6 to enable)")
 endif()

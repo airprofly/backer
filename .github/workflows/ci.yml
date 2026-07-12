@@ -14,8 +14,8 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  # ── 构建 + 单元测试（编译器矩阵） ──────────────────
-  build-and-test:
+  # ── Linux 构建 + 单元测试（编译器矩阵） ──────────────
+  linux-build:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -26,30 +26,87 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install compiler
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ${{ matrix.compiler.pkg }}
+      - name: Install compiler & Qt6
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ${{ matrix.compiler.pkg }} qt6-base-dev
 
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-${{ matrix.compiler.cc }}
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Linux-${{ matrix.compiler.cc }}
           restore-keys: |
-            deps-${{ hashFiles('CMakeLists.txt') }}-
-            deps-
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Linux-${{ matrix.compiler.cc }}-
+            deps-${{ hashFiles('CMakeLists.txt') }}-Linux-
+            deps-Linux-
 
       - name: Configure CMake
         run: >
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
           -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }}
-          -DBUILD_TESTING=ON
+          -DBUILD_TESTING=ON -DBUILD_GUI=ON
 
       - name: Build
         run: cmake --build build -j$(nproc)
 
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
+
+  # ── macOS 构建 ──────────────────────────────────────
+  macos-build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macOS
+          restore-keys: |
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macOS-
+            deps-${{ hashFiles('CMakeLists.txt') }}-macOS-
+            deps-macOS-
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                        -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.logicalcpu)
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure
+
+  # ── Windows 构建 ────────────────────────────────────
+  windows-build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Windows
+          restore-keys: |
+            deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-Windows-
+            deps-${{ hashFiles('CMakeLists.txt') }}-Windows-
+            deps-Windows-
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+                        -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure -C ${{ env.BUILD_TYPE }}
 
   # ── Docker 构建验证 ────────────────────────────────
   docker:
@@ -65,4 +122,3 @@ jobs:
       - name: Verify binary exists in image
         run: |
           docker run --rm --entrypoint /usr/bin/ls backer -la /usr/local/bin/backer
-

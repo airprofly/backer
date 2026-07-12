@@ -18,7 +18,7 @@ Backer 是计算机组成与体系结构/软件工程课程项目，基于 **C++
 
 依赖通过 **CMake FetchContent** 自动拉取（CLI11 v2.4.2、spdlog v1.14.1、GTest v1.15.2），无需手动安装。
 
-**当前状态**：已完成核心备份/还原、特殊文件、元数据保留、自定义筛选（6 维度）及 Tar 打包。后续将通过管道架构扩展压缩加密、GUI 界面、实时监控、定时调度及网络备份等功能。
+**当前状态**：已完成核心备份/还原、特殊文件、元数据保留、自定义筛选（6 维度）、Tar/Zip 打包、gzip/zstd/lzma 压缩及 Qt 6 图形界面。后续将通过管道架构扩展加密保护、实时监控、定时调度及网络备份等功能。
 
 ## 🔧 构建与运行
 
@@ -27,8 +27,12 @@ Backer 是计算机组成与体系结构/软件工程课程项目，基于 **C++
 ### Linux
 
 ```bash
-# 构建
+# 构建（CLI 版本，无外部依赖）
 cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+
+# 构建 GUI 版本（需要 Qt6：sudo apt install qt6-base-dev）
+cmake -B build -DBUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
 # 运行测试
@@ -88,7 +92,7 @@ docker run --rm backer --help
 - ✅ **打包格式** — 自实现 Tar 格式，可选 Zip (miniz) 打包
 - ✅ **压缩算法** — 支持 gzip / zstd / lzma 多级压缩（归档后压缩，还原前解压）
 - 🔲 **加密保护** — AES / SM4 (OpenSSL) 加密备份数据
-- 🔲 **图形界面** — Qt 6 桌面 GUI
+- ✅ **图形界面** — Qt 6 桌面 GUI，macOS 简约风格
 - 🔲 **实时监控** — inotify 文件变更实时备份
 - 🔲 **定时任务** — timerfd + cron 表达式灵活调度
 - 🔲 **网络备份** — gRPC + Protocol Buffers 远程备份
@@ -103,6 +107,7 @@ backer/
 ├── .dockerignore             # 构建上下文精简
 ├── .github/                  # CI: workflows/ci.yml（lint → 构建测试 → Valgrind → Docker）
 ├── .claude/                  # Claude Code AI 辅助配置（commands/：implement-feature, test-features, update-info, git 等）
+├── cmake/                    # CMake 模块（FetchQt6.cmake — Qt6 自动下载）
 ├── .vscode/                  # VS Code 编辑器配置（c_cpp_properties.json）
 ├── CLAUDE.md                 # AI 辅助开发指南
 ├── LICENSE                   # Apache 2.0
@@ -122,11 +127,11 @@ backer/
 │   ├── pack/                 # ✅ 打包模块（Tar ustar + miniz Zip）
 │   ├── compress/   ✅       # 压缩模块（gzip/zstd/lzma 策略接口 + 工厂）
 │   ├── crypto/     🔲       # 加密模块
-│   ├── gui/        🔲       # Qt 6 图形界面
+│   ├── gui/        ✅       # Qt 6 图形界面（自动下载 Qt6）
 │   ├── watch/      🔲       # inotify 实时监控
 │   └── network/    🔲       # gRPC 网络备份
 ├── tests/                    # 📝 Google Test 单元测试
-├── scripts/                  # 辅助脚本（setup-testdata.sh, test-backup-restore.sh）
+├── scripts/                  # 辅助脚本（setup-qt6.sh, setup-testdata.sh, test-backup-restore.sh）
 └── data/                     # 🧪 脚本生成的测试数据（.gitignore）
     ├── source/               # 源目录（setup-testdata.sh 生成）
     ├── backup/               # 备份输出
@@ -185,12 +190,12 @@ git push origin <分支名>
 
 项目配置了 [GitHub Actions CI](.github/workflows/ci.yml)，每次推送/PR 自动运行：
 
-| 阶段 | 内容 |
-|------|------|
-| `lint` | clang-tidy 静态分析（cpplint 仅本地使用） |
-| `build-and-test` | GCC 12 / Clang 14 双编译器矩阵构建 + Google Test |
-| `memcheck` | Valgrind 内存泄漏检测 |
-| `docker` | Docker 镜像构建验证 |
+| Job | 系统 | 内容 |
+|-----|------|------|
+| `linux-build` | Ubuntu 22.04 | GCC-12 / Clang-14 双编译器 + Google Test + GUI |
+| `macos-build` | macOS 14 | Xcode Clang + Google Test |
+| `windows-build` | Windows 2022 | MSVC + Google Test |
+| `docker` | Ubuntu 22.04 | Docker 镜像构建验证 |
 
 ## 📄 许可证
 

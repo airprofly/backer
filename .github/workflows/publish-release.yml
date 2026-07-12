@@ -1,0 +1,195 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  BUILD_TYPE: Release
+  PROJECT_NAME: backer
+
+jobs:
+  # ── Linux 构建 ──────────────────────────────────────
+  linux-build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qt6-base-dev
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-linux
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=ON
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Package
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          mkdir -p dist
+          cp build/backer-cli   dist/backer-cli
+          cp build/backer-gui   dist/backer-gui
+          cp LICENSE            dist/
+          cd dist
+          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-linux-x86_64.tar.gz \
+            backer-cli backer-gui LICENSE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: ${{ env.PROJECT_NAME }}-v*-linux-x86_64.tar.gz
+
+  # ── macOS 构建 ──────────────────────────────────────
+  macos-build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                        -DBUILD_TESTING=OFF
+
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.logicalcpu)
+
+      - name: Package
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          mkdir -p dist
+          cp build/backer-cli   dist/backer-cli
+          cp LICENSE            dist/
+          cd dist
+          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-x86_64.tar.gz \
+            backer-cli LICENSE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: ${{ env.PROJECT_NAME }}-v*-macos-x86_64.tar.gz
+
+  # ── macOS arm64 构建 ────────────────────────────────
+  macos-arm64-build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-macos-arm64
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                        -DBUILD_TESTING=OFF \
+                        -DCMAKE_OSX_ARCHITECTURES=arm64
+
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.logicalcpu)
+
+      - name: Package
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          mkdir -p dist
+          cp build/backer-cli   dist/backer-cli
+          cp LICENSE            dist/
+          cd dist
+          tar czf ../${{ env.PROJECT_NAME }}-v${VERSION}-macos-arm64.tar.gz \
+            backer-cli LICENSE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64-artifacts
+          path: ${{ env.PROJECT_NAME }}-v*-macos-arm64.tar.gz
+
+  # ── Windows 构建 ────────────────────────────────────
+  windows-build:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows
+          restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+                        -DBUILD_TESTING=OFF
+
+      - name: Build
+        run: cmake --build build -j $env:NUMBER_OF_PROCESSORS
+
+      - name: Package
+        run: |
+          $VERSION = "${{ github.ref_name }}".Substring(1)
+          New-Item -ItemType Directory -Path dist -Force
+          Copy-Item build/${{ env.BUILD_TYPE }}/backer-cli.exe dist/
+          Copy-Item LICENSE dist/
+          Compress-Archive -Path dist/* -DestinationPath `
+            "${{ env.PROJECT_NAME }}-v${VERSION}-windows-x86_64.zip" -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: ${{ env.PROJECT_NAME }}-v*-windows-x86_64.zip
+
+  # ── 创建 GitHub Release 并上传所有构建产物 ─────────
+  release:
+    runs-on: ubuntu-22.04
+    needs:
+      - linux-build
+      - macos-build
+      - macos-arm64-build
+      - windows-build
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect release assets
+        run: |
+          mkdir -p assets
+          find artifacts -type f -name '*.tar.gz' -o -name '*.zip' | while read f; do
+            cp "$f" assets/
+          done
+          ls -lh assets/
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generateReleaseNotes: true
+          artifacts: assets/*
