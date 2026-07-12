@@ -134,19 +134,23 @@ void FilterDialog::setupUi()
     sizeMax_->setValue(0);
     sizeMax_->setSpecialValueText(QStringLiteral("不限"));
     sizeMax_->setEnabled(false);
-    sizeUnit_ = new QComboBox();
-    sizeUnit_->addItems({QStringLiteral("B"), QStringLiteral("KB"),
-                          QStringLiteral("MB"), QStringLiteral("GB")});
-    sizeUnit_->setEnabled(false);
+    sizeUnitMin_ = new QComboBox();
+    sizeUnitMin_->addItems({QStringLiteral("B"), QStringLiteral("KB"),
+                            QStringLiteral("MB"), QStringLiteral("GB")});
+    sizeUnitMin_->setEnabled(false);
+    sizeUnitMax_ = new QComboBox();
+    sizeUnitMax_->addItems({QStringLiteral("B"), QStringLiteral("KB"),
+                            QStringLiteral("MB"), QStringLiteral("GB")});
+    sizeUnitMax_->setEnabled(false);
 
     auto* sizeRow = new QHBoxLayout();
     sizeRow->addWidget(new QLabel(QStringLiteral("最小:")));
     sizeRow->addWidget(sizeMin_);
-    sizeRow->addWidget(sizeUnit_);
+    sizeRow->addWidget(sizeUnitMin_);
     sizeRow->addSpacing(12);
     sizeRow->addWidget(new QLabel(QStringLiteral("最大:")));
     sizeRow->addWidget(sizeMax_);
-    sizeRow->addWidget(sizeUnit_);
+    sizeRow->addWidget(sizeUnitMax_);
     sizeRow->addStretch();
     tsForm->addRow(enableSizeFilter_);
     tsForm->addRow(QStringLiteral("文件大小:"), sizeRow);
@@ -162,7 +166,9 @@ void FilterDialog::setupUi()
     connect(enableSizeFilter_, &QCheckBox::toggled,
             sizeMax_, &QWidget::setEnabled);
     connect(enableSizeFilter_, &QCheckBox::toggled,
-            sizeUnit_, &QWidget::setEnabled);
+            sizeUnitMin_, &QWidget::setEnabled);
+    connect(enableSizeFilter_, &QCheckBox::toggled,
+            sizeUnitMax_, &QWidget::setEnabled);
 
     // ── Owner ────────────────────────────────────────────────
     auto* ownerGroup = new QGroupBox(QStringLiteral("所有者"));
@@ -257,27 +263,22 @@ bool FilterDialog::hasSizeFilter() const
     return enableSizeFilter_->isChecked();
 }
 
+qint64 FilterDialog::unitMultiplier(int index) noexcept
+{
+    static constexpr qint64 kUnits[] = {1LL, 1024LL, 1024LL * 1024, 1024LL * 1024 * 1024};
+    if (index >= 0 && index < 4) return kUnits[index];
+    return 1;
+}
+
 qint64 FilterDialog::sizeMin() const
 {
-    qint64 multiplier = 1;
-    switch (sizeUnit_->currentIndex()) {
-        case 1: multiplier = 1024; break;
-        case 2: multiplier = 1024 * 1024; break;
-        case 3: multiplier = 1024 * 1024 * 1024; break;
-    }
-    return sizeMin_->value() * multiplier;
+    return sizeMin_->value() * unitMultiplier(sizeUnitMin_->currentIndex());
 }
 
 qint64 FilterDialog::sizeMax() const
 {
     if (sizeMax_->value() == 0) return 0; // unlimited
-    qint64 multiplier = 1;
-    switch (sizeUnit_->currentIndex()) {
-        case 1: multiplier = 1024; break;
-        case 2: multiplier = 1024 * 1024; break;
-        case 3: multiplier = 1024 * 1024 * 1024; break;
-    }
-    return sizeMax_->value() * multiplier;
+    return sizeMax_->value() * unitMultiplier(sizeUnitMax_->currentIndex());
 }
 
 QString FilterDialog::owner() const

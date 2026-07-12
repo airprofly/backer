@@ -3,6 +3,7 @@
 #include "core/backup_engine.h"
 #include "core/restore_engine.h"
 #include "core/types.h"
+#include "crypto/build_encryptor.h"
 #include "filters/criteria_filter.h"
 #include "filters/filter.h"
 #include "fs/fs_abstraction.h"
@@ -13,18 +14,18 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <spdlog/spdlog.h>
-
-#include <cstring>
 #include <regex>
 #include <string>
+#include <spdlog/spdlog.h>
 
 #if BACKER_PLATFORM_POSIX
     #include <pwd.h>
+    #include <termios.h>
     #include <unistd.h>
 #endif
 
@@ -234,6 +235,172 @@ bool transformFile(std::filesystem::path const& inFile,
     return static_cast<bool>(out);
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Password helpers
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Prompt the user for a password without echoing to terminal.
+/// @param confirm  If true, prompt twice and confirm match.
+/// @return The password, or std::nullopt if input fails.
+std::optional<std::string> promptPassword(bool confirm) {
+#if BACKER_PLATFORM_POSIX
+    auto readPass = [](char const* prompt_str) -> std::optional<std::string> {
+        std::string pwd;
+        std::cerr << prompt_str << std::flush;
+
+        struct termios old{}, newt{};
+        if (tcgetattr(STDIN_FILENO, &old) != 0) return std::nullopt;
+        newt = old;
+        newt.c_lflag &= static_cast<tcflag_t>(~ECHO);
+        if (tcsetattr(STDIN_FILENO, TCSANOW, &newt) != 0) return std::nullopt;
+
+        std::getline(std::cin, pwd);
+        tcsetattr(STDIN_FILENO, TCSANOW, &old);
+        std::cerr << "\n";
+        return pwd;
+    };
+
+    auto pwd = readPass("Enter encryption password: ");
+    if (!pwd) return std::nullopt;
+
+    if (confirm) {
+        auto confirmPwd = readPass("Confirm encryption password: ");
+        if (!confirmPwd) return std::nullopt;
+        if (*pwd != *confirmPwd) {
+            std::cerr << "✗ Passwords do not match\n";
+            return std::nullopt;
+        }
+    }
+
+    return pwd;
+#else
+    // Fallback: just read without hiding
+    auto pwd = []() -> std::optional<std::string> {
+        std::string pwd;
+        std::cerr << "Enter encryption password: " << std::flush;
+        std::getline(std::cin, pwd);
+        return pwd;
+    }();
+    if (!pwd) return std::nullopt;
+
+    if (confirm) {
+        auto confirmPwd = []() -> std::optional<std::string> {
+            std::string pwd;
+            std::cerr << "Confirm encryption password: " << std::flush;
+            std::getline(std::cin, pwd);
+            return pwd;
+        }();
+        if (!confirmPwd) return std::nullopt;
+        if (*pwd != *confirmPwd) {
+            std::cerr << "✗ Passwords do not match\n";
+            return std::nullopt;
+        }
+    }
+    return pwd;
+#endif
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Encrypt / Decrypt file helpers
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Read @p inFile, encrypt with @p enc, write to @p outFile.
+static bool encryptFile(std::filesystem::path const& inFile,
+                         std::filesystem::path const& outFile,
+                         Encryptor& enc,
+                         std::string_view password)
+{
+    std::ifstream in(inFile, std::ios::binary);
+    if (!in) {
+        spdlog::error("Cannot open input file: {}", inFile.string());
+        return false;
+    }
+
+    std::error_code ec;
+    auto fsize = std::filesystem::file_size(inFile, ec);
+    if (ec) {
+        spdlog::error("Cannot get file size: {}", inFile.string());
+        return false;
+    }
+
+    std::vector<char> inData(fsize ? fsize : 1);
+    in.read(inData.data(), static_cast<std::streamsize>(inData.size()));
+    if (!in && !in.eof()) {
+        spdlog::error("Failed to read: {}", inFile.string());
+        return false;
+    }
+    inData.resize(static_cast<std::size_t>(in.gcount()));
+
+    std::vector<char> outData;
+    auto r = enc.encrypt(
+        backer::span<char const>(inData.data(), inData.size()), outData, password);
+    if (!r.has_value()) {
+        spdlog::error("Encryption failed for {}", inFile.string());
+        return false;
+    }
+
+    std::ofstream out(outFile, std::ios::binary | std::ios::trunc);
+    if (!out) {
+        spdlog::error("Cannot open output file: {}", outFile.string());
+        return false;
+    }
+    out.write(outData.data(), static_cast<std::streamsize>(outData.size()));
+    return static_cast<bool>(out);
+}
+
+/// Read @p inFile, decrypt with @p enc, write to @p outFile.
+static bool decryptFile(std::filesystem::path const& inFile,
+                         std::filesystem::path const& outFile,
+                         Encryptor& enc,
+                         std::string_view password)
+{
+    std::ifstream in(inFile, std::ios::binary);
+    if (!in) {
+        spdlog::error("Cannot open input file: {}", inFile.string());
+        return false;
+    }
+
+    std::error_code ec;
+    auto fsize = std::filesystem::file_size(inFile, ec);
+    if (ec) {
+        spdlog::error("Cannot get file size: {}", inFile.string());
+        return false;
+    }
+
+    std::vector<char> inData(fsize ? fsize : 1);
+    in.read(inData.data(), static_cast<std::streamsize>(inData.size()));
+    if (!in && !in.eof()) {
+        spdlog::error("Failed to read: {}", inFile.string());
+        return false;
+    }
+    inData.resize(static_cast<std::size_t>(in.gcount()));
+
+    std::vector<char> outData;
+    auto r = enc.decrypt(
+        backer::span<char const>(inData.data(), inData.size()), outData, password);
+    if (!r.has_value()) {
+        spdlog::error("Decryption failed for {} — wrong password or corrupted data",
+                      inFile.string());
+        return false;
+    }
+
+    std::ofstream out(outFile, std::ios::binary | std::ios::trunc);
+    if (!out) {
+        spdlog::error("Cannot open output file: {}", outFile.string());
+        return false;
+    }
+    out.write(outData.data(), static_cast<std::streamsize>(outData.size()));
+    return static_cast<bool>(out);
+}
+
+/// Resolve the encryption password: use the provided value, or prompt the user
+/// interactively. During backup (backup=true) the user is asked to confirm.
+static std::optional<std::string> resolvePassword(std::string const& provided,
+                                                   bool confirm) {
+    if (!provided.empty()) return provided;
+    return promptPassword(confirm);
+}
+
 } // anonymous namespace
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -291,20 +458,47 @@ int handleBackup(
     }
 
     // ── Optional post-compression of the archive ───────────────────────
-    auto finalDest = actualDest;
+    auto currentDest = actualDest;
     if (!options.compressAlgo.empty()) {
         auto comp = buildCompressor(options.compressAlgo, options.compressLevel);
         if (!comp) {
             std::cerr << "✗ Unknown compression algorithm: " << options.compressAlgo << "\n";
             return 1;
         }
-        finalDest += comp->suffix();
-        spdlog::info("Compressing with {} → {}", options.compressAlgo, finalDest.string());
-        if (!transformFile(actualDest, finalDest, *comp, &Compressor::compress, "Compression")) {
+        auto compressedDest = currentDest;
+        compressedDest += comp->suffix();
+        spdlog::info("Compressing with {} → {}", options.compressAlgo, compressedDest.string());
+        if (!transformFile(currentDest, compressedDest, *comp, &Compressor::compress, "Compression")) {
             std::cerr << "✗ Compression failed\n";
             return 1;
         }
-        std::filesystem::remove(actualDest);
+        std::filesystem::remove(currentDest);
+        currentDest = compressedDest;
+    }
+
+    // ── Optional post-encryption ───────────────────────────────────────
+    auto finalDest = currentDest;
+    if (!options.encryptAlgo.empty()) {
+        auto enc = buildEncryptor(options.encryptAlgo);
+        if (!enc) {
+            std::cerr << "✗ Unknown encryption algorithm: " << options.encryptAlgo << "\n";
+            return 1;
+        }
+
+        // Resolve password: use provided or prompt interactively
+        auto password = resolvePassword(options.password, /*confirm=*/true);
+        if (!password.has_value()) {
+            std::cerr << "✗ No password provided for encryption\n";
+            return 1;
+        }
+
+        finalDest += enc->suffix();  // ".enc"
+        spdlog::info("Encrypting with {} → {}", enc->name(), finalDest.string());
+        if (!encryptFile(currentDest, finalDest, *enc, *password)) {
+            std::cerr << "✗ Encryption failed\n";
+            return 1;
+        }
+        std::filesystem::remove(currentDest);
     }
 
     auto const& s = result.stats;
@@ -339,8 +533,34 @@ int handleRestore(
 
     auto fs = std::make_unique<LocalFsAbstraction>();
 
+    // ── Optional pre-decryption of the source archive ────────────────────
+    auto currentSource = source;
+    if (!options.decryptAlgo.empty()) {
+        auto enc = buildEncryptor(options.decryptAlgo);
+        if (!enc) {
+            std::cerr << "✗ Unknown decryption algorithm: " << options.decryptAlgo << "\n";
+            return 1;
+        }
+
+        auto password = resolvePassword(options.password, /*confirm=*/false);
+        if (!password.has_value()) {
+            std::cerr << "✗ No password provided for decryption\n";
+            return 1;
+        }
+
+        auto decryptedPath = source;
+        decryptedPath += ".decrypted";
+        spdlog::info("Decrypting with {} → {}",
+                     enc->name(), decryptedPath.string());
+        if (!decryptFile(source, decryptedPath, *enc, *password)) {
+            std::cerr << "✗ Decryption failed — wrong password or corrupted data\n";
+            return 1;
+        }
+        currentSource = decryptedPath;
+    }
+
     // ── Optional pre-decompression of the source archive ───────────────
-    auto actualSource = source;
+    auto actualSource = currentSource;
     if (!options.decompressAlgo.empty()) {
         auto comp = buildCompressor(options.decompressAlgo, 0);
         if (!comp) {
@@ -348,11 +568,11 @@ int handleRestore(
             return 1;
         }
         // Decompress to a temp file in the same directory as source
-        auto tempPath = source;
+        auto tempPath = currentSource;
         tempPath += ".decompressed";
         spdlog::info("Decompressing {} ({}) → {}",
-                     source.string(), options.decompressAlgo, tempPath.string());
-        if (!transformFile(source, tempPath, *comp, &Compressor::decompress, "Decompression")) {
+                     currentSource.string(), options.decompressAlgo, tempPath.string());
+        if (!transformFile(currentSource, tempPath, *comp, &Compressor::decompress, "Decompression")) {
             std::cerr << "✗ Decompression failed\n";
             return 1;
         }
@@ -368,9 +588,12 @@ int handleRestore(
     RestoreEngine engine(std::move(fs));
     auto result = engine.restore(actualSource, destination, packer.get());
 
-    // Clean up temp decompressed file if we created one
-    if (actualSource != source) {
-        std::filesystem::remove(actualSource);
+    // Clean up temp files
+    if (actualSource != currentSource) {
+        std::filesystem::remove(actualSource);  // decompressed temp
+    }
+    if (currentSource != source) {
+        std::filesystem::remove(currentSource);  // decrypted temp
     }
 
     if (result.success) {

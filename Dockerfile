@@ -5,7 +5,7 @@ FROM gcc:13-bookworm AS builder
 RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
     sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
     apt-get update && \
-    apt-get install -y cmake curl xz-utils && \
+    apt-get install -y cmake curl xz-utils libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # GitHub 镜像代理（国内用户加速），海外用户覆盖：docker build --build-arg GH_PROXY=
@@ -71,6 +71,9 @@ FROM debian:bookworm-slim
 # 自带的 version（当前为 libstdc++.so.6.0.32 → GLIBCXX_3.4.32）。
 COPY --from=builder /usr/local/lib64/libstdc++.so.6* /usr/lib/x86_64-linux-gnu/
 RUN ldconfig
+
+# OpenSSL 运行时库（libcrypto.so.3），用于加密功能
+RUN apt-get update && apt-get install -y libssl3 && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /src/build/backer-cli /usr/local/bin/backer
 

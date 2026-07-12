@@ -26,9 +26,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **依赖零系统化**：所有编译期依赖（CLI11、spdlog、Google Test、miniz、zlib/zstd/liblzma、OpenSSL、Qt、gRPC 等）一律通过 CMake 管理，**禁止依赖系统已安装的库**（不 `find_package` 系统库、不链接 `-l<syslib>`）。目标是 `git clone` 后只需 CMake + 编译器即可直接产出可执行软件，无需预先安装任何开发包。优先用 `FetchContent` 从源码拉取编译；**若该依赖有官方预编译产物（prebuilt binary）且平台/ABI 匹配，可直接拉取产物跳过编译以加速构建**（如 miniz、zlib 等纯库可通过 header-only 或预编译 .a/.so 引入）。性能分析（perf/gprof/gperftools）、内存检测（Valgrind）、lint（clang-tidy）等**非编译工具**不在此约束内，使用本机已安装的即可。
 - **跨平台开发**：项目在 CI 中对 Linux（GCC/Clang）、macOS（AppleClang）、Windows（MSVC）三平台执行编译+测试。编写 POSIX 专用代码时使用 `#if BACKER_PLATFORM_POSIX` 保护（见 [`src/fs/platform.h`](src/fs/platform.h)），确保 Windows 编译不触及 POSIX 符号。平台抽象层的 POSIX 类型（如 `mode_t`）须在 Windows include paths 中有对应定义。
 > **⚠ FetchContent 依赖自带测试陷阱**：有些库（如 zlib）通过自己的 CMakeLists.txt 注册了测试目标（`example`/`minigzip`），即使 `EXCLUDE_FROM_ALL` 阻止了默认编译，ctest 仍会发现已注册的测试并报告 "Not Run"（视作失败）。**拉取这类依赖时，务必在 `FetchContent_MakeAvailable` 前关闭其测试选项**，例如 `set(ZLIB_BUILD_TESTING OFF CACHE INTERNAL "" FORCE)`。此坑在 CI（ctest 执行全部注册测试）中出现，本地增量 `cmake --build` 则无感。
+> **注意**：加密功能依赖系统 OpenSSL（通过 `find_package(OpenSSL REQUIRED)` 接入，不是 FetchContent）。构建前需安装 `libssl-dev`（Ubuntu）或 `openssl-devel`（Fedora）。
+
+> **前置要求**（加密功能需要 OpenSSL）：`sudo apt install libssl-dev`
 
 ```bash
-# 构建（CLI 版本，无外部依赖）
+# 构建（CLI 版本，需要 OpenSSL）
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
@@ -36,6 +39,8 @@ cmake --build build -j$(nproc)
 cmake -B build -DBUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ./build/backer-gui                                    # 启动图形界面
+
+
 # 测试（ctest 使用 Mock，无需外部数据）
 ctest --test-dir build --output-on-failure            # 运行所有测试
 ./build/backer_test --gtest_filter="*BackupCore*"     # 指定测试
@@ -278,7 +283,7 @@ CI 包含以下 job，全部通过才可合入：
 │   ├── filters/    ✅          # 自定义筛选（路径/类型/名称/时间/尺寸/用户）
 │   ├── pack/       ✅          # 打包格式（自实现 Tar ustar + miniz Zip）
 │   ├── compress/   ✅          # 压缩（gzip/zstd/lzma 策略接口 + 工厂懒注册，span 缓冲区接口）
-│   ├── crypto/     🚧          # 加密（AES / SM4 策略接口，基于 OpenSSL）
+│   ├── crypto/     ✅          # 加密（AES-256-GCM / SM4-CBC，基于 OpenSSL EVP）
 │   ├── gui/        ✅          # Qt 6 Widgets 图形界面（自动下载 Qt6）
 │   ├── watch/      🚧          # inotify 实时文件监控
 │   └── network/    🚧          # gRPC 网络备份

@@ -9,20 +9,30 @@
 #include <unordered_set>
 
 namespace {
-/// Valid compression algorithm names.
-static constexpr std::string_view kValidAlgos[] = {"gzip", "zstd", "lzma"};
 
-/// Validate a --compress/--decompress algorithm value. @p action labels the
-/// error message ("compress" or "decompress"). Empty value is allowed (option
-/// not meaningfully set); returns an empty string on success.
-std::string validateCompressAlgo(std::string const& val, std::string_view action) {
+/// Valid compression algorithm names.
+constexpr std::string_view kValidAlgos[] = {"gzip", "zstd", "lzma"};
+
+/// Valid encryption algorithm names.
+constexpr std::string_view kValidEncAlgos[] = {"aes256", "aes-256-gcm",
+                                                "sm4", "sm4-cbc"};
+
+/// Validate @p val against a list of valid algorithm names.
+/// Empty value is allowed (option not meaningfully set); returns empty on success.
+template <size_t N>
+std::string validateAlgo(std::string const& val,
+                          std::string_view action,
+                          std::string_view const (&valid)[N],
+                          std::string_view validList)
+{
     if (val.empty()) return std::string{};
-    for (auto v : kValidAlgos) {
+    for (auto v : valid) {
         if (v == val) return std::string{};
     }
     return "Invalid " + std::string(action) + " algorithm '" + val +
-           "'. Use gzip, zstd, or lzma.";
+           "'. Use " + std::string(validList) + ".";
 }
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -110,10 +120,21 @@ int main(int argc, char** argv)
     backupCmd->add_option("--compress", backupCompressAlgo,
                           "Compress algorithm: gzip, zstd, lzma")
         ->type_name("ALGO")
-        ->check([](std::string const& val) { return validateCompressAlgo(val, "compress"); });
+        ->check([](std::string const& val) { return validateAlgo(val, "compress", kValidAlgos, "gzip, zstd, or lzma"); });
     backupCmd->add_option("--compress-level", backupCompressLevel,
                           "Compression level (1-9 for gzip/lzma, varies for zstd)")
         ->type_name("LEVEL");
+
+    // ── Encrypt arguments ──────────────────────────────────────────────
+    std::string backupEncryptAlgo;
+    std::string backupPassword;
+    backupCmd->add_option("--encrypt", backupEncryptAlgo,
+                          "Encrypt algorithm: aes256, sm4")
+        ->type_name("ALGO")
+        ->check([](std::string const& val) { return validateAlgo(val, "encrypt", kValidEncAlgos, "aes256, or sm4"); });
+    backupCmd->add_option("--password", backupPassword,
+                          "Encryption password (omit for interactive prompt)")
+        ->type_name("PASSWORD");
 
     // ════════════════════════════════════════════════════════════════
     // restore subcommand
@@ -143,7 +164,18 @@ int main(int argc, char** argv)
     restoreCmd->add_option("--decompress", restoreDecompressAlgo,
                            "Decompress algorithm: gzip, zstd, lzma")
         ->type_name("ALGO")
-        ->check([](std::string const& val) { return validateCompressAlgo(val, "decompress"); });
+        ->check([](std::string const& val) { return validateAlgo(val, "decompress", kValidAlgos, "gzip, zstd, or lzma"); });
+
+    // ── Decrypt arguments ──────────────────────────────────────────────
+    std::string restoreDecryptAlgo;
+    std::string restorePassword;
+    restoreCmd->add_option("--decrypt", restoreDecryptAlgo,
+                           "Decrypt algorithm: aes256, sm4")
+        ->type_name("ALGO")
+        ->check([](std::string const& val) { return validateAlgo(val, "decrypt", kValidEncAlgos, "aes256, or sm4"); });
+    restoreCmd->add_option("--password", restorePassword,
+                           "Decryption password (omit for interactive prompt)")
+        ->type_name("PASSWORD");
 
     // --version
     app.set_version_flag("--version", std::string(BACKER_VERSION),
@@ -180,6 +212,10 @@ int main(int argc, char** argv)
         opts.compressAlgo = std::move(backupCompressAlgo);
         opts.compressLevel = backupCompressLevel;
 
+        // Encrypt options
+        opts.encryptAlgo = std::move(backupEncryptAlgo);
+        opts.password    = std::move(backupPassword);
+
         return backer::cli::handleBackup(backupSource, backupDest, opts);
     }
     if (*restoreCmd) {
@@ -192,6 +228,10 @@ int main(int argc, char** argv)
 
         // Decompress option
         opts.decompressAlgo = std::move(restoreDecompressAlgo);
+
+        // Decrypt options
+        opts.decryptAlgo = std::move(restoreDecryptAlgo);
+        opts.password    = std::move(restorePassword);
 
         return backer::cli::handleRestore(restoreSource, restoreDest, opts);
     }

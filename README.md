@@ -16,18 +16,20 @@
 
 Backer 是计算机组成与体系结构/软件工程课程项目，基于 **C++17** 在 **Linux** 平台开发，使用 **CLI11** 提供命令行接口，**spdlog** 处理日志，**Google Test** 驱动测试。
 
-依赖通过 **CMake FetchContent** 自动拉取（CLI11 v2.4.2、spdlog v1.14.1、GTest v1.15.2），无需手动安装。
+依赖通过 **CMake FetchContent** 自动拉取（CLI11 v2.4.2、spdlog v1.14.1、GTest v1.15.2），无需手动安装。加密功能依赖系统 OpenSSL（`libssl-dev`，通过 `find_package` 接入）。
 
-**当前状态**：已完成核心备份/还原、特殊文件、元数据保留、自定义筛选（6 维度）、Tar/Zip 打包、gzip/zstd/lzma 压缩及 Qt 6 图形界面。后续将通过管道架构扩展加密保护、实时监控、定时调度及网络备份等功能。
+**当前状态**：已完成核心备份/还原、特殊文件、元数据保留、自定义筛选（6 维度）、Tar/Zip 打包、gzip/zstd/lzma 压缩、AES-256-GCM/SM4-CBC 加密及 Qt 6 图形界面。后续将通过管道架构扩展实时监控、定时调度及网络备份等功能。
 
 ## 🔧 构建与运行
 
 **前置要求**：GCC 9+ / Clang 12+、CMake 3.16+
 
+> 加密功能需要系统安装 OpenSSL 开发库（Ubuntu: `sudo apt install libssl-dev`，Fedora: `sudo dnf install openssl-devel`）。CMake 通过 `find_package` 自动检测。
+
 ### Linux
 
 ```bash
-# 构建（CLI 版本，无外部依赖）
+# 构建（CLI 版本，需要 OpenSSL）
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
@@ -91,7 +93,7 @@ docker run --rm backer --help
 - ✅ **灵活筛选** — 支持自定义包含/排除规则（路径/类型/名称/时间/尺寸/属主 6 维度）
 - ✅ **打包格式** — 自实现 Tar 格式，可选 Zip (miniz) 打包
 - ✅ **压缩算法** — 支持 gzip / zstd / lzma 多级压缩（归档后压缩，还原前解压）
-- 🔲 **加密保护** — AES / SM4 (OpenSSL) 加密备份数据
+- ✅ **加密保护** — AES-256-GCM / SM4-CBC (OpenSSL EVP) 加密备份数据
 - ✅ **图形界面** — Qt 6 桌面 GUI，macOS 简约风格
 - 🔲 **实时监控** — inotify 文件变更实时备份
 - 🔲 **定时任务** — timerfd + cron 表达式灵活调度
@@ -126,7 +128,7 @@ backer/
 │   ├── filters/              # ✅ 筛选器（6 维度自定义规则）
 │   ├── pack/                 # ✅ 打包模块（Tar ustar + miniz Zip）
 │   ├── compress/   ✅       # 压缩模块（gzip/zstd/lzma 策略接口 + 工厂）
-│   ├── crypto/     🔲       # 加密模块
+│   ├── crypto/     ✅       # 加密模块（AES-256-GCM / SM4-CBC，基于 OpenSSL EVP）
 │   ├── gui/        ✅       # Qt 6 图形界面（自动下载 Qt6）
 │   ├── watch/      🔲       # inotify 实时监控
 │   └── network/    🔲       # gRPC 网络备份

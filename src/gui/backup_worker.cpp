@@ -146,7 +146,6 @@ void BackupWorker::run()
                              filesTotal, filesTotal, bytesTotal, bytesTotal);
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
-
     // --- Completion ---
     bool success = (resultCode == 0);
     QString msg;

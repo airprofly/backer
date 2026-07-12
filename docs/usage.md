@@ -16,6 +16,7 @@
   - [Tar 打包](#tar-打包)
   - [Zip 打包](#zip-打包)
   - [压缩解压](#压缩解压)
+  - [加密解密](#加密解密)
 - [退出码](#退出码)
 - [Docker 使用](#docker-使用)
 
@@ -407,6 +408,93 @@ cmake --build build -j$(nproc)
 | 日常备份，追求速度 | `zstd` | 压缩/解压都极快，压缩比优秀 |
 | 通用兼容、跨工具交换 | `gzip` | 最广泛支持，与 `gunzip` 互通 |
 | 归档存储，最大化压缩 | `lzma` | 压缩比最高，但耗时与内存占用大 |
+
+---
+
+### 加密解密
+
+备份归档（`.tar` / `.zip`）在可选的压缩步骤之后，可叠加加密以保护数据机密性。还原时先解密再解压（如有）最后解包。
+
+**命令形式**
+
+```text
+backup:   --encrypt <ALGO> [--password <PWD>]
+restore:  --decrypt <ALGO> [--password <PWD>]
+```
+
+**支持的算法**
+
+| 算法 | 选项值 | 密钥 | 模式 | 认证 | 密钥派生 |
+|------|--------|------|------|------|----------|
+| AES-256-GCM | `aes256` / `aes-256-gcm` | 256 位 | GCM（认证加密） | GCM 认证标签 (16B) | PBKDF2-SHA256 (100000 轮) |
+| SM4-CBC | `sm4` / `sm4-cbc` | 128 位 | CBC（密文分组链接） | — | PBKDF2-SM3 (100000 轮) |
+
+> OpenSSL 3.0 起支持 SM4。SM4-GCM 需要 OpenSSL ≥ 3.2，当前版本暂不提供。
+
+#### 密码提供方式
+
+密码可通过两种方式提供：
+
+**1. 命令行参数**（非交互式，适合脚本）：
+
+```bash
+./build/backer-cli backup data/source data/backup \
+    --pack tar --encrypt aes256 --password "your-passphrase"
+```
+
+**2. 交互式提示**（省略 `--password`，适合手动使用）：
+
+```bash
+./build/backer-cli backup data/source data/backup --pack tar --encrypt aes256
+Enter encryption password:        # 不回显输入
+Confirm encryption password:      # 确认（仅加密时）
+```
+
+> 交互模式下终端回显被关闭（`tcsetattr()`），密码不会显示在屏幕上。还原时只需输入一次密码。
+
+#### 示例
+
+```bash
+# 备份 → 打包 (tar) → 压缩 (gzip) → 加密 (AES-256-GCM)
+# 产出：data/backup.tar.gz.enc
+./build/backer-cli backup data/source data/backup --pack tar --compress gzip \
+    --encrypt aes256 --password "secret"
+
+# 仅加密（不压缩）
+# 产出：data/backup.tar.enc
+./build/backer-cli backup data/source data/backup --pack tar \
+    --encrypt aes256 --password "secret"
+
+# 使用 SM4-CBC 加密
+./build/backer-cli backup data/source data/backup --pack tar \
+    --encrypt sm4 --password "sm4-passphrase"
+
+# 还原：解密 → 解压 (gzip) → 解包 (tar)
+./build/backer-cli restore data/backup.tar.gz.enc data/restore \
+    --pack tar --decompress gzip --decrypt aes256 --password "secret"
+```
+
+#### 文件命名
+
+加密自动追加 `.enc` 后缀，与压缩后缀叠加：
+
+| 流水线 | 产出文件名 |
+|--------|-----------|
+| 仅加密 | `backup.tar.enc` |
+| 压缩 + 加密 | `backup.tar.gz.enc` |
+| 加密 + 压缩（暂不支持） | — |
+
+#### 安全特性
+
+| 特性 | 说明 |
+|------|------|
+| 随机 salt | 每次加密生成新的 16 字节 salt |
+| 随机 IV | 每次加密生成新的 12/16 字节 IV |
+| PBKDF2 迭代 | 100000 轮（可承受的抗暴力破解） |
+| GCM 认证标签 | AES 模式解密前验证，防止篡改 |
+| 内存清理 | 密钥使用后通过 `OPENSSL_cleanse` 清零 |
+| 日志安全 | 密码/密钥永不被日志记录 |
+| 错误密码检测 | 认证标签不通过不输出任何解密数据 |
 
 ---
 
