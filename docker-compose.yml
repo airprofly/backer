@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: backer:latest
+    image: ghcr.io/airprofly/backer:latest
     container_name: backer
     entrypoint: ["/usr/local/bin/backer"]
     command: ["--help"]
