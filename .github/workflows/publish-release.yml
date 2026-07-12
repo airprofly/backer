@@ -155,7 +155,7 @@ jobs:
           name: macos-arm64-artifacts
           path: ${{ env.PROJECT_NAME }}-v*-macos-arm64.tar.gz
 
-  # ── Windows 构建（CLI only，Qt6 未适配 Windows） ─────
+  # ── Windows 构建（静态 OpenSSL，无 DLL 依赖） ────────
   windows-build:
     runs-on: windows-2022
     defaults:
@@ -164,22 +164,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install OpenSSL
+      - name: Install static OpenSSL via vcpkg
         run: |
-          choco install openssl -y --no-progress
-          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL" | Out-File -FilePath $env:GITHUB_ENV -Append
+          vcpkg install openssl:x64-windows-static
+          echo "OPENSSL_ROOT_DIR=C:\vcpkg\installed\x64-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows
+          key: deps-${{ hashFiles('CMakeLists.txt') }}-${{ env.BUILD_TYPE }}-windows-static
           restore-keys: deps-${{ hashFiles('CMakeLists.txt') }}-
 
       - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-                        -DBUILD_TESTING=OFF -DBUILD_GUI=OFF
+                        -DBUILD_TESTING=OFF -DBUILD_GUI=OFF `
+                        -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
+                        -DVCPKG_TARGET_TRIPLET=x64-windows-static
 
       - name: Build
         run: cmake --build build -j $env:NUMBER_OF_PROCESSORS --config ${{ env.BUILD_TYPE }}
@@ -190,19 +192,6 @@ jobs:
           New-Item -ItemType Directory -Path dist -Force
           Copy-Item build/${{ env.BUILD_TYPE }}/backer-cli.exe dist/
           Copy-Item LICENSE dist/
-          # Bundle OpenSSL runtime DLLs for portable executables
-          # Detect version (3.x or 4.x) dynamically
-          $osslBin = "$env:OPENSSL_ROOT_DIR\bin"
-          $cryptoDll = Get-ChildItem "$osslBin\libcrypto-*-x64.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
-          $sslDll = Get-ChildItem "$osslBin\libssl-*-x64.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
-          if ($cryptoDll) {
-            Copy-Item $cryptoDll.FullName dist/
-            Write-Host "Bundled: $($cryptoDll.Name)"
-          }
-          if ($sslDll) {
-            Copy-Item $sslDll.FullName dist/
-            Write-Host "Bundled: $($sslDll.Name)"
-          }
           Compress-Archive -Path dist/* -DestinationPath `
             "${{ env.PROJECT_NAME }}-v${VERSION}-windows-x86_64.zip" -Force
 

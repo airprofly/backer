@@ -163,6 +163,11 @@ target_link_libraries(backer_core PRIVATE
     liblzma
 )
 
+# Static linking on Windows: define OPENSSL_STATIC to avoid DLL imports
+if(WIN32 AND OPENSSL_STATIC)
+    target_compile_definitions(backer_core PUBLIC OPENSSL_STATIC)
+endif()
+
 # ccronexpr needs local-time mode for cron expressions in the user's timezone
 target_compile_definitions(backer_core PRIVATE $<$<COMPILE_LANGUAGE:C>:CRON_USE_LOCAL_TIME=1>)
 
