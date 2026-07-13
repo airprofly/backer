@@ -12,7 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 文档 | 位置 | 说明 |
 |------|------|------|
+| **零基础搭建指南** | [`SETUP.md](SETUP.md) | **新用户入口**：从克隆到编译运行的完整分步教程 |
 | 使用文档 | [`docs/usage.md`](docs/usage.md) | 功能使用说明、命令参考、示例 |
+| Linux 环境指南 | [`docs/linux-setup-guide.md`](docs/linux-setup-guide.md) | Linux 环境配置与编译运行详细参考 |
 | 需求规格说明 | [`docs/requirements.md`](docs/requirements.md) | 课程项目基本要求与扩展要求 |
 | 实施计划 | [`docs/plans/README.md`](docs/plans/README.md) | 分阶段实现路线图（01～11） |
 | 架构设计 | [`docs/architecture-design.md`](docs/architecture-design.md) | 分层架构 + 管道模式设计 |
@@ -35,17 +37,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
-# 构建 GUI 版本（需要 Qt6：sudo apt install qt6-base-dev）
+# 构建 GUI 版本（Qt6 通过 FetchQt6.cmake 自动下载，无需 apt install）
 cmake -B build -DBUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ./build/backer-gui                                    # 启动图形界面
 
 
+# 生成全功能测试数据（500+ 文件，覆盖特殊文件/权限/Unicode 等）
+bash scripts/setup-testdata.sh
+
 # 测试（ctest 使用 Mock，无需外部数据）
 ctest --test-dir build --output-on-failure            # 运行所有测试
 ./build/backer_test --gtest_filter="*BackupCore*"     # 指定测试
 
-# 手动使用 CLI / 端到端（需要 setup-testdata.sh 生成真实数据）
+# 手动使用 CLI / 端到端
 ./build/backer-cli backup data/source data/backup     # 备份
 ./build/backer-cli restore data/backup data/restore   # 还原
 bash scripts/test-backup-restore.sh                   # 端到端流程测试
@@ -55,6 +60,8 @@ docker build -t backer .
 docker compose run --rm backer backup /data/source /data/backup
 docker run --rm -it --entrypoint /bin/bash backer
 ```
+
+> 💡 **新用户？** 从零开始的完整分步教程见 [`SETUP.md`](SETUP.md)。
 
 ### Docker Compose 挂载约定
 

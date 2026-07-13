@@ -100,14 +100,11 @@ if(UNIX AND NOT APPLE AND NOT OPENGL_FOUND)
                 endforeach()
             endif()
         endif()
-        if(EXISTS "${_gl_dir}/usr/lib/x86_64-linux-gnu/libOpenGL.so")
+        if(EXISTS "${_gl_dir}/usr/lib/x86_64-linux-gnu/libGL.so")
             set(OPENGL_INCLUDE_DIR "${_gl_dir}/usr/include" CACHE PATH "" FORCE)
-            set(OPENGL_opengl_LIBRARY
-                "${_gl_dir}/usr/lib/x86_64-linux-gnu/libOpenGL.so" CACHE FILEPATH "" FORCE)
-            set(OPENGL_glx_LIBRARY
-                "${_gl_dir}/usr/lib/x86_64-linux-gnu/libGLX.so" CACHE FILEPATH "" FORCE)
-            set(OPENGL_egl_LIBRARY
-                "${_gl_dir}/usr/lib/x86_64-linux-gnu/libEGL.so" CACHE FILEPATH "" FORCE)
+            set(OPENGL_gl_LIBRARY
+                "${_gl_dir}/usr/lib/x86_64-linux-gnu/libGL.so" CACHE FILEPATH "" FORCE)
+            set(OpenGL_GL_PREFERENCE "LEGACY" CACHE STRING "OpenGL preference (LEGACY for Qt6 compatibility)" FORCE)
             message(STATUS "FetchQt6: OpenGL extracted to ${_gl_dir}")
         else()
             message(STATUS "FetchQt6: OpenGL not available — "
@@ -159,6 +156,10 @@ endif()
 set(Qt6_DIR "${_qt_dir}/${QT6_VERSION}/${_aqt_arch}"
     CACHE PATH "Path to downloaded Qt6" FORCE)
 message(STATUS "FetchQt6: Qt6 downloaded to ${Qt6_DIR}")
+
+# Add Qt6_DIR to CMAKE_PREFIX_PATH so find_dependency calls inside
+# Qt6Config can locate sub-modules (Qt6WidgetsTools, Qt6GuiTools, Qt6CoreTools).
+list(APPEND CMAKE_PREFIX_PATH "${Qt6_DIR}")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets
     PATHS "${Qt6_DIR}" NO_DEFAULT_PATH)

@@ -176,10 +176,9 @@ phase_build() {
 
         # 设置 Qt6_DIR 和 OpenGL 路径
         gui_flag+=" -DQt6_DIR=$QT6_DIR"
+        gui_flag+=" -DOpenGL_GL_PREFERENCE=LEGACY"
+        gui_flag+=" -DOPENGL_gl_LIBRARY=$OPENGL_DIR/usr/lib/x86_64-linux-gnu/libGL.so"
         gui_flag+=" -DOPENGL_INCLUDE_DIR=$OPENGL_DIR/usr/include"
-        gui_flag+=" -DOPENGL_opengl_LIBRARY=$OPENGL_DIR/usr/lib/x86_64-linux-gnu/libOpenGL.so"
-        gui_flag+=" -DOPENGL_glx_LIBRARY=$OPENGL_DIR/usr/lib/x86_64-linux-gnu/libGLX.so"
-        gui_flag+=" -DOPENGL_egl_LIBRARY=$OPENGL_DIR/usr/lib/x86_64-linux-gnu/libEGL.so"
         gui_flag+=" -DCMAKE_PREFIX_PATH=$QT6_DIR;$OPENGL_DIR/usr"
     fi
 
