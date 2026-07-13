@@ -1,0 +1,81 @@
+name: Bug 报告
+description: 提交一个 Bug 报告以帮助我们改进
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 请清晰简洁地描述遇到的问题
+      placeholder: 描述你遇到的问题...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 请描述你期望发生的行为
+      placeholder: 描述你期望的行为...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 请提供详细的复现操作步骤，越详细越好
+      placeholder: |
+        1. 打开应用
+        2. 点击...
+        3. 看到错误...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果
+      description: 请描述实际发生的情况，包括完整的错误输出
+      placeholder: 描述实际发生的情况...
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: 操作系统
+      placeholder: 例：Ubuntu 22.04 / macOS 14 / Windows 11
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: backer 版本
+      placeholder: 例：v1.0.0 或 commit hash
+    validations:
+      required: true
+
+  - type: input
+    id: compiler
+    attributes:
+      label: 编译器
+      placeholder: 例：GCC 12 / Clang 14 / MSVC 19.44
+
+  - type: dropdown
+    id: build-type
+    attributes:
+      label: 构建类型
+      options:
+        - Debug
+        - Release
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 补充信息
+      description: 任何可能有助于解决问题的额外信息，如日志、截图、配置文件等
+      placeholder: 添加其他相关信息...
