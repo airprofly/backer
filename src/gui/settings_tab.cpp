@@ -6,6 +6,7 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QScrollArea>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -25,7 +26,16 @@ SettingsTab::SettingsTab(QWidget* parent)
 
 void SettingsTab::setupUi()
 {
-    auto* layout = new QVBoxLayout(this);
+    auto* outerLayout = new QVBoxLayout(this);
+
+    auto* scrollArea = new QScrollArea();
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    outerLayout->addWidget(scrollArea);
+
+    auto* scrollContent = new QWidget();
+    scrollArea->setWidget(scrollContent);
+    auto* layout = new QVBoxLayout(scrollContent);
     layout->setSpacing(10);
 
     // ── Default paths ─────────────────────────────────────────
@@ -102,8 +112,7 @@ void SettingsTab::setupUi()
     auto* aboutLayout = new QVBoxLayout(aboutGroup);
     auto* aboutLabel = new QLabel(
         QStringLiteral("数据备份软件 v%1\n\n"
-                       "基于 C++17 / Qt 6\n\n"
-                       "计算机组成与体系结构 / 软件工程 课程项目")
+                       "基于 C++17 / Qt 6")
             .arg(QStringLiteral(BACKER_VERSION)));
     aboutLabel->setWordWrap(true);
     aboutLabel->setAlignment(Qt::AlignCenter);
@@ -113,6 +122,7 @@ void SettingsTab::setupUi()
     // ── Action buttons ────────────────────────────────────────
     auto* btnLayout = new QHBoxLayout();
     auto* restoreBtn = new QPushButton(QStringLiteral("恢复默认"));
+    style::styleButton(restoreBtn);
     auto* saveBtn = new QPushButton(QStringLiteral("保存设置"));
     style::styleButton(saveBtn, QColor(style::kAccentGreen));
     btnLayout->addStretch();

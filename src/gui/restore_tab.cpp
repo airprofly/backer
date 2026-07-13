@@ -69,11 +69,6 @@ void RestoreTab::setupUi()
     optionsLayout->addStretch();
     mainLayout->addLayout(optionsLayout);
 
-    connect(enableDecompress_, &QCheckBox::toggled,
-            decompressAlgo_, &QComboBox::setEnabled);
-    connect(enablePack_, &QCheckBox::toggled,
-            packFormat_, &QComboBox::setEnabled);
-
     // ── Restore flags ─────────────────────────────────────────
     auto* flagLayout = new QHBoxLayout();
     preserveMetadata_ = new QCheckBox(QStringLiteral("保留元数据"));
@@ -85,16 +80,42 @@ void RestoreTab::setupUi()
     flagLayout->addStretch();
     mainLayout->addLayout(flagLayout);
 
+    // ── Decrypt options ─────────────────────────────────────────
+    auto* decryptLayout = new QHBoxLayout();
+    enableDecrypt_ = new QCheckBox(QStringLiteral("解密"));
+    decryptAlgo_ = new QComboBox();
+    decryptAlgo_->addItems({QStringLiteral("AES-256"), QStringLiteral("SM4")});
+    decryptAlgo_->setEnabled(false);
+    password_ = new QLineEdit();
+    password_->setEchoMode(QLineEdit::Password);
+    password_->setPlaceholderText(QStringLiteral("解密密码"));
+    password_->setEnabled(false);
+    confirmPassword_ = new QLineEdit();
+    confirmPassword_->setEchoMode(QLineEdit::Password);
+    confirmPassword_->setPlaceholderText(QStringLiteral("确认密码"));
+    confirmPassword_->setEnabled(false);
+    decryptLayout->addWidget(enableDecrypt_);
+    decryptLayout->addWidget(decryptAlgo_);
+    decryptLayout->addWidget(password_);
+    decryptLayout->addWidget(confirmPassword_);
+    decryptLayout->addStretch();
+    mainLayout->addLayout(decryptLayout);
+
     // ── Action buttons ────────────────────────────────────────
     auto* btnLayout = new QHBoxLayout();
+    auto* resetBtn = new QPushButton(QStringLiteral("恢复默认"));
+    style::styleButton(resetBtn, {}, /*flat=*/true);
     startBtn_ = new QPushButton(QStringLiteral("开始还原"));
     style::styleButton(startBtn_, QColor(style::kAccentBlue));
     cancelBtn_ = new QPushButton(QStringLiteral("取消"));
     style::styleButton(cancelBtn_);
     cancelBtn_->setEnabled(false);
+    btnLayout->addWidget(resetBtn);
     btnLayout->addStretch();
     btnLayout->addWidget(startBtn_);
     btnLayout->addWidget(cancelBtn_);
+    connect(resetBtn, &QPushButton::clicked,
+            this, &RestoreTab::onResetDefaults);
     mainLayout->addLayout(btnLayout);
 
     // ── Progress & Log ────────────────────────────────────────
@@ -103,6 +124,7 @@ void RestoreTab::setupUi()
     mainLayout->addWidget(progressWidget_);
 
     logWidget_ = new LogWidget();
+    logWidget_->setMaximumHeight(150);
     mainLayout->addWidget(logWidget_, 1);
 }
 
@@ -112,6 +134,17 @@ void RestoreTab::setupConnections()
             this, &RestoreTab::onStartRestore);
     connect(cancelBtn_, &QPushButton::clicked,
             this, &RestoreTab::onCancel);
+
+    connect(enableDecompress_, &QCheckBox::toggled,
+            decompressAlgo_, &QComboBox::setEnabled);
+    connect(enablePack_, &QCheckBox::toggled,
+            packFormat_, &QComboBox::setEnabled);
+    connect(enableDecrypt_, &QCheckBox::toggled, this,
+            [this](bool checked) {
+                decryptAlgo_->setEnabled(checked);
+                password_->setEnabled(checked);
+                confirmPassword_->setEnabled(checked);
+            });
 }
 
 void RestoreTab::onBrowseSource()
@@ -150,6 +183,20 @@ void RestoreTab::onStartRestore()
         return;
     }
 
+    // Validate decrypt password
+    if (enableDecrypt_->isChecked()) {
+        if (password_->text().isEmpty()) {
+            QMessageBox::warning(this, QStringLiteral("提示"),
+                QStringLiteral("请输入解密密码"));
+            return;
+        }
+        if (password_->text() != confirmPassword_->text()) {
+            QMessageBox::warning(this, QStringLiteral("提示"),
+                QStringLiteral("两次输入的密码不一致"));
+            return;
+        }
+    }
+
     startBtn_->setEnabled(false);
     cancelBtn_->setEnabled(true);
     progressWidget_->setRunning(true);
@@ -162,6 +209,10 @@ void RestoreTab::onStartRestore()
         opts.decompressAlgo = decompressAlgo_->currentText().toStdString();
     if (enablePack_->isChecked())
         opts.packFormat = packFormat_->currentText().toLower().toStdString();
+    if (enableDecrypt_->isChecked()) {
+        opts.decryptAlgo = decryptAlgo_->currentText().toStdString();
+        opts.password = password_->text().toStdString();
+    }
 
     auto src = std::filesystem::path(sourcePath_->text().toStdString());
     auto dst = std::filesystem::path(destPath_->text().toStdString());
@@ -178,7 +229,7 @@ void RestoreTab::onStartRestore()
     connect(worker_, &BackupWorker::logMessage,
             logWidget_, &LogWidget::appendMessage);
     connect(worker_, &BackupWorker::finished,
-            this, &RestoreTab::onCancel); // re-use onCancel to clean up
+            this, &RestoreTab::onRestoreFinished);
 
     worker_->start();
     logWidget_->appendMessage(QStringLiteral("还原任务已启动"), 0);
@@ -190,23 +241,41 @@ void RestoreTab::onCancel()
         worker_->cancel();
         cancelBtn_->setEnabled(false);
         logWidget_->appendMessage(QStringLiteral("正在取消还原..."), 1);
-        return;
     }
+}
 
-    // Cleanup after completion
+void RestoreTab::onResetDefaults()
+{
+    sourcePath_->clear();
+    destPath_->clear();
+    enableDecompress_->setChecked(false);
+    enablePack_->setChecked(false);
+    enableDecrypt_->setChecked(false);
+    preserveMetadata_->setChecked(true);
+    handleSpecial_->setChecked(true);
+    password_->clear();
+    confirmPassword_->clear();
+}
+
+void RestoreTab::onRestoreFinished(bool success, QString const& message)
+{
     startBtn_->setEnabled(true);
     cancelBtn_->setEnabled(false);
     progressWidget_->setRunning(false);
 
-    QString msg;
+    if (success) {
+        progressWidget_->setValue(100);
+        logWidget_->appendMessage(QStringLiteral("还原完成"), 0);
+    } else {
+        logWidget_->appendMessage(QStringLiteral("还原失败"), 2);
+    }
+
+    emit restoreFinished(success, message);
+
     if (worker_) {
-        // Use last log line as result hint
-        msg = QStringLiteral("还原任务已完成");
         worker_->deleteLater();
         worker_ = nullptr;
     }
-
-    emit restoreFinished(true, msg);
 }
 
 } // namespace backer::gui
