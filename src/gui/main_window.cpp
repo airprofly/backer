@@ -19,8 +19,8 @@ MainWindow::MainWindow(QWidget* parent)
 {
     setWindowTitle(QStringLiteral("数据备份软件 v%1")
                        .arg(QStringLiteral(BACKER_VERSION)));
-    setMinimumSize(800, 600);
-    resize(1000, 700);
+    setMinimumSize(1000, 750);
+    resize(1280, 860);
 
     setupUi();
     setupMenuBar();
@@ -77,8 +77,6 @@ void MainWindow::setupMenuBar()
             QStringLiteral("关于"),
             QStringLiteral(
                 "数据备份软件 v%1\n\n"
-                "计算机组成与体系结构 / "
-                "软件工程 课程项目\n\n"
                 "支持目录树备份与还原、"
                 "压缩加密、定时/实时/网络"
                 "备份等功能。")

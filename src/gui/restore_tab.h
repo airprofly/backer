@@ -32,6 +32,9 @@ private slots:
     void onBrowseDest();
     void onStartRestore();
     void onCancel();
+    void onResetDefaults();
+    /// Cleanup after restore completes (success or failure).
+    void onRestoreFinished(bool success, QString const& message);
 
 private:
     void setupUi();
@@ -45,6 +48,11 @@ private:
     QComboBox* packFormat_{nullptr};
     QCheckBox* preserveMetadata_{nullptr};
     QCheckBox* handleSpecial_{nullptr};
+    // ── Decrypt ───────────────────────────────────────────────
+    QCheckBox* enableDecrypt_{nullptr};
+    QComboBox* decryptAlgo_{nullptr};
+    QLineEdit* password_{nullptr};
+    QLineEdit* confirmPassword_{nullptr};
     QPushButton* startBtn_{nullptr};
     QPushButton* cancelBtn_{nullptr};
     ProgressWidget* progressWidget_{nullptr};

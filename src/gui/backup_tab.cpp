@@ -127,15 +127,20 @@ void BackupTab::setupUi()
 
     // ── Action buttons ────────────────────────────────────────
     auto* btnLayout = new QHBoxLayout();
+    auto* resetBtn = new QPushButton(QStringLiteral("恢复默认"));
+    style::styleButton(resetBtn, {}, /*flat=*/true);
     startBtn_ = new QPushButton(QStringLiteral("开始备份"));
     style::styleButton(startBtn_, QColor(style::kAccentGreen));
     cancelBtn_ = new QPushButton(QStringLiteral("取消"));
     style::styleButton(cancelBtn_);
     cancelBtn_->setEnabled(false);
+    btnLayout->addWidget(resetBtn);
     btnLayout->addStretch();
     btnLayout->addWidget(startBtn_);
     btnLayout->addWidget(cancelBtn_);
     mainLayout->addLayout(btnLayout);
+    connect(resetBtn, &QPushButton::clicked,
+            this, &BackupTab::onResetDefaults);
 
     // ── Progress ──────────────────────────────────────────────
     progressWidget_ = new ProgressWidget();
@@ -144,6 +149,7 @@ void BackupTab::setupUi()
 
     // ── Log ───────────────────────────────────────────────────
     logWidget_ = new LogWidget();
+    logWidget_->setMaximumHeight(150);
     mainLayout->addWidget(logWidget_, 1);
 }
 
@@ -205,12 +211,64 @@ void BackupTab::onEncryptToggled(bool checked)
     confirmPassword_->setEnabled(checked);
 }
 
+void BackupTab::onResetDefaults()
+{
+    // Clear paths
+    sourcePath_->clear();
+    destPath_->clear();
+
+    // Uncheck all option toggles
+    enablePack_->setChecked(false);
+    enableCompress_->setChecked(false);
+    enableEncrypt_->setChecked(false);
+    enableFilter_->setChecked(false);
+
+    // Clear password fields
+    password_->clear();
+    confirmPassword_->clear();
+
+    // Clear filter text fields and state
+    includePaths_->clear();
+    excludePaths_->clear();
+    includeTypes_->clear();
+    excludeTypes_->clear();
+    hasTimeFilter_ = false;
+    hasSizeFilter_ = false;
+    sizeMin_ = 0;
+    sizeMax_ = 0;
+    owner_.clear();
+}
+
 void BackupTab::onEditFilter()
 {
     FilterDialog dlg(this);
+
+    // Pre-fill dialog from current state
+    dlg.setIncludePaths(includePaths_->text().split(QStringLiteral(", "),
+                        Qt::SkipEmptyParts));
+    dlg.setExcludePaths(excludePaths_->text().split(QStringLiteral(", "),
+                        Qt::SkipEmptyParts));
+
     if (dlg.exec() == QDialog::Accepted) {
+        // Paths
         includePaths_->setText(dlg.includePaths().join(QStringLiteral(", ")));
         excludePaths_->setText(dlg.excludePaths().join(QStringLiteral(", ")));
+
+        // Types (checkbox → comma-separated text)
+        includeTypes_->setText(dlg.includeTypes().join(QStringLiteral(", ")));
+
+        // Time range
+        hasTimeFilter_ = dlg.hasTimeFilter();
+        mtimeAfter_ = dlg.mtimeAfter();
+        mtimeBefore_ = dlg.mtimeBefore();
+
+        // Size range
+        hasSizeFilter_ = dlg.hasSizeFilter();
+        sizeMin_ = dlg.sizeMin();
+        sizeMax_ = dlg.sizeMax();
+
+        // Owner
+        owner_ = dlg.owner();
     }
 }
 
@@ -228,6 +286,11 @@ backer::cli::BackupOptions BackupTab::collectOptions() const
         opts.compressLevel = compressLevel_->value();
     }
 
+    if (enableEncrypt_->isChecked()) {
+        opts.encryptAlgo = encryptAlgo_->currentText().toStdString();
+        opts.password = password_->text().toStdString();
+    }
+
     // Parse filter fields
     if (enableFilter_->isChecked()) {
         auto split = [](QString const& text) {
@@ -242,6 +305,23 @@ backer::cli::BackupOptions BackupTab::collectOptions() const
             opts.includeTypes.push_back(s.toStdString());
         for (auto const& s : split(excludeTypes_->text()))
             opts.excludeTypes.push_back(s.toStdString());
+
+        // Time range from FilterDialog
+        if (hasTimeFilter_) {
+            opts.mtimeAfter = std::to_string(mtimeAfter_.toSecsSinceEpoch());
+            opts.mtimeBefore = std::to_string(mtimeBefore_.toSecsSinceEpoch());
+        }
+        // Size range from FilterDialog
+        if (hasSizeFilter_) {
+            opts.hasSizeMin = true;
+            opts.sizeMin = static_cast<uint64_t>(sizeMin_);
+            opts.hasSizeMax = true;
+            opts.sizeMax = static_cast<uint64_t>(sizeMax_);
+        }
+        // Owner filter from FilterDialog
+        if (!owner_.isEmpty()) {
+            opts.owner = owner_.toStdString();
+        }
     }
 
     return opts;

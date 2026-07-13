@@ -2,6 +2,8 @@
 
 #include "cli/commands.h"
 
+#include <QDateTime>
+#include <QString>
 #include <QWidget>
 
 #include <filesystem>
@@ -40,6 +42,7 @@ private slots:
     void onPackToggled(bool checked);
     void onCompressToggled(bool checked);
     void onEncryptToggled(bool checked);
+    void onResetDefaults();
     void onBackupFinished(bool success, QString const& message);
 
 private:
@@ -76,6 +79,15 @@ private:
     // ── Action buttons ────────────────────────────────────────
     QPushButton* startBtn_{nullptr};
     QPushButton* cancelBtn_{nullptr};
+
+    // ── Filter state from FilterDialog (time / size / owner) ──
+    bool hasTimeFilter_{false};
+    QDateTime mtimeAfter_;
+    QDateTime mtimeBefore_;
+    bool hasSizeFilter_{false};
+    qint64 sizeMin_{0};
+    qint64 sizeMax_{0};
+    QString owner_;
 
     // ── Progress & log ────────────────────────────────────────
     ProgressWidget* progressWidget_{nullptr};
