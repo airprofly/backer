@@ -142,13 +142,13 @@ xvfb-run ./build/backer-gui
 |------|------|
 | **目的** | 确认最简备份流程能跑通 |
 | **源目录** | `data/source/core/` |
-| **目标目录** | `~/Desktop/backer-test/01-basic/` |
+| **目标目录** | `data/01-basic/` |
 | **选项** | 全部不勾选 |
 
 操作步骤：
 
 1. 点源目录「浏览」→ 选择 `data/source/core/`
-2. 点目标目录「浏览」→ 选择或新建 `~/Desktop/backer-test/01-basic/`
+2. 点目标目录「浏览」→ 选择或新建 `data/01-basic/`
 3. 确认打包/压缩/加密/筛选 **全部未勾选**
 4. 点「**开始备份**」
 
@@ -161,8 +161,8 @@ xvfb-run ./build/backer-gui
 
 ```bash
 # 验证
-ls ~/Desktop/backer-test/01-basic/       # 应可见 hello.txt, empty.txt 等
-diff data/source/core ~/Desktop/backer-test/01-basic/   # 应无差异
+ls data/01-basic/       # 应可见 hello.txt, empty.txt 等
+diff data/source/core data/01-basic/   # 应无差异
 ```
 
 ---
@@ -173,16 +173,16 @@ diff data/source/core ~/Desktop/backer-test/01-basic/   # 应无差异
 |------|------|
 | **目的** | 确认深嵌套目录结构被完整保留 |
 | **源目录** | `data/source/core/` |
-| **目标目录** | `~/Desktop/backer-test/02-nested/` |
+| **目标目录** | `data/02-nested/` |
 | **选项** | 全部不勾选 |
 
 验证要点：
 
 ```bash
 # 验证 12 层深嵌套
-ls ~/Desktop/backer-test/02-nested/deep/d1/d2/d3/d4/d5/d6/d7/d8/d9/d10/d11/d12/bottom.txt
+ls data/02-nested/deep/d1/d2/d3/d4/d5/d6/d7/d8/d9/d10/d11/d12/bottom.txt
 # 验证 5 层嵌套
-ls ~/Desktop/backer-test/02-nested/nested/level1/level2/level3/level4/leaf.txt
+ls data/02-nested/nested/level1/level2/level3/level4/leaf.txt
 ```
 
 - ✅ 所有子目录结构完整保留，无目录丢失
@@ -196,13 +196,13 @@ ls ~/Desktop/backer-test/02-nested/nested/level1/level2/level3/level4/leaf.txt
 |------|------|
 | **目的** | 确认大文件（>1MB）备份正常 |
 | **源目录** | `data/source/core/` |
-| **目标目录** | `~/Desktop/backer-test/03-large/` |
+| **目标目录** | `data/03-large/` |
 
 验证要点：
 
 ```bash
 # 对比大文件
-diff data/source/core/random_10m.bin ~/Desktop/backer-test/03-large/random_10m.bin
+diff data/source/core/random_10m.bin data/03-large/random_10m.bin
 ```
 
 - ✅ 10MB 文件完整复制，MD5 一致
@@ -218,22 +218,22 @@ diff data/source/core/random_10m.bin ~/Desktop/backer-test/03-large/random_10m.b
 |------|------|
 | **目的** | 确认无打包备份的还原 |
 | **前置** | 先执行 TC-01 创建备份 |
-| **还原源** | `~/Desktop/backer-test/01-basic/` |
-| **还原到** | `~/Desktop/backer-test/04-restore-plain/` |
+| **还原源** | `data/01-basic/` |
+| **还原到** | `data/04-restore-plain/` |
 | **选项** | 全部不勾选 |
 
 操作步骤：
 
 1. 切换到「**还原**」标签页
-2. 备份源 → 选 `~/Desktop/backer-test/01-basic/`
-3. 还原到 → 选 `~/Desktop/backer-test/04-restore-plain/`
+2. 备份源 → 选 `data/01-basic/`
+3. 还原到 → 选 `data/04-restore-plain/`
 4. 不勾选打包、解密
 5. 点「**开始还原**」
 
 预期结果：
 
 - ✅ 进度 100%
-- ✅ `diff -r data/source/core/ ~/Desktop/backer-test/04-restore-plain/` 无差异
+- ✅ `diff -r data/source/core/ data/04-restore-plain/` 无差异
 
 ---
 
@@ -246,21 +246,21 @@ diff data/source/core/random_10m.bin ~/Desktop/backer-test/03-large/random_10m.b
 
 ```bash
 # 制作 Tar 包
-./build/backer-cli backup data/source/filter ~/Desktop/backer-test/tar-backup/ --pack tar
+./build/backer-cli backup data/source/filter data/tar-backup/ --pack tar
 ```
 
 操作步骤：
 
 1. 切换到「还原」标签页
-2. 备份源 → 选 `~/Desktop/backer-test/tar-backup/` 目录或里面的 `.tar` 文件
-3. 还原到 → 选 `~/Desktop/backer-test/05-restore-tar/`
+2. 备份源 → 选 `data/tar-backup/` 目录或里面的 `.tar` 文件
+3. 还原到 → 选 `data/05-restore-tar/`
 4. 勾选「打包格式」→ 选 **Tar**
 5. 点「**开始还原**」
 
 预期结果：
 
 - ✅ 还原成功
-- ✅ `diff -r data/source/filter ~/Desktop/backer-test/05-restore-tar/` 无差异
+- ✅ `diff -r data/source/filter data/05-restore-tar/` 无差异
 
 ---
 
@@ -288,7 +288,7 @@ diff data/source/core/random_10m.bin ~/Desktop/backer-test/03-large/random_10m.b
 | **目的** | 确认 gzip 压缩正常 |
 
 1. 源目录 → `data/source/compress/`
-2. 目标目录 → `~/Desktop/backer-test/07-gzip/`
+2. 目标目录 → `data/07-gzip/`
 3. 勾选「打包」→ **Tar**
 4. 勾选「压缩」→ **gzip** → 级别 **6**
 5. 点「开始备份」
@@ -296,15 +296,15 @@ diff data/source/core/random_10m.bin ~/Desktop/backer-test/03-large/random_10m.b
 
 ```bash
 # 验证压缩产物
-ls -lh ~/Desktop/backer-test/07-gzip/
+ls -lh data/07-gzip/
 # 验证压缩率（all_zeros.bin 应压缩极大）
-tar -tzf ~/Desktop/backer-test/07-gzip/*.tar.gz | head -5
+tar -tzf data/07-gzip/*.tar.gz | head -5
 ```
 
 ### TC-08：zstd 压缩备份
 
 1. 源目录 → `data/source/compress/`
-2. 目标目录 → `~/Desktop/backer-test/08-zstd/`
+2. 目标目录 → `data/08-zstd/`
 3. 勾选「打包」→ **Tar**
 4. 勾选「压缩」→ **zstd** → 级别 **3**（快速）和 **9**（高压缩比）各试一次
 5. ✅ 预期：产物 `.tar.zst`，级别不同性能/压缩比不同
@@ -312,7 +312,7 @@ tar -tzf ~/Desktop/backer-test/07-gzip/*.tar.gz | head -5
 ### TC-09：lzma 压缩备份
 
 1. 源目录 → `data/source/compress/`
-2. 目标目录 → `~/Desktop/backer-test/09-lzma/`
+2. 目标目录 → `data/09-lzma/`
 3. 勾选「打包」→ **Tar**
 4. 勾选「压缩」→ **lzma** → 级别 **6**
 5. ✅ 预期：产物 `.tar.xz`
@@ -339,7 +339,7 @@ tar -tzf ~/Desktop/backer-test/07-gzip/*.tar.gz | head -5
 **加密备份：**
 
 1. 源目录 → `data/source/crypto/`
-2. 目标目录 → `~/Desktop/backer-test/11-enc-aes/`
+2. 目标目录 → `data/11-enc-aes/`
 3. 勾选「打包」→ **Tar**
 4. 勾选「加密」→ **AES-256**
 5. 密码：`BackerTest123!` → 确认密码：`BackerTest123!`
@@ -348,19 +348,19 @@ tar -tzf ~/Desktop/backer-test/07-gzip/*.tar.gz | head -5
 
 ```bash
 # 确认是加密文件（不可读）
-file ~/Desktop/backer-test/11-enc-aes/*.tar.enc
-cat ~/Desktop/backer-test/11-enc-aes/*.tar.enc 2>&1 | head -1  # 应为乱码
+file data/11-enc-aes/*.tar.enc
+cat data/11-enc-aes/*.tar.enc 2>&1 | head -1  # 应为乱码
 ```
 
 **解密还原：**
 
 1. 切换到「还原」标签页
 2. 备份源 → 选加密产物
-3. 还原到 → `~/Desktop/backer-test/11-restore/`
+3. 还原到 → `data/11-restore/`
 4. 勾选「打包格式」→ Tar
 5. 勾选「解密」→ **AES-256** → 密码：`BackerTest123!`
 6. 点「开始还原」
-7. ✅ 预期：还原成功，`diff -r data/source/crypto/ ~/Desktop/backer-test/11-restore/` 无差异
+7. ✅ 预期：还原成功，`diff -r data/source/crypto/ data/11-restore/` 无差异
 
 ### TC-12：SM4 加密 + 解密还原
 
@@ -400,7 +400,7 @@ cat ~/Desktop/backer-test/11-enc-aes/*.tar.enc 2>&1 | head -1  # 应为乱码
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/filter/by_path/` |
-| **目标目录** | `~/Desktop/backer-test/16-filter/` |
+| **目标目录** | `data/16-filter/` |
 
 步骤：
 
@@ -414,11 +414,11 @@ cat ~/Desktop/backer-test/11-enc-aes/*.tar.enc 2>&1 | head -1  # 应为乱码
 
 ```bash
 # 应只有 documents 目录下的文件
-ls ~/Desktop/backer-test/16-filter/by_path/
+ls data/16-filter/by_path/
 # 应包含 documents
-ls ~/Desktop/backer-test/16-filter/by_path/documents/  # 应有 doc_1.txt 等
+ls data/16-filter/by_path/documents/  # 应有 doc_1.txt 等
 # 应不包含 images、videos 等
-test -d ~/Desktop/backer-test/16-filter/by_path/images && echo "❌ 不应包含" || echo "✅ 正确排除"
+test -d data/16-filter/by_path/images && echo "❌ 不应包含" || echo "✅ 正确排除"
 ```
 
 - ✅ 只备份了匹配 `*documents*` 路径的文件
@@ -428,7 +428,7 @@ test -d ~/Desktop/backer-test/16-filter/by_path/images && echo "❌ 不应包含
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/filter/by_type/` |
-| **目标目录** | `~/Desktop/backer-test/17-filter-type/` |
+| **目标目录** | `data/17-filter-type/` |
 
 步骤：
 
@@ -440,7 +440,7 @@ test -d ~/Desktop/backer-test/16-filter/by_path/images && echo "❌ 不应包含
 验证：
 
 ```bash
-ls -la ~/Desktop/backer-test/17-filter-type/by_type/
+ls -la data/17-filter-type/by_type/
 # 应只有 symlink.lnk（符号链接）
 # 不应有 regular.txt（普通文件）和 pipe.fifo（管道）
 ```
@@ -452,7 +452,7 @@ ls -la ~/Desktop/backer-test/17-filter-type/by_type/
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/filter/by_name/` |
-| **目标目录** | `~/Desktop/backer-test/18-filter-name/` |
+| **目标目录** | `data/18-filter-name/` |
 
 步骤：
 
@@ -464,7 +464,7 @@ ls -la ~/Desktop/backer-test/17-filter-type/by_type/
 验证：
 
 ```bash
-ls ~/Desktop/backer-test/18-filter-name/by_name/
+ls data/18-filter-name/by_name/
 # 应有 debug.log、app.log、system.log
 # 不应有 data.bin、cache.tmp、README.md 等
 ```
@@ -476,7 +476,7 @@ ls ~/Desktop/backer-test/18-filter-name/by_name/
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/filter/by_time/` |
-| **目标目录** | `~/Desktop/backer-test/19-filter-time/` |
+| **目标目录** | `data/19-filter-time/` |
 
 步骤：
 
@@ -489,7 +489,7 @@ ls ~/Desktop/backer-test/18-filter-name/by_name/
 验证：
 
 ```bash
-ls ~/Desktop/backer-test/19-filter-time/by_time/
+ls data/19-filter-time/by_time/
 # 应只有 0d_ago.txt, 1d_ago.txt, 3d_ago.txt, 7d_ago.txt, 14d_ago.txt
 # 不应有 30d_ago.txt, 90d_ago.txt, 180d_ago.txt, 365d_ago.txt
 ```
@@ -501,7 +501,7 @@ ls ~/Desktop/backer-test/19-filter-time/by_time/
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/filter/by_size/` |
-| **目标目录** | `~/Desktop/backer-test/20-filter-size/` |
+| **目标目录** | `data/20-filter-size/` |
 
 步骤：
 
@@ -514,7 +514,7 @@ ls ~/Desktop/backer-test/19-filter-time/by_time/
 验证：
 
 ```bash
-ls -la ~/Desktop/backer-test/20-filter-size/by_size/
+ls -la data/20-filter-size/by_size/
 # 应有 1k.txt, 10k.txt, 100k.txt, 1m.txt
 # 不应有 zero_byte.bin, one_byte.bin, tiny.txt
 ```
@@ -526,7 +526,7 @@ ls -la ~/Desktop/backer-test/20-filter-size/by_size/
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/filter/` |
-| **目标目录** | `~/Desktop/backer-test/21-filter-owner/` |
+| **目标目录** | `data/21-filter-owner/` |
 
 步骤：
 
@@ -543,7 +543,7 @@ ls -la ~/Desktop/backer-test/20-filter-size/by_size/
 |------|------|
 | **目的** | 确认多个筛选条件同时生效 |
 | **源目录** | `data/source/filter/by_name/` |
-| **目标目录** | `~/Desktop/backer-test/22-filter-combo/` |
+| **目标目录** | `data/22-filter-combo/` |
 
 步骤：
 
@@ -564,13 +564,13 @@ ls -la ~/Desktop/backer-test/20-filter-size/by_size/
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/compress/` |
-| **目标目录** | `~/Desktop/backer-test/23-pkg-compress/` |
+| **目标目录** | `data/23-pkg-compress/` |
 | **选项** | 打包=Tar，压缩=gzip 级别6 |
 
 ```bash
 # 验证产物
-ls ~/Desktop/backer-test/23-pkg-compress/*.tar.gz
-tar -tzf ~/Desktop/backer-test/23-pkg-compress/*.tar.gz | wc -l  # 应 > 0
+ls data/23-pkg-compress/*.tar.gz
+tar -tzf data/23-pkg-compress/*.tar.gz | wc -l  # 应 > 0
 ```
 
 ### TC-24：Tar 打包 + AES 加密
@@ -578,13 +578,13 @@ tar -tzf ~/Desktop/backer-test/23-pkg-compress/*.tar.gz | wc -l  # 应 > 0
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/crypto/` |
-| **目标目录** | `~/Desktop/backer-test/24-pkg-enc/` |
+| **目标目录** | `data/24-pkg-enc/` |
 | **选项** | 打包=Tar，加密=AES-256 密码=`test!@#456` |
 
 ```bash
 # 验证产物为加密文件
-ls ~/Desktop/backer-test/24-pkg-enc/*.tar.enc
-file ~/Desktop/backer-test/24-pkg-enc/*.tar.enc  # 显示为 data，非 tar archive
+ls data/24-pkg-enc/*.tar.enc
+file data/24-pkg-enc/*.tar.enc  # 显示为 data，非 tar archive
 ```
 
 ### TC-25：Tar 打包 + lzma 压缩 + SM4 加密（全功能）
@@ -593,7 +593,7 @@ file ~/Desktop/backer-test/24-pkg-enc/*.tar.enc  # 显示为 data，非 tar arch
 |------|------|
 | **目的** | 确认打包+压缩+加密三者同时使用 |
 | **源目录** | `data/source/integration/` |
-| **目标目录** | `~/Desktop/backer-test/25-full/` |
+| **目标目录** | `data/25-full/` |
 | **选项** | 打包=Tar，压缩=lzma 级别6，加密=SM4 密码=`FullTest2024!` |
 
 验证步骤：
@@ -604,23 +604,23 @@ file ~/Desktop/backer-test/24-pkg-enc/*.tar.enc  # 显示为 data，非 tar arch
 4. 还原源 → 选上述备份文件
 5. 勾选「打包格式」→ **Tar**
 6. 勾选「解密」→ **SM4** → 密码 `FullTest2024!`
-7. 还原到 → `~/Desktop/backer-test/25-restore/`
+7. 还原到 → `data/25-restore/`
 8. 点「开始还原」
 9. ✅ 还原成功
-10. `diff -r data/source/integration/ ~/Desktop/backer-test/25-restore/` 无差异
+10. `diff -r data/source/integration/ data/25-restore/` 无差异
 
 ### TC-26：Zip 打包（不压缩）
 
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/core/` |
-| **目标目录** | `~/Desktop/backer-test/26-zip/` |
+| **目标目录** | `data/26-zip/` |
 | **选项** | 打包=Zip，不压缩不加密 |
 
 ```bash
 # 验证 Zip 文件
-ls ~/Desktop/backer-test/26-zip/*.zip
-unzip -l ~/Desktop/backer-test/26-zip/*.zip | head -10
+ls data/26-zip/*.zip
+unzip -l data/26-zip/*.zip | head -10
 ```
 
 ---
@@ -643,7 +643,7 @@ unzip -l ~/Desktop/backer-test/26-zip/*.zip | head -10
 | 任务名称 | `test-hourly` |
 | Cron 表达式 | `0 * * * *`（每小时） |
 | 源目录 | `data/source/core/` |
-| 目标目录 | `~/Desktop/backer-test/scheduled/` |
+| 目标目录 | `data/scheduled/` |
 | 打包格式 | Tar |
 | 压缩算法 | gzip |
 | 压缩级别 | 6 |
@@ -656,7 +656,7 @@ unzip -l ~/Desktop/backer-test/26-zip/*.zip | head -10
 1. 点「添加」
 2. 名称：`test-daily`，Cron：`0 2 * * *`
 3. 源目录：`data/source/filter/`
-4. 目标目录：`~/Desktop/backer-test/scheduled2/`
+4. 目标目录：`data/scheduled2/`
 5. ✅ 预期：列表中现在有两个任务
 
 ### TC-30：删除定时任务
@@ -715,13 +715,13 @@ unzip -l ~/Desktop/backer-test/26-zip/*.zip | head -10
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/`（整个源，500+ 文件） |
-| **目标目录** | `~/Desktop/backer-test/34-cancel/` |
+| **目标目录** | `data/34-cancel/` |
 | **选项** | 打包=Tar，压缩=gzip（让处理慢一点方便观察） |
 
 1. 点「开始备份」
 2. 等待几秒 → 点「**取消**」
 3. ✅ 预期：进度条停止，日志显示「正在取消...」或「已取消」
-4. ✅ 预期：`~/Desktop/backer-test/34-cancel/` 下没有完整打包文件
+4. ✅ 预期：`data/34-cancel/` 下没有完整打包文件
 
 ### TC-35：无效源目录
 
@@ -741,7 +741,7 @@ unzip -l ~/Desktop/backer-test/26-zip/*.zip | head -10
 
 1. 新建一个空目录：`mkdir -p /tmp/backer-empty-test`
 2. 源目录 → 选 `/tmp/backer-empty-test/`
-3. 目标目录 → `~/Desktop/backer-test/37-empty/`
+3. 目标目录 → `data/37-empty/`
 4. 点「开始备份」
 5. ✅ 预期：备份完成，日志显示「0 个文件已备份」
 
@@ -750,7 +750,7 @@ unzip -l ~/Desktop/backer-test/26-zip/*.zip | head -10
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/fs/symlinks/` |
-| **目标目录** | `~/Desktop/backer-test/38-symlinks/` |
+| **目标目录** | `data/38-symlinks/` |
 
 1. 不勾选打包/压缩/加密/筛选
 2. 点「开始备份」
@@ -758,10 +758,10 @@ unzip -l ~/Desktop/backer-test/26-zip/*.zip | head -10
 4. 验证符号链接：
 
 ```bash
-ls -la ~/Desktop/backer-test/38-symlinks/
+ls -la data/38-symlinks/
 # 检查符号链接状态
-readlink ~/Desktop/backer-test/38-symlinks/good_link.txt   # 应指向 target.txt
-readlink ~/Desktop/backer-test/38-symlinks/broken_link      # 应指向不存在文件
+readlink data/38-symlinks/good_link.txt   # 应指向 target.txt
+readlink data/38-symlinks/broken_link      # 应指向不存在文件
 ```
 
 ### TC-39：源目录包含 FIFO 管道
@@ -769,7 +769,7 @@ readlink ~/Desktop/backer-test/38-symlinks/broken_link      # 应指向不存在
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/fs/pipes/` |
-| **目标目录** | `~/Desktop/backer-test/39-fifo/` |
+| **目标目录** | `data/39-fifo/` |
 
 1. 不勾选打包/压缩/加密/筛选
 2. 点「开始备份」
@@ -780,12 +780,12 @@ readlink ~/Desktop/backer-test/38-symlinks/broken_link      # 应指向不存在
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/pack/` |
-| **目标目录** | `~/Desktop/backer-test/40-longname/` |
+| **目标目录** | `data/40-longname/` |
 
 验证：
 
 ```bash
-ls ~/Desktop/backer-test/40-longname/AAAAA*.txt   # 240 字符文件名
+ls data/40-longname/AAAAA*.txt   # 240 字符文件名
 ```
 
 - ✅ 超长文件名文件被正确处理
@@ -795,12 +795,12 @@ ls ~/Desktop/backer-test/40-longname/AAAAA*.txt   # 240 字符文件名
 | 项目 | 内容 |
 |------|------|
 | **源目录** | `data/source/naming/` |
-| **目标目录** | `~/Desktop/backer-test/41-special-chars/` |
+| **目标目录** | `data/41-special-chars/` |
 
 验证：
 
 ```bash
-ls ~/Desktop/backer-test/41-special-chars/
+ls data/41-special-chars/
 # 应包含以下文件：
 #   .hidden.txt          隐藏文件
 #   "file with spaces"   含空格
