@@ -206,6 +206,36 @@ void FilterDialog::setExcludePaths(QStringList const& paths)
         excludePathList_->addItem(p);
 }
 
+void FilterDialog::setIncludeTypes(QStringList const& types)
+{
+    // Uncheck all first
+    typeFile_->setChecked(false);
+    typeDir_->setChecked(false);
+    typeSymlink_->setChecked(false);
+    typeFifo_->setChecked(false);
+    typeBlock_->setChecked(false);
+    typeChar_->setChecked(false);
+    typeSocket_->setChecked(false);
+
+    for (auto const& t : types) {
+        auto const key = t.trimmed().toLower();
+        if (key == QStringLiteral("file")    || key == QStringLiteral("regular") || key == QStringLiteral("f"))
+            typeFile_->setChecked(true);
+        else if (key == QStringLiteral("dir") || key == QStringLiteral("directory") || key == QStringLiteral("d"))
+            typeDir_->setChecked(true);
+        else if (key == QStringLiteral("symlink") || key == QStringLiteral("link") || key == QStringLiteral("l"))
+            typeSymlink_->setChecked(true);
+        else if (key == QStringLiteral("fifo") || key == QStringLiteral("pipe") || key == QStringLiteral("p"))
+            typeFifo_->setChecked(true);
+        else if (key == QStringLiteral("block") || key == QStringLiteral("blockdev") || key == QStringLiteral("b"))
+            typeBlock_->setChecked(true);
+        else if (key == QStringLiteral("char") || key == QStringLiteral("chardev") || key == QStringLiteral("c"))
+            typeChar_->setChecked(true);
+        else if (key == QStringLiteral("socket") || key == QStringLiteral("sock") || key == QStringLiteral("s"))
+            typeSocket_->setChecked(true);
+    }
+}
+
 // ── Getters ──────────────────────────────────────────────────────
 
 QStringList FilterDialog::includePaths() const

@@ -249,6 +249,8 @@ void BackupTab::onEditFilter()
                         Qt::SkipEmptyParts));
     dlg.setExcludePaths(excludePaths_->text().split(QStringLiteral(", "),
                         Qt::SkipEmptyParts));
+    dlg.setIncludeTypes(includeTypes_->text().split(QRegularExpression(QStringLiteral("[,\\s;]+")),
+                        Qt::SkipEmptyParts));
 
     if (dlg.exec() == QDialog::Accepted) {
         // Paths
