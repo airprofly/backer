@@ -94,11 +94,11 @@ int main(int argc, char** argv)
                           "Glob pattern for filenames to exclude (can be repeated)")
         ->type_name("GLOB");
     backupCmd->add_option("--mtime-before", backupMtimeBefore,
-                          "Exclude files modified at or after this Unix timestamp")
-        ->type_name("UNIX_TIME");
+                          "Exclude files modified at or after this time (Unix timestamp or YYYY-MM-DD)")
+        ->type_name("TIME");
     backupCmd->add_option("--mtime-after", backupMtimeAfter,
-                          "Exclude files modified before this Unix timestamp")
-        ->type_name("UNIX_TIME");
+                          "Exclude files modified before this time (Unix timestamp or YYYY-MM-DD)")
+        ->type_name("TIME");
     backupCmd->add_option("--size-min", backupSizeMin, "Minimum file size in bytes")
         ->type_name("BYTES")
         ->check([&](std::string const& /*val*/) { backupHasSizeMin = true; return std::string{}; });

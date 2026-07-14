@@ -18,9 +18,12 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <sstream>
 #include <memory>
 #include <regex>
 #include <string>
@@ -48,6 +51,54 @@ FileType parseFileType(std::string const& typeStr) {
     if (typeStr == "char"    || typeStr == "chardev" || typeStr == "c")  return FileType::kCharDevice;
     if (typeStr == "socket"  || typeStr == "sock" || typeStr == "s")     return FileType::kSocket;
     return FileType::kUnknown;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Helper: parse Unix timestamp or YYYY-MM-DD[ HH:MM:SS] → int64_t
+// ══════════════════════════════════════════════════════════════════════════════
+
+int64_t parseTimeOption(std::string const& s) {
+    // Pure numeric → Unix timestamp (backward compatible)
+    if (s.find_first_not_of("0123456789") == std::string::npos) {
+        return static_cast<int64_t>(std::atol(s.c_str()));
+    }
+
+    // Try YYYY-MM-DD HH:MM:SS or YYYY-MM-DD (standard C++11, cross-platform)
+    struct std::tm tm = {};
+    std::istringstream ss(s);
+
+    // Try with time first
+    ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+    if (!ss.fail()) {
+        // Ensure the entire input was consumed
+        char c{};
+        if (!(ss >> c)) {
+            tm.tm_isdst = -1;
+            time_t t = mktime(&tm);
+            if (t != static_cast<time_t>(-1)) {
+                return static_cast<int64_t>(t);
+            }
+        }
+    }
+
+    // Try date only
+    ss.clear();
+    ss.str(s);
+    ss.seekg(0);
+    ss >> std::get_time(&tm, "%Y-%m-%d");
+    if (!ss.fail()) {
+        char c{};
+        if (!(ss >> c)) {
+            tm.tm_isdst = -1;
+            time_t t = mktime(&tm);
+            if (t != static_cast<time_t>(-1)) {
+                return static_cast<int64_t>(t);
+            }
+        }
+    }
+
+    spdlog::warn("Cannot parse time '{}' — expected Unix timestamp or YYYY-MM-DD[ HH:MM:SS]", s);
+    return 0;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -143,11 +194,11 @@ std::unique_ptr<Filter> buildFilter(BackupOptions const& options) {
         TimeRange tr;
         if (!options.mtimeBefore.empty()) {
             tr.hasBefore = true;
-            tr.beforeSec = std::atol(options.mtimeBefore.c_str());
+            tr.beforeSec = parseTimeOption(options.mtimeBefore);
         }
         if (!options.mtimeAfter.empty()) {
             tr.hasAfter = true;
-            tr.afterSec = std::atol(options.mtimeAfter.c_str());
+            tr.afterSec = parseTimeOption(options.mtimeAfter);
         }
         c.timeRange = tr;
         criteria.push_back(std::move(c));
