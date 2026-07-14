@@ -20,8 +20,10 @@
 #include <cstring>
 #include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <sstream>
 #include <memory>
 #include <regex>
 #include <string>
@@ -61,18 +63,37 @@ int64_t parseTimeOption(std::string const& s) {
         return static_cast<int64_t>(std::atol(s.c_str()));
     }
 
-    // Try YYYY-MM-DD or YYYY-MM-DD HH:MM:SS
+    // Try YYYY-MM-DD HH:MM:SS or YYYY-MM-DD (standard C++11, cross-platform)
     struct std::tm tm = {};
-    char const* rest = nullptr;
-    rest = strptime(s.c_str(), "%Y-%m-%d %H:%M:%S", &tm);
-    if (rest == nullptr || *rest != '\0') {
-        rest = strptime(s.c_str(), "%Y-%m-%d", &tm);
+    std::istringstream ss(s);
+
+    // Try with time first
+    ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+    if (!ss.fail()) {
+        // Ensure the entire input was consumed
+        char c{};
+        if (!(ss >> c)) {
+            tm.tm_isdst = -1;
+            time_t t = mktime(&tm);
+            if (t != static_cast<time_t>(-1)) {
+                return static_cast<int64_t>(t);
+            }
+        }
     }
-    if (rest != nullptr && *rest == '\0') {
-        tm.tm_isdst = -1; // let mktime determine DST
-        time_t t = mktime(&tm);
-        if (t != static_cast<time_t>(-1)) {
-            return static_cast<int64_t>(t);
+
+    // Try date only
+    ss.clear();
+    ss.str(s);
+    ss.seekg(0);
+    ss >> std::get_time(&tm, "%Y-%m-%d");
+    if (!ss.fail()) {
+        char c{};
+        if (!(ss >> c)) {
+            tm.tm_isdst = -1;
+            time_t t = mktime(&tm);
+            if (t != static_cast<time_t>(-1)) {
+                return static_cast<int64_t>(t);
+            }
         }
     }
 
