@@ -1,0 +1,189 @@
+@startuml
+' 备份系统场景顺序图 - BackupEngine 完整备份流水线
+' 参与者按交互顺序：用户 -> CLI -> handleBackup -> BackupEngine -> 各管道模块
+
+skinparam backgroundColor #FEFCF6
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 13
+
+skinparam sequence {
+    ActorBorderColor #2C3E50
+    ActorFontColor #2C3E50
+    ActorBackgroundColor #F39C12
+    LifeLineBackgroundColor #2C3E50
+    LifeLineBorderColor #2C3E50
+
+    ParticipantBorderColor #2C3E50
+    ParticipantFontColor #FFFFFF
+    ParticipantBackgroundColor #3498DB
+    ParticipantFontSize 13
+
+    BoxBorderColor #BDC3C7
+    BoxBackgroundColor #ECF0F1
+
+    ArrowColor #2C3E50
+    ArrowFontColor #2C3E50
+    ArrowFontSize 11
+
+    NoteBorderColor #BDC3C7
+    NoteBackgroundColor #FFF9E6
+    NoteFontColor #2C3E50
+    NoteFontSize 10
+
+    DividerBackgroundColor #34495E
+    DividerFontColor #FFFFFF
+    DividerFontSize 12
+}
+
+actor       用户          as USER
+participant CLI          as CLI
+participant "handleBackup\n命令处理器" as HANDLER
+participant "BackupEngine\n核心引擎" as ENGINE
+participant "FSAbstraction\n文件系统抽象" as FS
+participant "CriteriaFilter\n筛选器" as FILTER
+participant "Packer\n打包器" as PACK
+participant "Compressor\n压缩器" as COMP
+participant "Encryptor\n加密器" as ENC
+participant "LocalStorage\n存储层" as STORE
+
+== 1. CLI 解析与参数构建 ==
+
+USER -> CLI: **backer backup** <source> <dest>\n[--pack tar] [--compress gzip]\n[--encrypt aes256] [--include-path ...]
+activate CLI
+
+CLI -> CLI: CLI11 解析命令行参数
+note right: main.cpp: CLI11_PARSE\n→ 填充 BackupOptions 结构体
+
+CLI -> HANDLER: **handleBackup**(source, dest, opts)
+activate HANDLER
+
+== 2. 预处理阶段 ==
+
+HANDLER -> HANDLER: create LocalFsAbstraction
+note right: commands.cpp:514\nstd::make_unique<LocalFsAbstraction>()
+HANDLER -> HANDLER: **buildFilter**(opts)
+note right: commands.cpp:87-192\n无条件 → NoopFilter\n有条件 → CriteriaFilter(6维度)
+HANDLER -> HANDLER: **buildPacker**(opts.packFormat)
+note right: commands.cpp:198-206\n--pack tar → TarPacker\n--pack zip → ZipPacker\n未指定 → nullptr(镜像模式)
+HANDLER -> HANDLER: **makeBackupPath**()
+note right: 归档模式自动追加后缀\n"backup_20260715.tar"
+
+HANDLER -> ENGINE: **engine.backup**(source, dest, filter, packer)
+activate ENGINE
+
+== 3. BackupEngine 内部流水线 ==
+
+ENGINE -> ENGINE: 验证源路径存在且为目录
+note right: backup_engine.cpp:32-43\nstd::filesystem::exists\n&& is_directory
+
+ENGINE -> FS: **fs_->walk**(source)
+activate FS
+FS --> ENGINE: vector<FileEntry>
+deactivate FS
+note right: backup_engine.cpp:46-54\n递归遍历全部子条目
+
+alt filter != nullptr
+
+    ENGINE -> FILTER: **filter->apply**(entries)
+    activate FILTER
+    FILTER --> ENGINE: vector<FileEntry>(filtered)
+    deactivate FILTER
+    note right: criteria_filter.cpp\n路径 / 类型 / 名称 /\nmtime / 大小 / 所有者
+else filter == nullptr
+    note right: NoopFilter → 直通\nentries 不变
+end
+
+alt packer != nullptr  【归档模式】
+
+    ENGINE -> PACK: **packer->pack**(entries, *fs, source, ostream)
+    activate PACK
+    note right: tar_packer.cpp / zip_packer.cpp\n逐个读取文件 → 打包到内存流
+    PACK --> ENGINE: Expected<void, ErrorCode>
+    deactivate PACK
+
+    ENGINE -> STORE: **fs_->write**(dest, archiveData, kRegular)
+    activate STORE
+    note right: 归档二进制写入目标文件
+    STORE --> ENGINE: Expected<void, ErrorCode>
+    deactivate STORE
+
+else packer == nullptr  【目录镜像模式】
+
+    ENGINE -> FS: **fs_->mkdir**(destination)
+    activate FS
+    FS --> ENGINE: Expected<void, ErrorCode>
+    deactivate FS
+
+    loop 逐条目处理 [遍历 FileEntry 列表]
+
+        ENGINE -> ENGINE: switch(entry.type)
+        note right: kRegular / kDirectory /\nkSymlink / kFifo /\nkBlockDevice / kCharDevice
+
+        alt 常规文件
+            ENGINE -> FS: **fs_->read**(sourcePath)
+            activate FS
+            FS --> ENGINE: vector<char>
+            deactivate FS
+
+            ENGINE -> STORE: **fs_->write**(destPath, content, kRegular)
+            activate STORE
+            STORE --> ENGINE: Expected<void, ErrorCode>
+            deactivate STORE
+        else 目录
+            ENGINE -> FS: **fs_->mkdir**(destPath)
+            activate FS
+            FS --> ENGINE: Expected<void, ErrorCode>
+            deactivate FS
+        else 符号链接 / FIFO / 设备
+            ENGINE -> ENGINE: createSymlink / createFifo / createDevice
+        end
+
+        ENGINE -> FS: **fs_->restoreMetadata**(destPath, meta)
+        activate FS
+        FS --> ENGINE: Expected<void, ErrorCode>
+        deactivate FS
+    end
+    note right: #FFF9E6\n条目处理完毕后:\n最深优先排序 → 批量恢复\n全部延迟目录元数据
+end
+
+ENGINE --> HANDLER: BackupResult{success, stats}
+deactivate ENGINE
+
+== 4. 后处理阶段（handleBackup 层） ==
+
+opt compressAlgo 非空
+
+    HANDLER -> HANDLER: **buildCompressor**(algo, level)
+    note right: commands.cpp:574-589\nGzipCompressor / ZstdCompressor\n/ LzmaCompressor
+
+    HANDLER -> COMP: **transformFile**(archive, compressed, comp, compress)
+    activate COMP
+    note right: 读取 → 压缩 → 写出\n删除原始未压缩文件
+    COMP --> HANDLER: bool success
+    deactivate COMP
+end
+
+opt encryptAlgo 非空
+
+    HANDLER -> HANDLER: **buildEncryptor**(algo)
+    note right: commands.cpp:592-614\nOpenSslEncryptor (AES256/SM4)
+
+    HANDLER -> HANDLER: **resolvePassword**(password)\n[交互式提示]
+    note right: 命令行未提供密码时\n终端无回显输入 + 确认
+
+    HANDLER -> ENC: **encryptFile**(archive, encrypted, enc, password)
+    activate ENC
+    note right: 读取 → 加密 → 写出\n删除原始未加密文件
+    ENC --> HANDLER: bool success
+    deactivate ENC
+end
+
+== 5. 统计输出 ==
+
+HANDLER -> HANDLER: 组装统计信息
+note right: totalFiles / totalDirs /\ntotalBytes / skipped / elapsed
+
+HANDLER --> USER: **✓ Backup completed**\n  Archive: ...\n  Files: N   Dirs: M\n  Size: X bytes\n  Skipped: Y\n  Time: Z ms
+
+deactivate HANDLER
+@enduml

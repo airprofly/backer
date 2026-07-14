@@ -1,0 +1,136 @@
+@startuml
+' 备份任务状态转换图 - BackupEngine 备份任务完整生命周期
+' [*] 初始终止状态，按代码执行路径映射状态转移
+
+skinparam backgroundColor #FEFCF6
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 13
+
+skinparam state {
+    BackgroundColor #F0F4F8
+    BorderColor #2C3E50
+    FontColor #2C3E50
+    FontSize 13
+    FontStyle bold
+    ArrowColor #2C3E50
+    ArrowFontColor #2C3E50
+    ArrowFontSize 11
+}
+
+skinparam state {
+    StartColor #27AE60
+    EndColor #E74C3C
+}
+
+state "[*]"                  as START <<initial>>
+state "[*]"                  as END <<final>>
+
+state "任务已创建\n(CLI参数校验通过)"           as CREATED #E8F6F3
+state "遍历扫描中\n(fs_->walk 递归遍历)"         as SCANNING #D6EAF8
+state "筛选过滤中\n(6维度匹配计算)"               as FILTERING #FDEBD0
+
+state "打包中\n(packer->pack 归档打包)"           as PACKING #F5EEF8 {
+    state "逐项读取内容"      as PACK_READ
+    state "写入归档流"        as PACK_WRITE
+    [*] --> PACK_READ : packer->pack() 开始
+    PACK_READ --> PACK_WRITE : 文件内容读取完成
+    PACK_WRITE --> PACK_READ : 还有下一条目
+    PACK_READ --> [*] : 全部条目处理完毕
+}
+
+state "目录镜像写入中\n(逐项拷贝+元数据恢复)"     as MIRRORING #FEF9E7 {
+    state "创建目标根目录"    as MIRROR_MKDIR_ROOT
+    state "逐项拷贝"          as MIRROR_COPY
+    state "恢复元数据"        as MIRROR_META
+    [*] --> MIRROR_MKDIR_ROOT : fs_->mkdir(destination)
+    MIRROR_MKDIR_ROOT --> MIRROR_COPY : 根目录创建成功
+    MIRROR_COPY --> MIRROR_META : 单条目写入完成
+    MIRROR_META --> MIRROR_COPY : 还有下一条目
+    MIRROR_META --> [*] : 全部条目 + 延迟元数据\n恢复完成
+}
+
+state "压缩中\ntransformFile(compress)"           as COMPRESSING #E8DAEF
+state "加密中\nencryptFile(encrypt)"              as ENCRYPTING #FADBD8
+state "归档写入中\n(最终文件落盘)"                 as WRITING #D5F5E3
+state "任务完成"             as COMPLETED #27AE60
+state "任务失败"             as FAILED #E74C3C
+
+' ──── 任务启动 ────
+
+START --> CREATED : CLI 参数校验通过\nBackupOptions 构建完成
+note right of START : main.cpp: CLI11_PARSE
+
+' ──── 备份引擎启动 ────
+
+CREATED --> SCANNING : engine.backup() 被调用\n源路径验证通过(存在且为目录)
+note right of CREATED : backup_engine.cpp:32-43
+
+' ──── 遍历扫描 ────
+
+SCANNING --> FILTERING : fs_->walk() 返回\nfilter != nullptr
+note right of SCANNING : backup_engine.cpp:46-60
+
+SCANNING --> MIRRORING : fs_->walk() 返回\nfilter == nullptr
+
+' ──── 筛选过滤 ────
+
+FILTERING --> PACKING : CriteriaFilter::apply() 完成\npacker != nullptr
+note right of FILTERING : criteria_filter.cpp: apply()
+
+FILTERING --> MIRRORING : filter->apply() 完成\npacker == nullptr
+
+' ──── 打包中 ────
+
+PACKING --> COMPRESSING : buildCompressor 成功\ncompressAlgo 非空
+note right of PACKING : backup_engine.cpp:63-106\n→ commands.cpp:574-589
+
+PACKING --> ENCRYPTING : compressAlgo 为空\n但 encryptAlgo 非空
+
+PACKING --> WRITING : compress 和 encrypt\n均为空
+
+' ──── 压缩中 ────
+
+COMPRESSING --> ENCRYPTING : buildEncryptor 成功\nencryptAlgo 非空
+note right of COMPRESSING : commands.cpp:574-589
+
+COMPRESSING --> WRITING : encryptAlgo 为空
+
+' ──── 加密中 ────
+
+ENCRYPTING --> WRITING : encryptFile() 成功
+note right of ENCRYPTING : commands.cpp:592-614
+
+' ──── 写入归档/目录镜像 → 完成 ────
+
+WRITING --> COMPLETED : 写入成功\n输出统计信息
+
+MIRRORING --> COMPLETED : 所有条目处理完毕\n元数据恢复完成
+
+' ──── 异常路径（从任何状态都可进入任务失败） ────
+
+CREATED --> FAILED : 源路径不存在\n或不是目录
+note left of FAILED : backup_engine.cpp:32-43\nErrorCode::kPathNotFound
+
+SCANNING --> FAILED : walk 权限不足\n或路径不可读
+note left of FAILED : fs_abstraction.cpp\nErrorCode::kPermissionDenied
+
+FILTERING --> FAILED : 筛选处理异常
+
+MIRRORING --> FAILED : 磁盘空间不足\n文件写入失败
+note left of FAILED : fs_->write() 失败\nErrorCode::kDiskFull
+
+PACKING --> FAILED : 打包报错\n（文件读取失败等）
+note left of FAILED : packer->pack() 失败\nErrorCode::kPackError
+
+COMPRESSING --> FAILED : 压缩算法报错\ntransformFile 返回 false
+note left of FAILED : transformFile() 失败\n→ commands.cpp:583-586
+
+ENCRYPTING --> FAILED : 加密失败\n密码未提供/密钥错误
+note left of FAILED : encryptFile() 失败\n或 resolvePassword() 为空\n→ commands.cpp:600-613
+
+' ──── 结束 ────
+
+COMPLETED --> END : **报告输出** / 进程返回 **0**
+
+FAILED --> END : **错误输出** / 进程返回 **1**
+@enduml
