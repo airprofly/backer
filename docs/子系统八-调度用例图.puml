@@ -1,0 +1,46 @@
+@startuml
+!theme plain
+left to right direction
+
+actor "用户" as user
+actor "系统时钟" as clock
+actor "守护进程" as daemon
+
+rectangle "调度子系统" {
+  usecase "UC-SC-01\n添加定时备份任务" as SC1
+  usecase "UC-SC-02\n删除定时备份任务" as SC2
+  usecase "UC-SC-03\n启用 / 禁用\n定时任务" as SC3
+  usecase "UC-SC-04\n列出所有\n定时任务" as SC4
+  usecase "UC-SC-05\n加载任务配置\nJSON 持久化" as SC5
+  usecase "UC-SC-06\n计算下次\n触发时间" as SC6
+  usecase "UC-SC-07\n阻塞等待\n到期触发" as SC7
+  usecase "UC-SC-08\n执行到期\n备份任务" as SC8
+  usecase "UC-SC-09\n按数量淘汰\n快照" as SC9
+  usecase "UC-SC-10\n按天数淘汰\n快照" as SC10
+  usecase "UC-SC-11\n保存任务配置\n到 JSON 文件" as SC11
+  usecase "UC-SC-12\n立即执行\n定时任务" as SC12
+  usecase "UC-SC-13\n安全停止\n守护进程" as SC13
+  usecase "UC-SC-14\n(GUI) 编辑\n定时任务" as SC14
+}
+
+user --> SC1
+user --> SC2
+user --> SC3
+user --> SC4
+user --> SC14
+daemon --> SC5
+clock --> SC7
+user --> SC12
+user --> SC13
+
+SC1 ..> SC11 : <<include>>
+SC2 ..> SC11 : <<include>>
+SC3 ..> SC11 : <<include>>
+SC5 ..> SC11 : <<include>>
+SC7 ..> SC6 : <<include>>
+SC7 ..> SC8 : <<include>>
+SC8 .> SC9 : <<extend>>
+SC8 .> SC10 : <<extend>>
+SC12 ..> SC8 : <<include>>
+SC13 ..> SC14 : <<extend>>
+@enduml

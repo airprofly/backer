@@ -1,0 +1,48 @@
+@startuml
+!theme plain
+left to right direction
+
+actor "用户" as user
+actor "BackupEngine" as engine
+actor "RestoreEngine" as restore_engine
+actor "调度器" as scheduler
+
+rectangle "用户接口子系统" {
+  usecase "UC-UI-01\n通过 CLI 执行备份" as UI1
+  usecase "UC-UI-02\n通过 CLI 执行还原" as UI2
+  usecase "UC-UI-03\n通过 CLI 管理\n计划任务" as UI3
+  usecase "UC-UI-04\n通过 CLI 启动\n守护进程" as UI4
+  usecase "UC-UI-05\n通过 GUI 执行备份" as UI5
+  usecase "UC-UI-06\n通过 GUI 执行还原" as UI6
+  usecase "UC-UI-07\n通过 GUI 管理\n定时任务" as UI7
+  usecase "UC-UI-08\n通过 GUI 配置\n持久化设置" as UI8
+  usecase "UC-UI-09\n通过 GUI 设置\n筛选条件" as UI9
+  usecase "UC-UI-10\n取消正在进行的\n操作" as UI10
+  usecase "UC-UI-11\n恢复表单到\n默认值" as UI11
+}
+
+user --> UI1
+user --> UI2
+user --> UI3
+user --> UI4
+user --> UI5
+user --> UI6
+user --> UI7
+user --> UI8
+
+UI1 ..> UI9 : <<extend>>
+UI5 ..> UI9 : <<extend>>
+UI5 ..> UI10 : <<extend>>
+UI5 ..> UI11 : <<extend>>
+UI6 ..> UI10 : <<extend>>
+UI6 ..> UI11 : <<extend>>
+UI8 ..> UI11 : <<extend>>
+
+UI1 --> engine
+UI5 --> engine
+UI2 --> restore_engine
+UI6 --> restore_engine
+UI3 --> scheduler
+UI4 --> scheduler
+UI7 --> scheduler
+@enduml

@@ -1,0 +1,47 @@
+@startuml
+!theme plain
+left to right direction
+
+actor "CLI / GUI" as cli_gui
+actor "Compressor" as comp
+actor "Encryptor" as enc
+actor "Packer" as pack
+actor "Filter" as filter
+actor "FSAbstraction" as fs
+
+rectangle "核心引擎子系统" {
+  usecase "UC-CE-01\n验证源路径有效性" as CE1
+  usecase "UC-CE-02\n遍历源目录树\n收集文件条目" as CE2
+  usecase "UC-CE-03\n筛选文件条目" as CE3
+  usecase "UC-CE-04\n执行目录镜像复制" as CE4
+  usecase "UC-CE-05\n执行打包归档写入" as CE5
+  usecase "UC-CE-06\n按类型创建\n文件/目录/特殊文件" as CE6
+  usecase "UC-CE-07\n恢复文件元数据" as CE7
+  usecase "UC-CE-08\n生成操作统计" as CE8
+  usecase "UC-CE-09\n跳过失败文件\n继续执行" as CE9
+  usecase "UC-CE-10\n自动命名快照\n/还原目录" as CE10
+}
+
+cli_gui --> CE4
+cli_gui --> CE5
+cli_gui --> CE10
+
+CE4 ..> CE1 : <<include>>
+CE4 ..> CE2 : <<include>>
+CE4 ..> CE3 : <<include>>
+CE4 ..> CE6 : <<include>>
+CE4 ..> CE7 : <<include>>
+CE4 ..> CE8 : <<include>>
+CE5 ..> CE2 : <<include>>
+CE5 ..> CE3 : <<include>>
+CE5 ..> CE6 : <<include>>
+CE5 ..> CE8 : <<include>>
+CE4 ..> CE9 : <<extend>>
+CE5 ..> CE9 : <<extend>>
+
+CE2 --> fs
+CE3 --> filter
+CE5 --> pack
+CE7 --> fs
+CE6 --> fs
+@enduml

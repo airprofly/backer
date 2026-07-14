@@ -1,0 +1,33 @@
+@startuml
+!theme plain
+left to right direction
+
+actor "BackupEngine" as be
+actor "RestoreEngine" as re
+
+rectangle "打包子系统" {
+  usecase "UC-PK-01\n打包到 Tar\nustar 格式" as PK1
+  usecase "UC-PK-02\n从 Tar ustar\n解包" as PK2
+  usecase "UC-PK-03\n打包到 Zip 格式" as PK3
+  usecase "UC-PK-04\n从 Zip 解包" as PK4
+  usecase "UC-PK-05\n在 Tar 头部\n编码元数据" as PK5
+  usecase "UC-PK-06\n在 Zip 中嵌入\n.backer_zip_meta" as PK6
+  usecase "UC-PK-07\n验证 Tar 头部\n校验和" as PK7
+  usecase "UC-PK-08\n工厂创建打包器" as PK8
+}
+
+be --> PK1
+be --> PK3
+re --> PK2
+re --> PK4
+
+PK1 ..> PK5 : <<include>>
+PK1 ..> PK7 : <<include>>
+PK1 ..> PK8 : <<include>>
+PK2 ..> PK7 : <<include>>
+PK2 ..> PK8 : <<include>>
+PK3 ..> PK6 : <<include>>
+PK3 ..> PK8 : <<include>>
+PK4 ..> PK6 : <<include>>
+PK4 ..> PK8 : <<include>>
+@enduml

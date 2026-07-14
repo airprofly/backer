@@ -1,0 +1,27 @@
+@startuml
+!theme plain
+left to right direction
+
+actor "BackupEngine" as be
+
+rectangle "过滤子系统" {
+  usecase "UC-FL-01\n按路径 GLOB\n包含 / 排除" as FL1
+  usecase "UC-FL-02\n按文件类型筛选\n共 7 种类型" as FL2
+  usecase "UC-FL-03\n按文件名 GLOB\n包含 / 排除" as FL3
+  usecase "UC-FL-04\n按修改时间筛选\nUnix 时间戳" as FL4
+  usecase "UC-FL-05\n按文件大小筛选\n字节区间" as FL5
+  usecase "UC-FL-06\n按属主 UID 筛选\ngetpwnam_r 解析" as FL6
+  usecase "UC-FL-07\n多维度组合筛选\n同维 OR + 异维 AND" as FL7
+  usecase "UC-FL-08\n无筛选全量备份\nNoopFilter" as FL8
+}
+
+be --> FL7
+be --> FL8
+
+FL7 ..> FL1 : <<include>>
+FL7 ..> FL2 : <<include>>
+FL7 ..> FL3 : <<include>>
+FL7 .> FL4 : <<extend>>
+FL7 .> FL5 : <<extend>>
+FL7 .> FL6 : <<extend>>
+@enduml

@@ -1,0 +1,22 @@
+@startuml
+!theme plain
+left to right direction
+actor "用户" as user
+
+rectangle "Backer 系统" {
+  usecase "UC-TOP-01\n执行目录镜像备份" as UC1
+  usecase "UC-TOP-02\n执行打包归档备份" as UC2
+  usecase "UC-TOP-03\n执行还原操作" as UC3
+  usecase "UC-TOP-04\n管理定时备份任务" as UC4
+  usecase "UC-TOP-05\n启动守护进程\n定时执行备份" as UC5
+}
+
+user --> UC1
+user --> UC2
+user --> UC3
+user --> UC4
+user --> UC5
+
+UC5 ..> UC1 : <<include>>
+UC5 ..> UC3 : <<include>>
+@enduml

@@ -1,0 +1,37 @@
+@startuml
+!theme plain
+left to right direction
+
+actor "handleBackup\n/ handleRestore" as caller
+
+rectangle "压缩子系统" {
+  usecase "UC-CP-01\n选择压缩算法" as CP1
+  usecase "UC-CP-02\n设置压缩级别" as CP2
+  usecase "UC-CP-03\ngzip 压缩" as CP3
+  usecase "UC-CP-04\nzstd 压缩" as CP4
+  usecase "UC-CP-05\nlzma 压缩" as CP5
+  usecase "UC-CP-06\ngzip 解压" as CP6
+  usecase "UC-CP-07\nzstd 解压" as CP7
+  usecase "UC-CP-08\nlzma 解压" as CP8
+  usecase "UC-CP-09\n工厂创建压缩器" as CP9
+}
+
+caller --> CP1
+caller --> CP2
+caller --> CP3
+caller --> CP4
+caller --> CP5
+caller --> CP6
+caller --> CP7
+caller --> CP8
+
+CP1 ..> CP9 : <<include>>
+CP2 ..> CP9 : <<include>>
+CP3 ..> CP1 : <<include>>
+CP4 ..> CP1 : <<include>>
+CP5 ..> CP1 : <<include>>
+CP3 ..> CP2 : <<extend>>
+CP6 ..> CP9 : <<include>>
+CP7 ..> CP9 : <<include>>
+CP8 ..> CP9 : <<include>>
+@enduml

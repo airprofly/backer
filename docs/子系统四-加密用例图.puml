@@ -1,0 +1,54 @@
+@startuml
+!theme plain
+left to right direction
+
+actor "handleBackup\n/ handleRestore" as caller
+actor "用户" as user
+
+rectangle "加密子系统" {
+  usecase "UC-EN-01\n选择加密算法" as EN1
+  usecase "UC-EN-02\n命令行参数\n提供密码" as EN2
+  usecase "UC-EN-03\n交互式输入密码" as EN3
+  usecase "UC-EN-04\n确认密码一致" as EN4
+  usecase "UC-EN-05\nAES-256-GCM\n加密" as EN5
+  usecase "UC-EN-06\nSM4-CBC 加密" as EN6
+  usecase "UC-EN-07\nAES-256-GCM\n解密" as EN7
+  usecase "UC-EN-08\nSM4-CBC 解密" as EN8
+  usecase "UC-EN-09\n密钥派生\n(PBKDF2)" as EN9
+  usecase "UC-EN-10\n生成随机\nSalt 和 IV" as EN10
+  usecase "UC-EN-11\n校验 GCM\n认证标签" as EN11
+  usecase "UC-EN-12\n工厂创建\n加密器" as EN12
+  usecase "UC-EN-13\n写出加密\n头部格式" as EN13
+}
+
+caller --> EN1
+caller --> EN5
+caller --> EN6
+caller --> EN7
+caller --> EN8
+user --> EN2
+user --> EN3
+user --> EN4
+
+EN2 .> EN5 : <<extend>>
+EN3 .> EN5 : <<extend>>
+EN4 .> EN5 : <<extend>>
+EN2 .> EN7 : <<extend>>
+EN3 .> EN7 : <<extend>>
+EN5 ..> EN1 : <<include>>
+EN5 ..> EN9 : <<include>>
+EN5 ..> EN10 : <<include>>
+EN5 ..> EN12 : <<include>>
+EN5 ..> EN13 : <<include>>
+EN5 .> EN11 : <<extend>>
+EN6 ..> EN1 : <<include>>
+EN6 ..> EN9 : <<include>>
+EN6 ..> EN10 : <<include>>
+EN6 ..> EN12 : <<include>>
+EN6 ..> EN13 : <<include>>
+EN7 ..> EN9 : <<include>>
+EN7 ..> EN11 : <<include>>
+EN7 ..> EN12 : <<include>>
+EN8 ..> EN9 : <<include>>
+EN8 ..> EN12 : <<include>>
+@enduml

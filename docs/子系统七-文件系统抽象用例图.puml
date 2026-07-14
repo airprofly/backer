@@ -1,0 +1,47 @@
+@startuml
+!theme plain
+left to right direction
+
+actor "BackupEngine" as be
+actor "RestoreEngine" as re
+actor "Packer" as pack
+
+rectangle "文件系统抽象子系统" {
+  usecase "UC-FS-01\n递归遍历目录树" as FS1
+  usecase "UC-FS-02\n读取文件内容" as FS2
+  usecase "UC-FS-03\n写入常规文件" as FS3
+  usecase "UC-FS-04\n创建目录\n含父目录" as FS4
+  usecase "UC-FS-05\n创建符号链接" as FS5
+  usecase "UC-FS-06\n创建命名管道\n(FIFO)" as FS6
+  usecase "UC-FS-07\n创建设备节点\nblock / char" as FS7
+  usecase "UC-FS-08\n检测文件类型\nlstat 区分 7 种" as FS8
+  usecase "UC-FS-09\n读取文件元数据" as FS9
+  usecase "UC-FS-10\n恢复文件元数据\nlchown+fchmodat\n+utimensat" as FS10
+  usecase "UC-FS-11\n检测是否可\n恢复属主" as FS11
+  usecase "UC-FS-12\n路径映射转换\nsource↔relative\n↔backup" as FS12
+}
+
+be --> FS1
+be --> FS2
+be --> FS4
+be --> FS5
+be --> FS6
+be --> FS7
+be --> FS9
+be --> FS10
+be --> FS12
+re --> FS1
+re --> FS2
+re --> FS3
+re --> FS4
+re --> FS5
+re --> FS6
+re --> FS7
+re --> FS10
+re --> FS12
+pack --> FS2
+
+FS1 ..> FS8 : <<include>>
+FS1 ..> FS9 : <<include>>
+FS10 ..> FS11 : <<include>>
+@enduml
