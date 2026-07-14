@@ -437,7 +437,11 @@ static std::string currentTimestamp() {
     auto now = std::chrono::system_clock::now();
     auto tt = std::chrono::system_clock::to_time_t(now);
     std::tm tm{};
+#if BACKER_PLATFORM_POSIX
     localtime_r(&tt, &tm);
+#else
+    localtime_s(&tm, &tt);
+#endif
     std::ostringstream os;
     os << std::put_time(&tm, "%Y%m%d_%H%M%S");
     return os.str();
