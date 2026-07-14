@@ -301,22 +301,17 @@ Expected<void, ErrorCode> ZipPacker::pack(
         return ErrorCode::kCompressionFailed;
     }
 
-    // 3. Write metadata entry first
+    // 3. Write metadata entry first (internal, no meaningful timestamp)
+    if (!mz_zip_writer_add_mem_ex_v2(&zip, ".backer_zip_meta",
+                                      metaJson.data(), metaJson.size(),
+                                      nullptr, 0, MZ_DEFAULT_COMPRESSION,
+                                      0, 0, nullptr,
+                                      nullptr, 0, nullptr, 0))
     {
-        MZ_TIME_T metaTime = 0;
-        if (!mz_zip_writer_add_mem_ex_v2(&zip, ".backer_zip_meta",
-                                          metaJson.data(), metaJson.size(),
-                                          nullptr, 0, MZ_DEFAULT_COMPRESSION,
-                                          0, 0, &metaTime,
-                                          nullptr, 0, nullptr, 0))
-        {
-            mz_zip_writer_end(&zip);
-            spdlog::error("ZipPacker: failed to add metadata entry");
-            return ErrorCode::kCompressionFailed;
-        }
+        mz_zip_writer_end(&zip);
+        spdlog::error("ZipPacker: failed to add metadata entry");
+        return ErrorCode::kCompressionFailed;
     }
-
-    // 4. Write file entries
     for (auto const& entry : files) {
         auto pathStr = entry.relativePath.generic_string();
         MZ_TIME_T entryTime = static_cast<MZ_TIME_T>(entry.metadata.modifyTimeSec);
