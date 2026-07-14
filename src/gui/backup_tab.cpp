@@ -72,7 +72,8 @@ void BackupTab::setupUi()
 
     enableEncrypt_ = new QCheckBox(QStringLiteral("加密"));
     encryptAlgo_ = new QComboBox();
-    encryptAlgo_->addItems({QStringLiteral("AES-256"), QStringLiteral("SM4")});
+    encryptAlgo_->addItem(QStringLiteral("AES-256"),  QStringLiteral("aes256"));
+    encryptAlgo_->addItem(QStringLiteral("SM4"),      QStringLiteral("sm4"));
     encryptAlgo_->setEnabled(false);
     password_ = new QLineEdit();
     password_->setEchoMode(QLineEdit::Password);
@@ -287,7 +288,7 @@ backer::cli::BackupOptions BackupTab::collectOptions() const
     }
 
     if (enableEncrypt_->isChecked()) {
-        opts.encryptAlgo = encryptAlgo_->currentText().toStdString();
+        opts.encryptAlgo = encryptAlgo_->currentData().toString().toStdString();
         opts.password = password_->text().toStdString();
     }
 
@@ -364,15 +365,8 @@ void BackupTab::onStartBackup()
     auto src = std::filesystem::path(sourcePath_->text().toStdString());
     auto dst = std::filesystem::path(destPath_->text().toStdString());
 
-    // When pack is enabled and destination is an existing directory,
-    // put the archive INSIDE that directory (not alongside it).
-    if (!opts.packFormat.empty() && std::filesystem::is_directory(dst)) {
-        auto name = dst.filename().string();
-        if (name.empty() || name == "." || name == "..") {
-            name = "backup";
-        }
-        dst = dst / name;
-    }
+    // Always treat destination as a directory; auto-generate a name inside it.
+    dst = backer::cli::makeBackupPath(dst, src, opts.packFormat);
 
     worker_ = new BackupWorker(BackupWorker::Backup, src, dst, opts, this);
 

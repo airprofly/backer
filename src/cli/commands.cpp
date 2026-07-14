@@ -16,14 +16,19 @@
 #include "scheduler/schedule_store.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <regex>
+#include <sstream>
 #include <string>
+#include <unordered_set>
 #include <spdlog/spdlog.h>
 
 #if BACKER_PLATFORM_POSIX
@@ -404,7 +409,85 @@ static std::optional<std::string> resolvePassword(std::string const& provided,
     return promptPassword(confirm);
 }
 
+/// Strip known archive/compress/encrypt extensions from a filename.
+///   "data_20260714.tar.gz.enc" → "data_20260714"
+static std::string stripExtensions(std::filesystem::path const& path) {
+    static std::unordered_set<std::string> const kKnownExts = {
+        ".enc", ".gz", ".zst", ".lzma", ".xz", ".tar", ".zip"
+    };
+    // Strip trailing separators so filename() is reliable
+    auto s = path.string();
+    while (s.size() > 1 && (s.back() == '/' || s.back() == '\\'))
+        s.pop_back();
+    auto filename = std::filesystem::path(s).filename().string();
+    auto p = std::filesystem::path(filename);
+    while (true) {
+        auto ext = p.extension().string();
+        if (!ext.empty() && kKnownExts.count(ext)) {
+            p = p.stem();
+        } else {
+            break;
+        }
+    }
+    return p.string();
+}
+
+/// Return current local time as YYYYMMDD_HHMMSS.
+static std::string currentTimestamp() {
+    auto now = std::chrono::system_clock::now();
+    auto tt = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{};
+    localtime_r(&tt, &tm);
+    std::ostringstream os;
+    os << std::put_time(&tm, "%Y%m%d_%H%M%S");
+    return os.str();
+}
+
 } // anonymous namespace
+
+// ══════════════════════════════════════════════════════════════════════════════
+// makeBackupPath / makeRestorePath
+// ══════════════════════════════════════════════════════════════════════════════
+
+std::filesystem::path makeBackupPath(
+    std::filesystem::path const& destDir,
+    std::filesystem::path const& source,
+    std::string const& packFormat)
+{
+    // Strip trailing separators so filename() is reliable
+    auto s = source.string();
+    while (s.size() > 1 && (s.back() == '/' || s.back() == '\\'))
+        s.pop_back();
+    auto srcName = std::filesystem::path(s).filename().string();
+    if (srcName.empty() || srcName == "." || srcName == "..") {
+        srcName = "backup";
+    }
+    auto ts = currentTimestamp();
+
+    auto name = srcName + "_" + ts;
+    if (!packFormat.empty()) {
+        name += "." + packFormat;
+    }
+
+    std::error_code ec;
+    std::filesystem::create_directories(destDir, ec);
+    return destDir / name;
+}
+
+std::filesystem::path makeRestorePath(
+    std::filesystem::path const& destDir,
+    std::filesystem::path const& source)
+{
+    auto baseName = stripExtensions(source);
+    if (baseName.empty() || baseName == "." || baseName == "..") {
+        baseName = "restore";
+    }
+    auto ts = currentTimestamp();
+
+    std::error_code ec;
+    std::filesystem::create_directories(destDir, ec);
+    return destDir / (baseName + "_R" + ts);
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // handleBackup

@@ -50,18 +50,21 @@ backer restore <source> <destination> [OPTIONS]
 
 **说明**
 
-默认模式。Backer 将源目录递归扫描，在目标位置重建完整的目录结构，每个文件逐一复制：
+默认模式。Backer 将源目录递归扫描，在目标目录中创建带时间戳的快照文件夹，重建完整的目录结构，每个文件逐一复制：
 
 ```text
-源目录                          备份目录
+源目录                          仓库目录
 data/source/                    data/backup/
-├── docs/                       ├── docs/
-│   ├── report.pdf              │   ├── report.pdf
-│   └── notes.txt               │   └── notes.txt
-├── src/                        ├── src/
-│   └── main.cpp                │   └── main.cpp
-└── README.md                   └── README.md
+└── ...                         └── source_20260714_172800/
+                                    ├── docs/
+                                    │   ├── report.pdf
+                                    │   └── notes.txt
+                                    ├── src/
+                                    │   └── main.cpp
+                                    └── README.md
 ```
+
+> 目标路径固定视为**仓库目录**（repository），系统自动在其内部生成 `{源目录名}_{时间戳}` 格式的快照文件夹，避免多个备份互相覆盖。
 
 备份完成后输出统计信息：
 
@@ -77,11 +80,11 @@ data/source/                    data/backup/
 **示例**
 
 ```bash
-# 备份项目目录
+# 备份项目目录（产出 data/backup/source_20260714_172800/）
 ./build/backer-cli backup data/source data/backup
 
-# 还原备份
-./build/backer-cli restore data/backup data/restore
+# 还原备份（产出 data/restore/backup_20260714_172800_R20260714_180000/）
+./build/backer-cli restore data/backup/source_20260714_172800 data/restore
 ```
 
 ---
@@ -267,12 +270,12 @@ backer-cli backup <source> <destination> [--include-* ...] [--exclude-* ...]
 **示例**
 
 ```bash
-# 打包备份与还原
-./build/backer-cli backup data/source data/backup.tar --pack tar
-./build/backer-cli restore data/backup.tar data/restore --pack tar
+# 打包备份与还原（产出 data/repo/source_20260714_172800.tar）
+./build/backer-cli backup data/source data/repo --pack tar
+./build/backer-cli restore data/repo/source_20260714_172800.tar data/restore --pack tar
 
 # 快速快照：仅备份目录和符号链接（不备份文件内容）
-./build/backer-cli backup data/source snapshot.tar --pack tar \
+./build/backer-cli backup data/source data/repo --pack tar \
     --include-type dir --include-type symlink
 ```
 
@@ -321,12 +324,12 @@ Zip 格式不原生支持特殊文件类型，Backer 通过在归档中嵌入元
 **示例**
 
 ```bash
-# Zip 打包备份与还原
-./build/backer-cli backup data/source data/backup.zip --pack zip
-./build/backer-cli restore data/backup.zip data/restore --pack zip
+# Zip 打包备份与还原（产出 data/repo/source_20260714_172800.zip）
+./build/backer-cli backup data/source data/repo --pack zip
+./build/backer-cli restore data/repo/source_20260714_172800.zip data/restore --pack zip
 
 # 仅备份特定类型的文件
-./build/backer-cli backup data/source data/backup.zip --pack zip \
+./build/backer-cli backup data/source data/repo --pack zip \
     --include-type file --include-type dir
 
 # 与筛选器组合
@@ -377,28 +380,29 @@ cmake --build build -j$(nproc)
 #### 命令
 
 ```bash
-# 备份 → 打包 (tar) → 压缩 (gzip) 产出 data/backup.tar.gz
-./build/backer-cli backup data/source data/backup --pack tar --compress gzip
+# 备份 → 打包 (tar) → 压缩 (gzip) 产出 data/repo/source_20260714_172800.tar.gz
+./build/backer-cli backup data/source data/repo --pack tar --compress gzip
 
 # 指定压缩级别（1=最快, 9=最高压缩比）
-./build/backer-cli backup data/source data/backup --pack tar --compress lzma --compress-level 9
+./build/backer-cli backup data/source data/repo --pack tar --compress lzma --compress-level 9
 
 # 还原：先解压 (gzip) 再解包 (tar)
-./build/backer-cli restore data/backup.tar.gz data/restore --pack tar --decompress gzip
+./build/backer-cli restore data/repo/source_20260714_172800.tar.gz data/restore \
+    --pack tar --decompress gzip
  
 # 三种算法均可
-./build/backer-cli backup data/source data/backup --pack tar --compress zstd
-./build/backer-cli backup data/source data/backup --pack tar --compress lzma
+./build/backer-cli backup data/source data/repo --pack tar --compress zstd
+./build/backer-cli backup data/source data/repo --pack tar --compress lzma
 ```
 
 #### 文件命名
 
-备份时自动追加后缀（避免与用户已有的扩展名重复）：
+备份时自动在仓库目录内生成 `{源目录名}_{时间戳}.{格式}` 文件名，压缩/加密后追加相应后缀：
 
 ```
---pack tar --compress gzip  → data/backup.tar.gz
---pack tar --compress zstd  → data/backup.tar.zst
---pack tar --compress lzma  → data/backup.tar.xz
+--pack tar --compress gzip  → repo/src_172800.tar.gz
+--pack tar --compress zstd  → repo/src_172800.tar.zst
+--pack tar --compress lzma  → repo/src_172800.tar.xz
 ```
 
 还原时 `--decompress` 读取压缩归档，解压到临时文件后交给解包器，完成后自动清理临时文件。
@@ -458,21 +462,22 @@ Confirm encryption password:      # 确认（仅加密时）
 
 ```bash
 # 备份 → 打包 (tar) → 压缩 (gzip) → 加密 (AES-256-GCM)
-# 产出：data/backup.tar.gz.enc
-./build/backer-cli backup data/source data/backup --pack tar --compress gzip \
+# 产出：data/repo/src_20260714_172800.tar.gz.enc
+./build/backer-cli backup data/source data/repo --pack tar --compress gzip \
     --encrypt aes256 --password "secret"
 
 # 仅加密（不压缩）
-# 产出：data/backup.tar.enc
-./build/backer-cli backup data/source data/backup --pack tar \
+# 产出：data/repo/src_20260714_172800.tar.enc
+./build/backer-cli backup data/source data/repo --pack tar \
     --encrypt aes256 --password "secret"
 
 # 使用 SM4-CBC 加密
-./build/backer-cli backup data/source data/backup --pack tar \
+./build/backer-cli backup data/source data/repo --pack tar \
     --encrypt sm4 --password "sm4-passphrase"
 
 # 还原：解密 → 解压 (gzip) → 解包 (tar)
-./build/backer-cli restore data/backup.tar.gz.enc data/restore \
+# 还原产出：data/restore/src_20260714_172800_R20260714_180000/
+./build/backer-cli restore data/repo/src_20260714_172800.tar.gz.enc data/restore \
     --pack tar --decompress gzip --decrypt aes256 --password "secret"
 ```
 
@@ -636,7 +641,9 @@ backer schedule disable <id>                      # 禁用任务
 docker build -t backer .
 
 # 使用 Compose（自动挂载数据卷）
+# 产出 /data/backup/source_20260714_172800/
 docker compose run --rm backer backup /data/source /data/backup
+# 产出 /data/restore/backup_20260714_172800_R20260714_180000/
 docker compose run --rm backer restore /data/backup /data/restore
 
 # 查看帮助

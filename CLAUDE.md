@@ -51,8 +51,8 @@ ctest --test-dir build --output-on-failure            # 运行所有测试
 ./build/backer_test --gtest_filter="*BackupCore*"     # 指定测试
 
 # 手动使用 CLI / 端到端
-./build/backer-cli backup data/source data/backup     # 备份
-./build/backer-cli restore data/backup data/restore   # 还原
+./build/backer-cli backup data/source data/backup         # 备份 → data/backup/source_172800/
+./build/backer-cli restore data/backup/source_172800 data/restore   # 还原
 bash scripts/test-backup-restore.sh                   # 端到端流程测试
 
 # Docker

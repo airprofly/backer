@@ -84,7 +84,8 @@ void RestoreTab::setupUi()
     auto* decryptLayout = new QHBoxLayout();
     enableDecrypt_ = new QCheckBox(QStringLiteral("解密"));
     decryptAlgo_ = new QComboBox();
-    decryptAlgo_->addItems({QStringLiteral("AES-256"), QStringLiteral("SM4")});
+    decryptAlgo_->addItem(QStringLiteral("AES-256"),  QStringLiteral("aes256"));
+    decryptAlgo_->addItem(QStringLiteral("SM4"),      QStringLiteral("sm4"));
     decryptAlgo_->setEnabled(false);
     password_ = new QLineEdit();
     password_->setEchoMode(QLineEdit::Password);
@@ -210,12 +211,15 @@ void RestoreTab::onStartRestore()
     if (enablePack_->isChecked())
         opts.packFormat = packFormat_->currentText().toLower().toStdString();
     if (enableDecrypt_->isChecked()) {
-        opts.decryptAlgo = decryptAlgo_->currentText().toStdString();
+        opts.decryptAlgo = decryptAlgo_->currentData().toString().toStdString();
         opts.password = password_->text().toStdString();
     }
 
     auto src = std::filesystem::path(sourcePath_->text().toStdString());
     auto dst = std::filesystem::path(destPath_->text().toStdString());
+
+    // Always treat destination as a directory; auto-generate a restore folder inside.
+    dst = backer::cli::makeRestorePath(dst, src);
 
     worker_ = new BackupWorker(BackupWorker::Restore, src, dst, opts, this);
 
