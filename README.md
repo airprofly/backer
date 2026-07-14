@@ -20,42 +20,39 @@ Backer 是计算机组成与体系结构/软件工程课程项目，基于 **C++
 
 **当前状态**：已完成核心备份/还原、特殊文件、元数据保留、自定义筛选（6 维度）、Tar/Zip 打包、gzip/zstd/lzma 压缩、AES-256-GCM/SM4-CBC 加密、Qt 6 图形界面及**定时备份（Cron 调度 + 数据淘汰）**。后续将通过管道架构扩展实时监控及网络备份等功能。
 
-## 🚀 快速开始（Linux）
+## 🔧 构建与运行
 
-> **第一次接触这个项目？** 完整的分步指南见 [`SETUP.md`](SETUP.md)——从安装依赖到编译运行，每一步都有命令和预期输出。
+**前置要求**：GCC 9+ / Clang 12+、CMake 3.16+
 
-### 一分钟速览
+> 加密功能需要系统安装 OpenSSL 开发库（Ubuntu: `sudo apt install libssl-dev`，Fedora: `sudo dnf install openssl-devel`）。CMake 通过 `find_package` 自动检测。
+
+### Linux
 
 ```bash
-# 1. 安装依赖
-sudo apt install cmake g++ libssl-dev
-
-# 2. 编译 CLI
+# 构建（CLI 版本，需要 OpenSSL）
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
-# 3. 生成测试数据并运行
-bash scripts/setup-testdata.sh              # 生成 500+ 文件、符号链接、FIFO 等
+# 构建 GUI 版本（需要 Qt6：sudo apt install qt6-base-dev）
+cmake -B build -DBUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+
+# 运行测试
+ctest --test-dir build --output-on-failure
+
+# 生成测试数据（在 data/source 下创建目录及各类文件）
+bash scripts/setup-testdata.sh
+
+# CLI 使用（测试数据目录备份/还原）
 ./build/backer-cli backup data/source data/backup
 ./build/backer-cli restore data/backup data/restore
 
-# 4. 运行测试
-ctest --test-dir build --output-on-failure
+# 端到端流程测试（交互式选择 Local/Docker）
+bash scripts/test-backup-restore.sh
 
-# 5. 编译 GUI（可选，需桌面环境）
-cmake -B build -DBUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j$(nproc)
-bash scripts/run-gui.sh
+# 仅运行特定测试
+./build/backer_test --gtest_filter="*RestoreEngine*"
 ```
-
-### 要点说明
-
-| 主题 | 说明 |
-|------|------|
-| **依赖管理** | 所有库（CLI11、spdlog、GTest、zlib/zstd/lzma、Qt6）通过 CMake FetchContent 自动拉取，**无需手动安装**。只需 cmake、g++、libssl-dev |
-| **Qt6 (GUI)** | 通过 `cmake/FetchQt6.cmake` 自动下载预编译包，**无需 `apt install qt6-base-dev`** |
-| **增量编译** | 修改源码后只需 `cmake --build build -j$(nproc)`，**不需要** `rm -rf build` |
-| **测试数据** | `scripts/setup-testdata.sh` 生成 500+ 文件覆盖全部功能场景（特殊文件、权限、Unicode 等） |
 
 ### Docker 构建
 
@@ -107,19 +104,16 @@ docker run --rm backer --help
 ```text
 backer/
 ├── CMakeLists.txt            # 根构建配置（FetchContent 自动拉取依赖）
-├── SETUP.md                  #   **新用户入口**：从零搭建分步指南
 ├── Dockerfile                # Multi-stage Docker 构建
 ├── docker-compose.yml        # Compose 编排
 ├── .dockerignore             # 构建上下文精简
-├── .github/                  # CI: workflows/ci.yml（Linux/macOS/Windows 三平台）
-├── .claude/                  # Claude Code AI 辅助配置
+├── .github/                  # CI: workflows/ci.yml（lint → 构建测试 → Valgrind → Docker）
+├── .claude/                  # Claude Code AI 辅助配置（commands/：implement-feature, test-features, update-info, git 等）
 ├── cmake/                    # CMake 模块（FetchQt6.cmake — Qt6 自动下载）
-├── .vscode/                  # VS Code 编辑器配置
+├── .vscode/                  # VS Code 编辑器配置（c_cpp_properties.json）
 ├── CLAUDE.md                 # AI 辅助开发指南
 ├── LICENSE                   # Apache 2.0
 ├── docs/
-│   ├── linux-setup-guide.md       # Linux 环境详细参考文档
-│   ├── usage-gui-verify.md        # GUI 功能验证手册
 │   ├── architecture-design.md     # 分层架构 + 管道模式
 │   ├── requirements.md            # 需求规格说明
 │   ├── technology-selection.md    # 技术选型记录
@@ -140,12 +134,7 @@ backer/
 │   ├── watch/      🔲       # inotify 实时监控
 │   └── network/    🔲       # gRPC 网络备份
 ├── tests/                    # 📝 Google Test 单元测试
-├── scripts/                  # 辅助脚本
-│   ├── setup.sh              # 一键环境配置 + 编译（自动下载 Qt6/OpenGL）
-│   ├── setup-testdata.sh     # 全功能测试数据生成器（500+ 文件）
-│   ├── run-gui.sh            # GUI 启动脚本（自动设置库路径）
-│   ├── setup-testdata.sh     # 测试数据生成
-│   └── test-backup-restore.sh# 端到端备份还原测试
+├── scripts/                  # 辅助脚本（setup-qt6.sh, setup-testdata.sh, test-backup-restore.sh）
 └── data/                     # 🧪 脚本生成的测试数据（.gitignore）
     ├── source/               # 源目录（setup-testdata.sh 生成）
     ├── backup/               # 备份输出

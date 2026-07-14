@@ -228,8 +228,7 @@ int main(int argc, char** argv)
         opts.encryptAlgo = std::move(backupEncryptAlgo);
         opts.password    = std::move(backupPassword);
 
-        auto resolvedDest = backer::cli::makeBackupPath(backupDest, backupSource, backupPackFormat);
-        return backer::cli::handleBackup(backupSource, resolvedDest, opts);
+        return backer::cli::handleBackup(backupSource, backupDest, opts);
     }
     if (*restoreCmd) {
         backer::cli::RestoreOptions opts;
@@ -246,8 +245,7 @@ int main(int argc, char** argv)
         opts.decryptAlgo = std::move(restoreDecryptAlgo);
         opts.password    = std::move(restorePassword);
 
-        auto resolvedDest = backer::cli::makeRestorePath(restoreDest, restoreSource);
-        return backer::cli::handleRestore(restoreSource, resolvedDest, opts);
+        return backer::cli::handleRestore(restoreSource, restoreDest, opts);
     }
     if (*scheduleCmd) {
         return backer::cli::handleSchedule(scheduleCmd->remaining());

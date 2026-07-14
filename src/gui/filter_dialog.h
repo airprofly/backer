@@ -24,7 +24,6 @@ public:
     // ── Setters (pre-fill from existing config) ─────────────
     void setIncludePaths(QStringList const& paths);
     void setExcludePaths(QStringList const& paths);
-    void setIncludeTypes(QStringList const& types);
 
     // ── Getters ─────────────────────────────────────────────
     QStringList includePaths() const;

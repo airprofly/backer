@@ -58,59 +58,13 @@ endif()
 # ── Bootstrap pip (if not already available) ──────────────────────────
 execute_process(COMMAND ${_python} -m ensurepip --upgrade
     OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE _ensure_ret)
-
-# Try pip install; Ubuntu 24.04+ may need --break-system-packages (PEP 668)
 execute_process(COMMAND ${_python} -m pip install --user aqtinstall
-    OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE _pip_ret)
-if(NOT _pip_ret EQUAL 0)
-    execute_process(COMMAND ${_python} -m pip install --user --break-system-packages aqtinstall
-        OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE _pip_ret)
-endif()
-if(NOT _pip_ret EQUAL 0)
-    execute_process(COMMAND pip3 install --user aqtinstall
-        OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE _pip_ret)
-endif()
+    OUTPUT_VARIABLE _pip_out ERROR_VARIABLE _pip_err
+    RESULT_VARIABLE _pip_ret OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 if(NOT _pip_ret EQUAL 0)
-    message(WARNING "FetchQt6: pip install aqtinstall failed. "
-        "Install manually: python3 -m pip install --user --break-system-packages aqtinstall")
+    message(WARNING "FetchQt6: pip install aqtinstall failed: ${_pip_err}")
     return()
-endif()
-
-# ── On Linux, ensure OpenGL is available (Qt6Gui depends on it) ─────
-if(UNIX AND NOT APPLE AND NOT OPENGL_FOUND)
-    find_package(OpenGL QUIET)
-    if(NOT OpenGL_FOUND)
-        set(_gl_dir "${CMAKE_BINARY_DIR}/_deps/opengl_local")
-        if(NOT EXISTS "${_gl_dir}/usr/lib/x86_64-linux-gnu/libOpenGL.so")
-            message(STATUS "FetchQt6: OpenGL not found, downloading...")
-            file(MAKE_DIRECTORY "${_gl_dir}")
-            execute_process(COMMAND apt-get download libopengl0 libgl1 libglx0 libegl1
-                OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE _dl_ret
-                WORKING_DIRECTORY "${_gl_dir}")
-            execute_process(COMMAND apt-get download libgl1-mesa-dev libgl-dev libglx-dev
-                libopengl-dev libegl-dev libglvnd-dev
-                OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE _dl_ret2
-                WORKING_DIRECTORY "${_gl_dir}")
-            if(_dl_ret EQUAL 0 OR _dl_ret2 EQUAL 0)
-                file(GLOB _debs "${_gl_dir}/*.deb")
-                foreach(_deb ${_debs})
-                    execute_process(COMMAND dpkg-deb -x "${_deb}" "${_gl_dir}"
-                        OUTPUT_QUIET ERROR_QUIET)
-                endforeach()
-            endif()
-        endif()
-        if(EXISTS "${_gl_dir}/usr/lib/x86_64-linux-gnu/libGL.so")
-            set(OPENGL_INCLUDE_DIR "${_gl_dir}/usr/include" CACHE PATH "" FORCE)
-            set(OPENGL_gl_LIBRARY
-                "${_gl_dir}/usr/lib/x86_64-linux-gnu/libGL.so" CACHE FILEPATH "" FORCE)
-            set(OpenGL_GL_PREFERENCE "LEGACY" CACHE STRING "OpenGL preference (LEGACY for Qt6 compatibility)" FORCE)
-            message(STATUS "FetchQt6: OpenGL extracted to ${_gl_dir}")
-        else()
-            message(STATUS "FetchQt6: OpenGL not available — "
-                "install: sudo apt install libgl1-mesa-dev")
-        endif()
-    endif()
 endif()
 
 # ── Detect platform for aqtinstall ────────────────────────────────────
@@ -156,10 +110,6 @@ endif()
 set(Qt6_DIR "${_qt_dir}/${QT6_VERSION}/${_aqt_arch}"
     CACHE PATH "Path to downloaded Qt6" FORCE)
 message(STATUS "FetchQt6: Qt6 downloaded to ${Qt6_DIR}")
-
-# Add Qt6_DIR to CMAKE_PREFIX_PATH so find_dependency calls inside
-# Qt6Config can locate sub-modules (Qt6WidgetsTools, Qt6GuiTools, Qt6CoreTools).
-list(APPEND CMAKE_PREFIX_PATH "${Qt6_DIR}")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets
     PATHS "${Qt6_DIR}" NO_DEFAULT_PATH)

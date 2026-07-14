@@ -100,7 +100,6 @@ nbdist/
 Thumbs.db
 desktop.ini
 *.lnk
-*:Zone.Identifier
 
 # =============== 压缩文件 ===============
 *.zip

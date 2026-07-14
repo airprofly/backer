@@ -38,7 +38,7 @@ QString globalStylesheet()
             font-family: -apple-system, "PingFang SC", "Segoe UI",
                          "Helvetica Neue", "Noto Sans CJK SC",
                          "Microsoft YaHei", sans-serif;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         /* ── 标签 ────────────────────────────────── */
@@ -48,19 +48,15 @@ QString globalStylesheet()
             border: none;
             padding: 0;
         }
-        QLabel[heading="true"] {
-            font-size: 18px;
-            font-weight: 600;
-        }
 
         /* ── 输入框 ──────────────────────────────── */
         QLineEdit, QSpinBox, QComboBox, QDateTimeEdit {
             background-color: %3;
             border: 1px solid %10;
             border-radius: %4px;
-            padding: 10px 14px;
+            padding: 7px 10px;
             color: %2;
-            font-size: 15px;
+            font-size: 13px;
             selection-background-color: %6;
             selection-color: white;
         }
@@ -74,17 +70,17 @@ QString globalStylesheet()
         QComboBox::drop-down {
             border: none;
             background: transparent;
-            width: 28px;
+            width: 24px;
         }
         QComboBox::down-arrow {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
         }
         QComboBox QAbstractItemView {
             background-color: %3;
             border: 1px solid %10;
             border-radius: %4px;
-            padding: 6px;
+            padding: 4px;
             selection-background-color: %6;
             selection-color: white;
             outline: none;
@@ -94,15 +90,15 @@ QString globalStylesheet()
         QProgressBar {
             background-color: %5;
             border: none;
-            border-radius: 3px;
-            height: 6px;
+            border-radius: 2px;
+            height: 4px;
             text-align: center;
             font-size: 0px;
             color: transparent;
         }
         QProgressBar::chunk {
             background-color: %6;
-            border-radius: 3px;
+            border-radius: 2px;
         }
 
         /* ── 表格 ────────────────────────────────── */
@@ -115,10 +111,9 @@ QString globalStylesheet()
             outline: none;
         }
         QTableWidget::item {
-            padding: 10px 14px;
+            padding: 6px 10px;
             border: none;
             border-bottom: 1px solid %5;
-            font-size: 14px;
         }
         QTableWidget::item:selected {
             background-color: %5;
@@ -128,10 +123,9 @@ QString globalStylesheet()
             background-color: %1;
             border: none;
             border-bottom: 1px solid %10;
-            padding: 10px 14px;
-            font-weight: 600;
+            padding: 8px 10px;
+            font-weight: 500;
             color: %7;
-            font-size: 13px;
         }
 
         /* ── 列表 ────────────────────────────────── */
@@ -139,13 +133,12 @@ QString globalStylesheet()
             background-color: %3;
             border: 1px solid %10;
             border-radius: %4px;
-            padding: 6px;
+            padding: 4px;
             outline: none;
-            font-size: 14px;
         }
         QListWidget::item {
             border-radius: %4px;
-            padding: 8px 12px;
+            padding: 6px 10px;
         }
         QListWidget::item:selected {
             background-color: %6;
@@ -156,15 +149,15 @@ QString globalStylesheet()
         QGroupBox {
             background: transparent;
             border: none;
-            margin-top: 4px;
+            margin-top: 0;
             padding: 0;
         }
         QGroupBox::title {
             subcontrol-origin: margin;
             subcontrol-position: top left;
-            padding: 0 0 10px 0;
+            padding: 0 0 8px 0;
             color: %7;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
         }
@@ -172,12 +165,12 @@ QString globalStylesheet()
         /* ── 滚动条 ──────────────────────────────── */
         QScrollBar:vertical {
             background: transparent;
-            width: 8px;
+            width: 6px;
             border: none;
         }
         QScrollBar::handle:vertical {
             background: %10;
-            border-radius: 4px;
+            border-radius: 3px;
             min-height: 30px;
         }
         QScrollBar::handle:vertical:hover {
@@ -189,12 +182,12 @@ QString globalStylesheet()
 
         QScrollBar:horizontal {
             background: transparent;
-            height: 8px;
+            height: 6px;
             border: none;
         }
         QScrollBar::handle:horizontal {
             background: %10;
-            border-radius: 4px;
+            border-radius: 3px;
             min-width: 30px;
         }
         QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
@@ -213,15 +206,15 @@ QString globalStylesheet()
             background: transparent;
             border: none;
             border-radius: 0;
-            padding: 12px 24px;
+            padding: 8px 18px;
             margin: 0;
             color: %7;
-            font-size: 15px;
+            font-size: 13px;
         }
         QTabBar::tab:selected {
             color: %2;
             font-weight: 600;
-            border-bottom: 3px solid %6;
+            border-bottom: 2px solid %6;
         }
         QTabBar::tab:hover:!selected {
             background: transparent;
@@ -231,14 +224,14 @@ QString globalStylesheet()
         /* ── 复选框/单选 ──────────────────────────── */
         QCheckBox, QRadioButton {
             background: transparent;
-            spacing: 8px;
+            spacing: 6px;
             color: %2;
-            font-size: 15px;
+            font-size: 13px;
         }
         QCheckBox::indicator {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
             border: 1px solid %10;
             background: %3;
         }
@@ -247,9 +240,9 @@ QString globalStylesheet()
             border-color: %6;
         }
         QRadioButton::indicator {
-            width: 20px;
-            height: 20px;
-            border-radius: 10px;
+            width: 16px;
+            height: 16px;
+            border-radius: 8px;
             border: 1px solid %10;
             background: %3;
         }
@@ -264,7 +257,7 @@ QString globalStylesheet()
         }
         QMessageBox QLabel {
             color: %2;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         /* ── 工具提示 ────────────────────────────── */
@@ -273,8 +266,8 @@ QString globalStylesheet()
             color: %2;
             border: 1px solid %10;
             border-radius: %4px;
-            padding: 8px 12px;
-            font-size: 13px;
+            padding: 6px 10px;
+            font-size: 12px;
         }
     )")
     .arg(kBgWindow,           // %1 - 窗口背景
@@ -300,8 +293,8 @@ void styleButton(QPushButton* btn, QColor const& accent, bool flat)
             "  background: transparent;"
             "  border: none;"
             "  color: %1;"
-            "  font-size: 14px;"
-            "  padding: 6px 12px;"
+            "  font-size: 13px;"
+            "  padding: 4px 8px;"
             "  border-radius: %2px;"
             "}"
             "QPushButton:hover {"
@@ -328,9 +321,9 @@ void styleButton(QPushButton* btn, QColor const& accent, bool flat)
             "  background-color: %1;"
             "  border: none;"
             "  border-radius: %2px;"
-            "  padding: 10px 28px;"
+            "  padding: 7px 20px;"
             "  color: white;"
-            "  font-size: 15px;"
+            "  font-size: 13px;"
             "  font-weight: 500;"
             "}"
             "QPushButton:hover {"
@@ -357,9 +350,9 @@ void styleButton(QPushButton* btn, QColor const& accent, bool flat)
             "  background-color: %1;"
             "  border: 1px solid %2;"
             "  border-radius: %3px;"
-            "  padding: 10px 28px;"
+            "  padding: 6px 20px;"
             "  color: %4;"
-            "  font-size: 15px;"
+            "  font-size: 13px;"
             "}"
             "QPushButton:hover {"
             "  background-color: %5;"
