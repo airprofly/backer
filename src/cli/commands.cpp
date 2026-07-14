@@ -16,14 +16,19 @@
 #include "scheduler/schedule_store.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <regex>
+#include <sstream>
 #include <string>
+#include <unordered_set>
 #include <spdlog/spdlog.h>
 
 #if BACKER_PLATFORM_POSIX
@@ -404,7 +409,89 @@ static std::optional<std::string> resolvePassword(std::string const& provided,
     return promptPassword(confirm);
 }
 
+/// Strip known archive/compress/encrypt extensions from a filename.
+///   "data_20260714.tar.gz.enc" → "data_20260714"
+static std::string stripExtensions(std::filesystem::path const& path) {
+    static std::unordered_set<std::string> const kKnownExts = {
+        ".enc", ".gz", ".zst", ".lzma", ".xz", ".tar", ".zip"
+    };
+    // Strip trailing separators so filename() is reliable
+    auto s = path.string();
+    while (s.size() > 1 && (s.back() == '/' || s.back() == '\\'))
+        s.pop_back();
+    auto filename = std::filesystem::path(s).filename().string();
+    auto p = std::filesystem::path(filename);
+    while (true) {
+        auto ext = p.extension().string();
+        if (!ext.empty() && kKnownExts.count(ext)) {
+            p = p.stem();
+        } else {
+            break;
+        }
+    }
+    return p.string();
+}
+
+/// Return current local time as YYYYMMDD_HHMMSS.
+static std::string currentTimestamp() {
+    auto now = std::chrono::system_clock::now();
+    auto tt = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{};
+#if BACKER_PLATFORM_POSIX
+    localtime_r(&tt, &tm);
+#else
+    localtime_s(&tm, &tt);
+#endif
+    std::ostringstream os;
+    os << std::put_time(&tm, "%Y%m%d_%H%M%S");
+    return os.str();
+}
+
 } // anonymous namespace
+
+// ══════════════════════════════════════════════════════════════════════════════
+// makeBackupPath / makeRestorePath
+// ══════════════════════════════════════════════════════════════════════════════
+
+std::filesystem::path makeBackupPath(
+    std::filesystem::path const& destDir,
+    std::filesystem::path const& source,
+    std::string const& packFormat)
+{
+    // Strip trailing separators so filename() is reliable
+    auto s = source.string();
+    while (s.size() > 1 && (s.back() == '/' || s.back() == '\\'))
+        s.pop_back();
+    auto srcName = std::filesystem::path(s).filename().string();
+    if (srcName.empty() || srcName == "." || srcName == "..") {
+        srcName = "backup";
+    }
+    auto ts = currentTimestamp();
+
+    auto name = srcName + "_" + ts;
+    if (!packFormat.empty()) {
+        name += "." + packFormat;
+    }
+
+    std::error_code ec;
+    std::filesystem::create_directories(destDir, ec);
+    return destDir / name;
+}
+
+std::filesystem::path makeRestorePath(
+    std::filesystem::path const& destDir,
+    std::filesystem::path const& source)
+{
+    auto baseName = stripExtensions(source);
+    if (baseName.empty() || baseName == "." || baseName == "..") {
+        baseName = "restore";
+    }
+    auto ts = currentTimestamp();
+
+    std::error_code ec;
+    std::filesystem::create_directories(destDir, ec);
+    return destDir / (baseName + "_R" + ts);
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // handleBackup
@@ -441,12 +528,34 @@ int handleBackup(
     auto actualDest = destination;
     if (packer) {
         auto ext = std::string(".") + std::string(packer->formatName());
-        auto destStr = destination.string();
-        // Avoid double-adding extension if user already typed it
-        if (destStr.size() < ext.size() ||
-            destStr.compare(destStr.size() - ext.size(), ext.size(), ext) != 0) {
+
+        // Extract filename, handling edge cases:
+        //   "./data"     → filename="data",  base="."
+        //   "./data/"    → filename="data",  base="."   (sibling of dir)
+        //   "." / "./"   → filename="backup.tar"
+        //   "data.tar"   → already has ext   → skip
+        std::string filename = destination.filename().string();
+        std::filesystem::path base;
+        if (filename.empty()) {
+            // Path ends with separator — use parent's name, grandparent as base
+            auto parent_path = destination.parent_path();
+            filename = parent_path.filename().string();
+            base = parent_path.parent_path();
+        } else {
+            base = destination.parent_path();
+        }
+
+        if (filename.empty() || filename == "." || filename == ".." || filename == "/") {
+            filename = "backup";
+        }
+        if (base.empty()) base = ".";
+
+        // Avoid double-adding extension
+        if (filename.size() >= ext.size() &&
+            filename.compare(filename.size() - ext.size(), ext.size(), ext) == 0) {
             actualDest = destination;
-            actualDest += ext;
+        } else {
+            actualDest = base / (filename + ext);
         }
         spdlog::info("Output archive: {}", actualDest.string());
     }

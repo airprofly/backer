@@ -55,6 +55,33 @@ struct RestoreOptions {
     std::string password;     // decryption password (empty = prompt)
 };
 
+/// ── Auto-naming helpers ──────────────────────────────────────────────────────
+
+/// Generate an auto-named backup path inside @p destDir.
+///
+///   pack mode:   destDir / srcName_YYYYMMDD_HHMMSS.format
+///   mirror mode: destDir / srcName_YYYYMMDD_HHMMSS
+///
+/// @p destDir is always treated as a directory (the backup repository).
+/// The filename is derived from the source directory name + current timestamp.
+std::filesystem::path makeBackupPath(
+    std::filesystem::path const& destDir,
+    std::filesystem::path const& source,
+    std::string const& packFormat);
+
+/// Generate an auto-named restore path inside @p destDir.
+///
+///   destDir / baseName_RYYYYMMDD_HHMMSS
+///
+/// @p baseName is the source filename with known archive/compress/encrypt
+/// extensions stripped.  The trailing restore timestamp avoids collisions
+/// when the same backup is restored multiple times.
+std::filesystem::path makeRestorePath(
+    std::filesystem::path const& destDir,
+    std::filesystem::path const& source);
+
+/// ── Command handlers ─────────────────────────────────────────────────────────
+
 /// Execute `backup` command: source → destination.
 /// Returns exit code (0 = success).
 int handleBackup(std::filesystem::path const& source,

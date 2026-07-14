@@ -79,8 +79,9 @@ void SettingsTab::setupUi()
     defaultCompressLevel_->setValue(3);
     defaultCompressLevel_->setToolTip(QStringLiteral("0=默认, 1=最快, 22=最佳"));
     defaultEncrypt_ = new QComboBox();
-    defaultEncrypt_->addItems({QStringLiteral("无"), QStringLiteral("AES-256"),
-                               QStringLiteral("SM4")});
+    defaultEncrypt_->addItem(QStringLiteral("无"),      QString());
+    defaultEncrypt_->addItem(QStringLiteral("AES-256"), QStringLiteral("aes256"));
+    defaultEncrypt_->addItem(QStringLiteral("SM4"),     QStringLiteral("sm4"));
 
     optForm->addRow(QStringLiteral("默认打包格式:"), defaultPack_);
     optForm->addRow(QStringLiteral("默认压缩算法:"), defaultCompress_);
@@ -153,8 +154,17 @@ void SettingsTab::loadSettings()
     defaultCompress_->setCurrentText(comp);
     defaultCompressLevel_->setValue(
         settings.value(QStringLiteral("compressLevel"), 3).toInt());
-    auto enc = settings.value(QStringLiteral("encryptAlgo"), QStringLiteral("无")).toString();
-    defaultEncrypt_->setCurrentText(enc);
+    auto enc = settings.value(QStringLiteral("encryptAlgo"), QString()).toString();
+    if (enc.isEmpty()) {
+        defaultEncrypt_->setCurrentIndex(0);
+    } else {
+        // Find by stored data value (internal algorithm name)
+        auto idx = defaultEncrypt_->findData(enc);
+        if (idx >= 0)
+            defaultEncrypt_->setCurrentIndex(idx);
+        else
+            defaultEncrypt_->setCurrentText(enc);  // fallback for legacy saves
+    }
 
     settings.endGroup();
 
@@ -175,7 +185,7 @@ void SettingsTab::saveSettings()
     settings.setValue(QStringLiteral("packFormat"), defaultPack_->currentText());
     settings.setValue(QStringLiteral("compressAlgo"), defaultCompress_->currentText());
     settings.setValue(QStringLiteral("compressLevel"), defaultCompressLevel_->value());
-    settings.setValue(QStringLiteral("encryptAlgo"), defaultEncrypt_->currentText());
+    settings.setValue(QStringLiteral("encryptAlgo"), defaultEncrypt_->currentData().toString());
     settings.endGroup();
 
     settings.beginGroup(QStringLiteral("advanced"));

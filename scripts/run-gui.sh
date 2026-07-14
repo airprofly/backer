@@ -6,8 +6,10 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-OPENGL_DIR="$HOME/.local/backer-deps/usr"
 BUILD_DIR="$PWD/build"
+
+# OpenGL 运行时路径（FetchQt6.cmake 自动下载到此目录）
+OPENGL_DIR="$BUILD_DIR/_deps"/opengl_local/usr
 
 # 设置 OpenGL 运行时路径
 if [ -d "$OPENGL_DIR/lib/x86_64-linux-gnu" ]; then

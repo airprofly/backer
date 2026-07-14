@@ -72,7 +72,8 @@ void BackupTab::setupUi()
 
     enableEncrypt_ = new QCheckBox(QStringLiteral("加密"));
     encryptAlgo_ = new QComboBox();
-    encryptAlgo_->addItems({QStringLiteral("AES-256"), QStringLiteral("SM4")});
+    encryptAlgo_->addItem(QStringLiteral("AES-256"),  QStringLiteral("aes256"));
+    encryptAlgo_->addItem(QStringLiteral("SM4"),      QStringLiteral("sm4"));
     encryptAlgo_->setEnabled(false);
     password_ = new QLineEdit();
     password_->setEchoMode(QLineEdit::Password);
@@ -248,6 +249,8 @@ void BackupTab::onEditFilter()
                         Qt::SkipEmptyParts));
     dlg.setExcludePaths(excludePaths_->text().split(QStringLiteral(", "),
                         Qt::SkipEmptyParts));
+    dlg.setIncludeTypes(includeTypes_->text().split(QRegularExpression(QStringLiteral("[,\\s;]+")),
+                        Qt::SkipEmptyParts));
 
     if (dlg.exec() == QDialog::Accepted) {
         // Paths
@@ -287,7 +290,7 @@ backer::cli::BackupOptions BackupTab::collectOptions() const
     }
 
     if (enableEncrypt_->isChecked()) {
-        opts.encryptAlgo = encryptAlgo_->currentText().toStdString();
+        opts.encryptAlgo = encryptAlgo_->currentData().toString().toStdString();
         opts.password = password_->text().toStdString();
     }
 
@@ -363,6 +366,9 @@ void BackupTab::onStartBackup()
     auto opts = collectOptions();
     auto src = std::filesystem::path(sourcePath_->text().toStdString());
     auto dst = std::filesystem::path(destPath_->text().toStdString());
+
+    // Always treat destination as a directory; auto-generate a name inside it.
+    dst = backer::cli::makeBackupPath(dst, src, opts.packFormat);
 
     worker_ = new BackupWorker(BackupWorker::Backup, src, dst, opts, this);
 

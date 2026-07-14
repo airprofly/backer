@@ -301,19 +301,20 @@ Expected<void, ErrorCode> ZipPacker::pack(
         return ErrorCode::kCompressionFailed;
     }
 
-    // 3. Write metadata entry first
-    if (!mz_zip_writer_add_mem(&zip, ".backer_zip_meta",
-                                metaJson.data(), metaJson.size(),
-                                MZ_DEFAULT_COMPRESSION))
+    // 3. Write metadata entry first (internal, no meaningful timestamp)
+    if (!mz_zip_writer_add_mem_ex_v2(&zip, ".backer_zip_meta",
+                                      metaJson.data(), metaJson.size(),
+                                      nullptr, 0, MZ_DEFAULT_COMPRESSION,
+                                      0, 0, nullptr,
+                                      nullptr, 0, nullptr, 0))
     {
         mz_zip_writer_end(&zip);
         spdlog::error("ZipPacker: failed to add metadata entry");
         return ErrorCode::kCompressionFailed;
     }
-
-    // 4. Write file entries
     for (auto const& entry : files) {
         auto pathStr = entry.relativePath.generic_string();
+        MZ_TIME_T entryTime = static_cast<MZ_TIME_T>(entry.metadata.modifyTimeSec);
 
         switch (entry.type) {
 
@@ -322,8 +323,11 @@ Expected<void, ErrorCode> ZipPacker::pack(
             auto readResult = fs.read(absPath);
             if (!readResult) {
                 // Unreadable file — add zero-byte entry
-                if (!mz_zip_writer_add_mem(&zip, pathStr.c_str(),
-                                            nullptr, 0, MZ_DEFAULT_COMPRESSION))
+                if (!mz_zip_writer_add_mem_ex_v2(&zip, pathStr.c_str(),
+                                                  nullptr, 0,
+                                                  nullptr, 0, MZ_DEFAULT_COMPRESSION,
+                                                  0, 0, &entryTime,
+                                                  nullptr, 0, nullptr, 0))
                 {
                     mz_zip_writer_end(&zip);
                     return ErrorCode::kCompressionFailed;
@@ -334,9 +338,11 @@ Expected<void, ErrorCode> ZipPacker::pack(
             }
 
             auto const& content = readResult.value();
-            if (!mz_zip_writer_add_mem(&zip, pathStr.c_str(),
-                                        content.data(), content.size(),
-                                        MZ_DEFAULT_COMPRESSION))
+            if (!mz_zip_writer_add_mem_ex_v2(&zip, pathStr.c_str(),
+                                              content.data(), content.size(),
+                                              nullptr, 0, MZ_DEFAULT_COMPRESSION,
+                                              0, 0, &entryTime,
+                                              nullptr, 0, nullptr, 0))
             {
                 mz_zip_writer_end(&zip);
                 spdlog::error("ZipPacker: failed to add entry: {}", pathStr);
@@ -348,8 +354,11 @@ Expected<void, ErrorCode> ZipPacker::pack(
         case FileType::kDirectory: {
             // Directory entry: name ends with '/', empty content
             std::string dirName = pathStr + '/';
-            if (!mz_zip_writer_add_mem(&zip, dirName.c_str(),
-                                        nullptr, 0, MZ_DEFAULT_COMPRESSION))
+            if (!mz_zip_writer_add_mem_ex_v2(&zip, dirName.c_str(),
+                                              nullptr, 0,
+                                              nullptr, 0, MZ_DEFAULT_COMPRESSION,
+                                              0, 0, &entryTime,
+                                              nullptr, 0, nullptr, 0))
             {
                 mz_zip_writer_end(&zip);
                 return ErrorCode::kCompressionFailed;
@@ -360,9 +369,11 @@ Expected<void, ErrorCode> ZipPacker::pack(
         case FileType::kSymlink: {
             // Store symlink target as file content
             auto targetStr = entry.symlinkTarget.generic_string();
-            if (!mz_zip_writer_add_mem(&zip, pathStr.c_str(),
-                                        targetStr.data(), targetStr.size(),
-                                        MZ_DEFAULT_COMPRESSION))
+            if (!mz_zip_writer_add_mem_ex_v2(&zip, pathStr.c_str(),
+                                              targetStr.data(), targetStr.size(),
+                                              nullptr, 0, MZ_DEFAULT_COMPRESSION,
+                                              0, 0, &entryTime,
+                                              nullptr, 0, nullptr, 0))
             {
                 mz_zip_writer_end(&zip);
                 return ErrorCode::kCompressionFailed;
@@ -375,8 +386,11 @@ Expected<void, ErrorCode> ZipPacker::pack(
         case FileType::kCharDevice:
         case FileType::kSocket: {
             // Zero-byte placeholder
-            if (!mz_zip_writer_add_mem(&zip, pathStr.c_str(),
-                                        nullptr, 0, MZ_DEFAULT_COMPRESSION))
+            if (!mz_zip_writer_add_mem_ex_v2(&zip, pathStr.c_str(),
+                                              nullptr, 0,
+                                              nullptr, 0, MZ_DEFAULT_COMPRESSION,
+                                              0, 0, &entryTime,
+                                              nullptr, 0, nullptr, 0))
             {
                 mz_zip_writer_end(&zip);
                 return ErrorCode::kCompressionFailed;
