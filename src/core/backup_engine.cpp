@@ -117,6 +117,22 @@ BackupResult BackupEngine::backup(
 
     bool const canOwn = canRestoreOwnership();
 
+    // Deferred directory metadata: restore AFTER all content is written,
+    // sorted deepest-first, so child writes don't overwrite parent mtime.
+    std::vector<std::pair<std::filesystem::path, Metadata>> dirsToRestore;
+
+    // Read source root metadata (walk does not include the root itself)
+    Metadata sourceRootMeta;
+    {
+        auto metaResult = fs_->readMetadata(source);
+        if (metaResult) {
+            sourceRootMeta = metaResult.value();
+        } else {
+            spdlog::warn("BackupEngine: cannot read source root metadata: {}",
+                         toString(metaResult.error()));
+        }
+    }
+
     for (auto const& entry : entries) {
         auto destPath = PathMapper::relativeToBackup(entry.relativePath, destination);
 
@@ -131,7 +147,9 @@ BackupResult BackupEngine::backup(
                 continue;
             }
             result.stats.totalDirs++;
-            break;
+            // Defer metadata restoration until all children are written
+            dirsToRestore.emplace_back(destPath, entry.metadata);
+            continue;  // skip immediate metadata restore below
         }
 
         case FileType::kRegular: {
@@ -217,7 +235,7 @@ BackupResult BackupEngine::backup(
             continue;
         }
 
-        // 5. Restore metadata for every created entry
+        // 5. Restore metadata for non-directory entries immediately
         auto metaResult = fs_->restoreMetadata(destPath, entry.metadata, canOwn);
         if (!metaResult) {
             spdlog::warn("BackupEngine: metadata restore partially failed for {}",
@@ -225,7 +243,35 @@ BackupResult BackupEngine::backup(
         }
     }
 
-    // 6. Finalize
+    // 6. Restore deferred directory metadata, deepest-first, so child
+    //    writes no longer overwrite parent mtime after this point.
+    std::sort(dirsToRestore.begin(), dirsToRestore.end(),
+        [](auto const& a, auto const& b) {
+            auto depthA = std::distance(a.first.begin(), a.first.end());
+            auto depthB = std::distance(b.first.begin(), b.first.end());
+            return depthA > depthB;
+        });
+
+    for (auto const& [dirPath, meta] : dirsToRestore) {
+        auto metaResult = fs_->restoreMetadata(dirPath, meta, canOwn);
+        if (!metaResult) {
+            spdlog::warn("BackupEngine: dir metadata partially failed for {}",
+                         dirPath.string());
+        }
+    }
+
+    // Restore source root metadata on the destination root directory.
+    // Must happen last — destination root is the parent of all children,
+    // and any prior write updated its mtime.
+    {
+        auto metaResult = fs_->restoreMetadata(destination, sourceRootMeta, canOwn);
+        if (!metaResult) {
+            spdlog::warn("BackupEngine: root metadata partially failed for {}",
+                         destination.string());
+        }
+    }
+
+    // 7. Finalize
     auto const endTime = std::chrono::steady_clock::now();
     result.stats.elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
         endTime - startTime);

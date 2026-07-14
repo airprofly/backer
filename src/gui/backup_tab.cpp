@@ -364,6 +364,16 @@ void BackupTab::onStartBackup()
     auto src = std::filesystem::path(sourcePath_->text().toStdString());
     auto dst = std::filesystem::path(destPath_->text().toStdString());
 
+    // When pack is enabled and destination is an existing directory,
+    // put the archive INSIDE that directory (not alongside it).
+    if (!opts.packFormat.empty() && std::filesystem::is_directory(dst)) {
+        auto name = dst.filename().string();
+        if (name.empty() || name == "." || name == "..") {
+            name = "backup";
+        }
+        dst = dst / name;
+    }
+
     worker_ = new BackupWorker(BackupWorker::Backup, src, dst, opts, this);
 
     connect(worker_, &BackupWorker::progressUpdated,

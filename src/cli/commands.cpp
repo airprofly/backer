@@ -441,12 +441,34 @@ int handleBackup(
     auto actualDest = destination;
     if (packer) {
         auto ext = std::string(".") + std::string(packer->formatName());
-        auto destStr = destination.string();
-        // Avoid double-adding extension if user already typed it
-        if (destStr.size() < ext.size() ||
-            destStr.compare(destStr.size() - ext.size(), ext.size(), ext) != 0) {
+
+        // Extract filename, handling edge cases:
+        //   "./data"     → filename="data",  base="."
+        //   "./data/"    → filename="data",  base="."   (sibling of dir)
+        //   "." / "./"   → filename="backup.tar"
+        //   "data.tar"   → already has ext   → skip
+        std::string filename = destination.filename().string();
+        std::filesystem::path base;
+        if (filename.empty()) {
+            // Path ends with separator — use parent's name, grandparent as base
+            auto parent_path = destination.parent_path();
+            filename = parent_path.filename().string();
+            base = parent_path.parent_path();
+        } else {
+            base = destination.parent_path();
+        }
+
+        if (filename.empty() || filename == "." || filename == ".." || filename == "/") {
+            filename = "backup";
+        }
+        if (base.empty()) base = ".";
+
+        // Avoid double-adding extension
+        if (filename.size() >= ext.size() &&
+            filename.compare(filename.size() - ext.size(), ext.size(), ext) == 0) {
             actualDest = destination;
-            actualDest += ext;
+        } else {
+            actualDest = base / (filename + ext);
         }
         spdlog::info("Output archive: {}", actualDest.string());
     }

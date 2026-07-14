@@ -149,16 +149,16 @@ void RestoreTab::setupConnections()
 
 void RestoreTab::onBrowseSource()
 {
-    // Try archive file first, fall back to directory
-    QString file = QFileDialog::getOpenFileName(this,
-        QStringLiteral("选择备份文件"));
-    if (file.isEmpty()) {
-        QString dir = QFileDialog::getExistingDirectory(this,
-            QStringLiteral("选择备份目录"));
-        if (!dir.isEmpty())
-            sourcePath_->setText(dir);
+    // Try directory first (mirror mode), fall back to archive file
+    QString dir = QFileDialog::getExistingDirectory(this,
+        QStringLiteral("选择备份目录"));
+    if (dir.isEmpty()) {
+        QString file = QFileDialog::getOpenFileName(this,
+            QStringLiteral("选择备份文件"));
+        if (!file.isEmpty())
+            sourcePath_->setText(file);
     } else {
-        sourcePath_->setText(file);
+        sourcePath_->setText(dir);
     }
 }
 
