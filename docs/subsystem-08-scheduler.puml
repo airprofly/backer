@@ -1,0 +1,142 @@
+@startuml
+!theme plain
+skinparam classBorderColor #333333
+skinparam classBackgroundColor #F1F1F1
+
+title 子系统八：调度子系统构件图
+
+package "调度子系统" {
+
+  package "BackupScheduler\n备份调度器" as Scheduler #E8F0FE {
+    class "BackupScheduler\n（线程安全）" as SchedulerClass {
+      · mutex + condition_variable
+      · 跨平台（无timerfd/epoll）
+    }
+
+    class "ScheduleJob\n调度任务\n══════════\n· id / name\n· cronExpression\n· source / destination\n· BackupOptions\n· enabled / createdAt" as ScheduleJob <<结构体>>
+
+    class "JobInfo\n任务信息\n══════════\n· 同ScheduleJob\n· nextFireTime" as JobInfo <<结构体>>
+
+    class "run()\n主循环（阻塞）" as runMethod {
+      1. 检查停止标志
+      2. 触发到期任务
+      3. 计算最近下次触发
+      4. cv_.wait_until()
+    }
+
+    class "addJob()\n添加任务" as addJob
+    class "removeJob()\n移除任务" as removeJob
+    class "enableJob()\n启用/禁用" as enableJob
+    class "listJobs()\n列出全部" as listJobs
+    class "findJob()\n查找任务" as findJob
+
+    class "calcNextFire()\n计算下次触发时间\n（静态方法）" as calcNextFire
+    class "makeSnapshotPath()\n生成快照目录名\nYYYYMMDD_HHMMSS" as makeSnapshot
+  }
+
+  package "ccronexpr\nCron表达式引擎" as CronLib #E8F5E9 {
+    class "ccronexpr\n（C语言库）\n═══════════\n编译选项：\nCRON_USE_LOCAL_TIME=1\n支持5/6字段cron\n支持step/range/list" as ccronexpr <<第三方库>>
+    class "cron_parse_expr()\n解析表达式" as cronParse
+    class "cron_next()\n计算下次触发" as cronNext
+    class "cron_expr\n表达式对象" as cronExpr
+  }
+
+  package "RetentionPolicy\n保留策略" as Retention #FFF3E0 {
+    class "RetentionPolicy" as RetentionClass
+
+    class "RetentionConfig\n保留配置\n══════════\n· maxSnapshots (0=无限)\n· retentionDays (0=无限)\n· enabled()" as RetentionConfig <<结构体>>
+
+    class "scanSnapshots()\n扫描快照目录\n（按时间排序）" as scanSnapshots
+    class "parseTimestamp()\n解析时间戳\nYYYYMMDD_HHMMSS" as parseTimestamp
+    class "selectForRemoval()\n选择待删除快照" as selectForRemoval
+  }
+
+  package "ScheduleStore\n计划持久化" as Store #F3E5F5 {
+    class "ScheduleStore\n（自定义轻量JSON）" as StoreClass {
+      默认路径：
+      ~/.config/backer/schedule.json
+    }
+    class "save()\n保存到JSON文件" as saveMethod
+    class "load()\n从JSON文件加载" as loadMethod
+
+    class "serializeJobs()\n序列化为JSON" as serialize
+    class "deserializeJobs()\n从JSON反序列化" as deserialize
+
+    class "extractStr()\n提取字符串" as extractStr
+    class "extractInt()\n提取整数" as extractInt
+    class "extractBool()\n提取布尔值" as extractBool
+  }
+}
+
+' === Scheduler 内部 ===
+SchedulerClass --> ScheduleJob : 数据模型
+SchedulerClass --> JobInfo : 查询结果
+SchedulerClass --> runMethod : 启动
+SchedulerClass --> addJob
+SchedulerClass --> removeJob
+SchedulerClass --> enableJob
+SchedulerClass --> listJobs
+SchedulerClass --> findJob
+SchedulerClass --> calcNextFire
+SchedulerClass --> makeSnapshot
+
+addJob --> calcNextFire : 计算首次触发
+runMethod --> calcNextFire : 更新时间表
+
+' === Cron 依赖 ===
+calcNextFire --> cronParse : 解析cron表达式
+calcNextFire --> cronNext : 获取下次触发
+cronParse --> cronExpr
+
+' === 调度器 → 保留策略 ===
+runMethod ..> scanSnapshots : 触发后扫描快照
+runMethod ..> selectForRemoval : 执行清理
+
+' === 调度器 → 存储 ===
+addJob ..> saveMethod : 持久化
+removeJob ..> saveMethod : 持久化
+enableJob ..> saveMethod : 持久化
+runMethod ..> loadMethod : 启动时加载
+
+' === Store 内部 ===
+StoreClass --> saveMethod
+StoreClass --> loadMethod
+saveMethod --> serialize
+loadMethod --> deserialize
+deserialize --> extractStr
+deserialize --> extractInt
+deserialize --> extractBool
+
+' === 策略内部 ===
+selectForRemoval --> parseTimestamp : 解析时间戳
+selectForRemoval --> RetentionConfig : 读取配置
+scanSnapshots --> parseTimestamp
+
+note left of runMethod
+  <b>run() 主循环：</b>
+
+  1. 检查 stopRequested_
+  2. 遍历所有启用任务
+  3. 触发到期任务
+     （调用executor_回调）
+  4. 计算最近下次触发
+  5. cv_.wait_until(nextFire)
+     （新任务加入时notify）
+  6. 回到步骤1
+end note
+
+note right of RetentionClass
+  <b>清理策略（按快照目录名）：</b>
+  1. scanSnapshots() 扫描
+  2. 超 maxSnapshots → 删最旧
+  3. 超 retentionDays → 全删
+end note
+
+note top of SchedulerClass
+  <b>调用者：</b>
+  handleDaemon() 守护进程
+  handleSchedule() 计划管理
+  GUI::ScheduleTab 可视化管理
+end note
+
+@enduml

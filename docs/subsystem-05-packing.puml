@@ -1,0 +1,116 @@
+@startuml
+!theme plain
+skinparam classBorderColor #333333
+skinparam classBackgroundColor #F1F1F1
+
+title 子系统五：打包子系统构件图
+
+package "打包子系统" {
+
+  package "接口层" as InterfaceLayer #E8F0FE {
+    abstract class "Packer\n打包器抽象接口" as PackerInterface {
+      + pack(files, fs, sourceRoot, ostream)
+      + unpack(istream, dest, fs)
+      + formatName() : string_view
+    }
+  }
+
+  package "TarPacker\nTar打包器" as TarPkg #E8F5E9 {
+    class "TarPacker\n（POSIX ustar格式）" as TarPacker
+
+    class "TarHeader\ntar头结构体\n（512字节 packed）\n══════════════\nname[100]+mode[8]\nuid[8]+gid[8]+size[12]\nmtime[12]+chksum[8]\ntypeflag+linkname[100]\nmagic[6]=\"ustar\\0\"\nversion[2]+uname[32]\ngname[32]+devmajor[8]\ndevminor[8]+prefix[155]" as TarHeader
+
+    class "encodeHeader()\n编码tar头" as encodeHeader
+    class "decodeHeader()\n解码tar头" as decodeHeader
+    class "formatOctal()\n八进制格式化" as formatOctal
+    class "parseOctal()\n八进制解析" as parseOctal
+
+    class "splitPath()\n路径拆分为\nname+prefix" as splitPath
+    class "typeToFlag()\nFileType→tar标志" as typeToFlag
+    class "flagToType()\ntar标志→FileType" as flagToType
+
+    class "writeAligned()\n512B对齐写入" as writeAligned
+    class "readExact()\n精确读取" as readExact
+    class "skipData()\n跳过数据块" as skipData
+
+    class "verifyChecksum()\n校验和验证" as verifyChecksum
+  }
+
+  package "ZipPacker\nZip打包器" as ZipPkg #F3E5F5 {
+    class "ZipPacker\n（miniz库）" as ZipPacker
+
+    class "EntryMeta\n条目元数据\n（内部结构体）" as EntryMeta
+
+    class "buildMetaJson()\n构建元数据JSON" as buildMetaJson
+    class "parseMetaEntries()\n解析元数据条目" as parseMetaEntries
+    class "parseEntryMeta()\n解析单条目元数据" as parseEntryMeta
+
+    class "mz_zip_archive\n（miniz库）\n═══════════\n· mz_zip_writer\n· mz_zip_reader" as miniz <<第三方库>>
+
+    class "jsonEscape()\nJSON转义" as jsonEscape
+    class "jsonUnescape()\nJSON反转义" as jsonUnescape
+  }
+}
+
+' === 继承 ===
+TarPacker -up-|> PackerInterface
+ZipPacker -up-|> PackerInterface
+
+' === Tar 内部 ===
+TarPacker --> encodeHeader : pack时调用
+TarPacker --> decodeHeader : unpack时调用
+TarPacker --> writeAligned : 写入对齐
+TarPacker --> readExact : 精确读取
+TarPacker --> skipData : 跳过数据
+TarPacker --> verifyChecksum : 验证校验
+
+encodeHeader --> formatOctal : 数字→八进制
+encodeHeader --> splitPath : 拆分长路径
+encodeHeader --> typeToFlag : 类型映射
+decodeHeader --> parseOctal : 八进制→数字
+decodeHeader --> flagToType : 标志映射
+
+TarPacker --> TarHeader : 填充/解析
+
+' === Zip 内部 ===
+ZipPacker --> buildMetaJson : pack时调用
+ZipPacker --> parseMetaEntries : unpack时调用
+ZipPacker --> parseEntryMeta : 解析单条
+ZipPacker --> EntryMeta : 中间结构
+ZipPacker --> miniz : mz_zip API
+
+parseMetaEntries --> jsonUnescape
+buildMetaJson --> jsonEscape
+
+' === 格式说明 ===
+note right of TarPacker
+  <b>Tar归档结构：</b>
+  ┌──────────────┐
+  │ TarHeader    │ 512B
+  ├──────────────┤
+  │ 文件数据     │ n×512B
+  ├──────────────┤
+  │ ...下一个... │
+  ├──────────────┤
+  │ 零块 × 2    │ 结束
+  └──────────────┘
+  魔数："ustar\\0"
+end note
+
+note right of ZipPacker
+  <b>Zip元数据策略：</b>
+  .backer_zip_meta 特殊条目
+  存储全部文件的元数据JSON
+  ─────────────────────
+  普通文件：deflate压缩
+  目录：尾部"/"空条目
+  符号链接：目标存为内容
+  FIFO/设备：零字节占位
+end note
+
+note top of PackerInterface
+  <b>依赖：FSAbstraction（读写文件内容）</b>
+  <b>被调用者：</b>BackupEngine / RestoreEngine / handleBackup() / handleRestore()
+end note
+
+@enduml

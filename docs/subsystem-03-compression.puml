@@ -1,0 +1,104 @@
+@startuml
+!theme plain
+skinparam classBorderColor #333333
+skinparam classBackgroundColor #F1F1F1
+
+title 子系统三：压缩子系统构件图
+
+package "压缩子系统" {
+
+  package "接口层" as InterfaceLayer #E8F0FE {
+    abstract class "Compressor\n压缩器抽象接口" as CompressorInterface {
+      + compress(input, output)
+      + decompress(input, output)
+      + name() : string_view
+      + defaultLevel() : int
+      + suffix() : string_view
+      + isValidLevel(int) : bool
+    }
+  }
+
+  package "工厂层" as FactoryLayer #FFF3E0 {
+    class "buildCompressor()\n压缩器工厂函数" as buildCompressor {
+      根据名称创建实例
+      "gzip" → GzipCompressor
+      "zstd" → ZstdCompressor
+      "lzma" → LzmaCompressor
+      level=0 使用算法默认级别
+    }
+  }
+
+  package "GzipCompressor\nGzip压缩器" as GzipPkg #E8F5E9 {
+    class "GzipCompressor" as GzipComp {
+      底层库：zlib
+      默认级别：6
+      后缀：.gz
+    }
+    class "deflateInit2()\n初始化压缩" as deflateInit
+    class "deflate()\n执行压缩" as deflateDo
+    class "inflateInit2()\n初始化解压" as inflateInit
+    class "inflate()\n执行解压" as inflateDo
+  }
+
+  package "ZstdCompressor\nZstd压缩器" as ZstdPkg #F3E5F5 {
+    class "ZstdCompressor" as ZstdComp {
+      底层库：libzstd
+      默认级别：3
+      后缀：.zst
+    }
+    class "ZSTD_compress()\n单次压缩" as zstdCompress
+    class "ZSTD_decompress()\n单次解压" as zstdDecompress
+    class "ZSTD_getFrameContentSize()\n获取帧大小" as zstdSize
+  }
+
+  package "LzmaCompressor\nLzma压缩器" as LzmaPkg #FCE4EC {
+    class "LzmaCompressor" as LzmaComp {
+      底层库：liblzma
+      默认级别：6
+      后缀：.xz
+    }
+    class "lzma_easy_encoder()\n初始化编码器" as lzmaInit
+    class "lzma_code()\n流式编解码" as lzmaCode
+    class "lzma_auto_decoder()\n自动解码器" as lzmaAuto
+  }
+}
+
+' === 继承 ===
+GzipComp -up-|> CompressorInterface
+ZstdComp -up-|> CompressorInterface
+LzmaComp -up-|> CompressorInterface
+
+buildCompressor ..> GzipComp : 创建
+buildCompressor ..> ZstdComp : 创建
+buildCompressor ..> LzmaComp : 创建
+
+' === 内部调用 ===
+GzipComp --> deflateInit : 初始化
+GzipComp --> deflateDo : 压缩
+GzipComp --> inflateInit : 初始化
+GzipComp --> inflateDo : 解压
+
+ZstdComp --> zstdCompress
+ZstdComp --> zstdDecompress
+ZstdComp --> zstdSize
+
+LzmaComp --> lzmaInit
+LzmaComp --> lzmaCode
+LzmaComp --> lzmaAuto
+
+note right of CompressorInterface
+  <b>输入/输出规范：</b>
+  compress: span<char> → vector<char>&
+  decompress: span<char> → vector<char>&
+  返回 Expected<void, ErrorCode>
+  支持空输入处理
+end note
+
+note bottom of buildCompressor
+  <b>调用者：</b>
+  handleBackup() 备份时压缩
+  handleRestore() 恢复时解压
+  BackupWorker 后台线程
+end note
+
+@enduml

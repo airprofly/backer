@@ -1,0 +1,114 @@
+@startuml
+!theme plain
+skinparam classBorderColor #333333
+skinparam classBackgroundColor #F1F1F1
+
+title 子系统七：文件系统抽象子系统构件图
+
+package "文件系统抽象子系统" {
+
+  package "接口层" as InterfaceLayer #E8F0FE {
+    abstract class "FSAbstraction\n文件系统抽象接口" as FSAbstraction {
+      + walk(root) : Expected<vector<FileEntry>>
+      + read(path) : Expected<vector<char>>
+      + write(path, data, type) : Expected<void>
+      + mkdir(path) : Expected<void>
+      + readMetadata(path) : Expected<Metadata>
+      + restoreMetadata(path, meta, own) : Expected<void>
+    }
+  }
+
+  package "平台检测（platform.h）" as Platform #FCE4EC {
+    class "平台宏定义" as PlatformMacros {
+      BACKER_PLATFORM_POSIX = 1 (Linux/macOS)
+      BACKER_PLATFORM_WINDOWS = 1 (Windows)
+      BACKER_STAT_ATIME(st) 平台适配
+      BACKER_STAT_MTIME(st) 平台适配
+      BACKER_STAT_CTIME(st) 平台适配
+    }
+  }
+
+  package "LocalFsAbstraction\n本地文件系统实现" as LocalFs #E8F5E9 {
+    class "LocalFsAbstraction" as LocalFsClass {
+      实现全部FSAbstraction方法
+      使用std::filesystem + POSIX
+    }
+    class "walk()\nrecursive_directory_iterator\n+ lstat() 类型检测" as walkImpl
+    class "read()\nifstream + prealloc" as readImpl
+    class "write()\nofstream 64KB chunks\n按FileType分派" as writeImpl
+    class "mkdir()\ncreate_directories" as mkdirImpl
+    class "makeFileEntry()\nlstat + 提取UID/GID/时间戳" as makeFileEntry
+  }
+
+  package "Metadata\n元数据模块" as MetadataPkg #FFF3E0 {
+    class "readMetadata()\nlstat + 提取字段" as readMetaFree
+    class "restoreMetadata()\nlchown→fchmodat→utimensat" as restoreMetaFree
+    class "metadataToJson()\n序列化" as metaToJson
+    class "metadataFromJson()\n反序列化" as metaFromJson
+    class "canRestoreOwnership()\n检查root权限" as canRestore
+  }
+
+  package "SpecialFile\n特殊文件处理" as SpecialFile #F3E5F5 {
+    class "detectFileType()\nS_ISREG/DIR/LNK等" as detectSpecial
+    class "readSymlink()\nreadlink / read_symlink" as readSym
+    class "createSymlink()\nsymlink / create_symlink" as createSym
+    class "createFifo()\nmkfifo （仅POSIX）" as createFifo
+    class "createDevice()\nmakedev+mknod （仅POSIX）" as createDev
+  }
+
+  package "PathMapper\n路径映射工具" as PathMapperPkg #E0F7FA {
+    class "PathMapper\n静态工具类" as PathMapper
+    class "sourceToRelative()\n绝对路径→相对路径" as srcToRel
+    class "relativeToBackup()\n相对路径→备份路径" as relToBackup
+    class "backupToRelative()\n备份路径→相对路径" as backupToRel
+    class "relativeToSource()\n相对路径→源路径" as relToSrc
+  }
+}
+
+' === 继承 ===
+LocalFsClass -up-|> FSAbstraction
+
+' === LocalFs 内部调用 ===
+LocalFsClass --> walkImpl
+LocalFsClass --> readImpl
+LocalFsClass --> writeImpl
+LocalFsClass --> mkdirImpl
+
+walkImpl --> makeFileEntry
+makeFileEntry --> detectSpecial : 检测类型
+
+writeImpl --> createSym : 符号链接
+writeImpl --> createFifo : FIFO
+writeImpl --> createDev : 设备文件
+
+LocalFsClass ..> readMetaFree : 元数据读取
+LocalFsClass ..> restoreMetaFree : 元数据恢复
+
+LocalFsClass ..> PlatformMacros : 条件编译
+
+restoreMetaFree --> canRestore
+
+LocalFsClass --> PathMapper : 路径转换
+
+' === 平台差异 ===
+note bottom of LocalFsClass
+  <b>平台差异说明：</b>
+  <b>POSIX (Linux/macOS)：</b>
+  · lstat() 不跟随符号链接
+  · 完整 UID/GID/权限/纳秒时间戳
+  · 支持 mkfifo + mknod
+  · root权限可恢复属主
+
+  <b>Windows：</b>
+  · symlink_status() 检测类型
+  · FIFO/设备文件→不支持错误
+  · UID/GID 固定为 0
+  · 权限恢复受限
+end note
+
+note top of FSAbstraction
+  <b>主要调用者：</b>
+  BackupEngine / RestoreEngine / TarPacker / ZipPacker / handleBackup() / handleRestore()
+end note
+
+@enduml

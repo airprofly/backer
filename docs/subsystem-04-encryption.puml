@@ -1,0 +1,99 @@
+@startuml
+!theme plain
+skinparam classBorderColor #333333
+skinparam classBackgroundColor #F1F1F1
+
+title 子系统四：加密子系统构件图
+
+package "加密子系统" {
+
+  package "加密格式定义（encrypted_format.h）" as FormatDef #E8F0FE {
+    class "EncryptedHeader\n加密头结构体（47字节）\n══════════════\n· magic[10]=\"BACKERENC\"\n· algorithm (uint8)\n· salt[16] (随机)\n· iterations (uint32 LE)\n· iv[16] (随机)" as Header <<结构体>>
+
+    class "Algorithm\n算法枚举\n══════════\n· kAes256Gcm = 0\n· kSm4Cbc = 1" as AlgoEnum <<枚举>>
+
+    class "格式常量\n═══════\nkGcmIvLength=12\nkCbcIvLength=16\nkGcmTagLength=16\nkAes256KeyLength=32\nkSm4KeyLength=16\nkDefaultIterations=100000" as Constants
+
+    class "isValidMagic()\n验证魔术字" as validMagic
+    class "algorithmName()\n算法名转换" as algoName
+  }
+
+  package "KeyDerivation\n密钥派生" as KeyDerivationPkg #FFF3E0 {
+    class "KeyDerivation" as KeyDerivation <<工具类>>
+    class "deriveKey()\nPBKDF2派生密钥\nAES→SHA-256\nSM4→SM3（国密）" as deriveKey
+    class "randomBytes()\n安全随机数生成" as randomBytes
+  }
+
+  package "接口层" as InterfaceLayer #E8F5E9 {
+    abstract class "Encryptor\n加密器抽象接口" as EncryptorInterface {
+      + encrypt(input, output, password)
+      + decrypt(input, output, password)
+      + name() : string_view
+      + suffix() : string_view
+    }
+    class "buildEncryptor()\n加密器工厂" as buildEncryptor
+  }
+
+  package "OpenSslEncryptor\nOpenSSL加密实现" as OpenSslPkg #F3E5F5 {
+    class "OpenSslEncryptor" as OpenSslEncryptor <<实现类>>
+    class "encrypt()\n加密流程" as encryptMethod
+    class "decrypt()\n解密流程" as decryptMethod
+
+    class "EVP_Encrypt\n初始化→更新→完成\n+ GCM标签追加" as evpEnc
+    class "EVP_Decrypt\n初始化→更新→完成\n+ GCM标签验证" as evpDec
+  }
+}
+
+' === 结构关系 ===
+Header --> AlgoEnum : 引用
+Header --> Constants : 引用
+validMagic --> Header
+algoName --> AlgoEnum
+
+' === 继承 ===
+OpenSslEncryptor -up-|> EncryptorInterface
+buildEncryptor ..> OpenSslEncryptor : 创建
+
+' === 加密流程 ===
+OpenSslEncryptor --> encryptMethod
+OpenSslEncryptor --> decryptMethod
+
+encryptMethod --> evpEnc : OpenSSL EVP
+encryptMethod --> KeyDerivation : deriveKey()
+encryptMethod --> randomBytes : 生成盐和IV
+encryptMethod --> Header : 写入加密头
+
+decryptMethod --> evpDec : OpenSSL EVP
+decryptMethod --> KeyDerivation : deriveKey()
+decryptMethod --> Header : 解析加密头
+
+KeyDerivation --> deriveKey
+KeyDerivation --> randomBytes
+
+' === 加密文件格式 ===
+note left of Header
+  <b>加密文件存储格式：</b>
+  ┌───────────────────┐
+  │ EncryptedHeader   │ 47B 明文
+  │ (magic+算法+盐    │
+  │  +迭代+IV)        │
+  ├───────────────────┤
+  │ 密文数据          │ 变长
+  ├───────────────────┤
+  │ GCM认证标签       │ 16B (GCM)
+  └───────────────────┘
+end note
+
+note right of encryptMethod
+  <b>安全特性：</b>
+  · std::fill 清零密钥
+  · 密码不存文件头
+  · PBKDF2 10万次迭代
+  · GCM认证加密防篡改
+end note
+
+note top of buildEncryptor
+  <b>调用者：</b>handleBackup() / handleRestore() / encryptFile() / decryptFile()
+end note
+
+@enduml

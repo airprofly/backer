@@ -1,0 +1,98 @@
+@startuml
+!theme plain
+skinparam classBorderColor #333333
+skinparam classBackgroundColor #F1F1F1
+
+title 子系统一：用户接口子系统构件图
+
+package "用户接口子系统" {
+
+  package "CLI 命令行模块" as CLI #E8F0FE {
+    class "CLI::App（CLI11库）" as CLI11App <<外部库>>
+    class "handleBackup()\n执行备份命令" as handleBackup
+    class "handleRestore()\n执行恢复命令" as handleRestore
+    class "handleSchedule()\n计划管理命令" as handleSchedule
+    class "handleDaemon()\n守护进程命令" as handleDaemon
+
+    class "BackupOptions\n备份配置" as BackupOpts <<结构体>>
+    class "RestoreOptions\n恢复配置" as RestoreOpts <<结构体>>
+
+    class "buildFilter()\n过滤器工厂" as buildFilterCLI
+    class "buildPacker()\n打包器工厂" as buildPackerCLI
+    class "transformFile()\n压缩/解压文件" as transformFile
+    class "encryptFile()\n加密文件" as encryptFileCLI
+    class "decryptFile()\n解密文件" as decryptFileCLI
+    class "promptPassword()\n密码输入" as promptPassword
+  }
+
+  package "GUI 图形界面模块" as GUI #E8F5E9 {
+    class "QApplication\n+ QSplashScreen" as QApp <<Qt框架>>
+    class "MainWindow\n主窗口" as MainWindow <<QMainWindow>>
+    class "QTabWidget\n页签容器" as TabWidget <<Qt控件>>
+
+    class "BackupTab\n备份页签" as BackupTab
+    class "RestoreTab\n恢复页签" as RestoreTab
+    class "ScheduleTab\n计划页签" as ScheduleTabGUI
+    class "SettingsTab\n设置页签" as SettingsTab
+
+    class "BackupWorker\n后台工作线程" as BackupWorker <<QThread>>
+    class "RestoreWorker\n后台恢复线程" as RestoreWorker
+
+    class "FilterDialog\n过滤条件编辑器" as FilterDialog <<QDialog>>
+    class "ScheduleEditDialog\n计划编辑对话框" as ScheduleEditDialog
+
+    class "ProgressWidget\n进度组件" as ProgressWidget
+    class "LogWidget\n日志组件" as LogWidget
+
+    class "gui_style\n界面样式模块" as GuiStyle
+    class "resources/app.qrc\n图标资源" as Resources
+  }
+}
+
+' === CLI 内部关系 ===
+CLI11App --> handleBackup : 解析子命令
+CLI11App --> handleRestore
+CLI11App --> handleSchedule
+CLI11App --> handleDaemon
+
+handleBackup --> BackupOpts : 填充配置
+handleRestore --> RestoreOpts
+
+handleBackup --> buildFilterCLI : 创建过滤器
+handleBackup --> buildPackerCLI : 创建打包器
+handleBackup --> transformFile : 后压缩
+handleBackup --> encryptFileCLI : 后加密
+
+handleRestore --> buildPackerCLI : 创建打包器
+handleRestore --> transformFile : 预解压
+handleRestore --> decryptFileCLI : 预解密
+
+encryptFileCLI --> promptPassword : 获取密码
+decryptFileCLI --> promptPassword
+
+' === GUI 内部关系 ===
+QApp --> MainWindow : 创建
+QApp --> GuiStyle : 应用全局样式
+MainWindow --> TabWidget : 承载页签
+TabWidget --> BackupTab
+TabWidget --> RestoreTab
+TabWidget --> ScheduleTabGUI
+TabWidget --> SettingsTab
+
+BackupTab --> BackupWorker : 启动后台线程
+RestoreTab --> RestoreWorker
+BackupTab --> FilterDialog : 编辑过滤条件
+BackupTab --> ProgressWidget : 显示进度
+BackupTab --> LogWidget : 显示日志
+RestoreTab --> ProgressWidget
+RestoreTab --> LogWidget
+
+ScheduleTabGUI --> ScheduleEditDialog : 编辑计划
+BackupTab --> Resources : 加载图标
+MainWindow --> Resources
+
+' === GUI → CLI 调用 ===
+BackupWorker ..> handleBackup : 调用
+RestoreWorker ..> handleRestore : 调用
+
+@enduml

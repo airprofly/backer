@@ -1,0 +1,61 @@
+@startuml
+!theme plain
+skinparam classBorderColor #333333
+skinparam classBackgroundColor #F1F1F1
+
+title Backer 系统构件图（顶层）
+
+package "用户接口" as UI #E8F0FE {
+  class "CLI 命令行" as cli
+  class "GUI 图形界面" as gui
+}
+
+package "核心引擎" as Core #FFF3E0 {
+  class "BackupEngine\n备份引擎" as backup_engine
+  class "RestoreEngine\n恢复引擎" as restore_engine
+}
+
+package "功能模块" #E8F5E9 {
+  class "Compressor\n压缩模块" as compress
+  class "Encryptor\n加密模块" as crypto
+  class "Packer\n打包模块" as pack
+  class "Filter\n过滤模块" as filter
+}
+
+package "调度系统" as Schedule #F3E5F5 {
+  class "BackupScheduler\n调度器" as scheduler
+  class "RetentionPolicy\n保留策略" as retention
+  class "ScheduleStore\n计划存储" as store
+}
+
+package "基础设施" as Infra #FCE4EC {
+  class "FSAbstraction\n文件系统抽象" as fs
+  class "Metadata\n元数据" as metadata
+}
+
+class "文件存储\n(本地磁盘)" as storage
+
+cli --> backup_engine : 执行备份
+cli --> restore_engine : 执行恢复
+gui --> backup_engine : 执行备份
+gui --> restore_engine : 执行恢复
+
+backup_engine --> filter : 筛选文件
+backup_engine --> compress : 压缩数据
+backup_engine --> crypto : 加密数据
+backup_engine --> pack : 打包归档
+backup_engine --> fs : 读写文件
+backup_engine --> metadata : 保存元数据
+
+restore_engine --> crypto : 解密数据
+restore_engine --> compress : 解压数据
+restore_engine --> pack : 解包归档
+restore_engine --> fs : 写文件
+restore_engine --> metadata : 恢复元数据
+
+pack --> storage : 输出归档文件
+scheduler --> backup_engine : 触发备份
+scheduler --> retention : 清理快照
+scheduler --> store : 持久化计划
+
+@enduml

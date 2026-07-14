@@ -1,0 +1,119 @@
+@startuml
+!theme plain
+skinparam classBorderColor #333333
+skinparam classBackgroundColor #F1F1F1
+
+title 子系统六：文件过滤子系统构件图
+
+package "文件过滤子系统" {
+
+  package "接口层" as Interface #E8F0FE {
+    abstract class "Filter\n过滤器抽象接口" as FilterInterface {
+      + apply(files : vector<FileEntry>&) : vector<FileEntry>
+    }
+
+    class "NoopFilter\n空过滤器" as NoopFilter {
+      apply() 原样返回，不做任何过滤
+    }
+  }
+
+  package "过滤条件结构体" as Criteria #FFF3E0 {
+    class "FilterCriteria\n过滤条件" as FilterCriteria <<结构体>> {
+      · pathGlob : vector<string>
+      · fileType : vector<FileType>
+      · nameGlob : vector<string>
+      · timeRange : TimeRange
+      · sizeRange : SizeRange
+      · ownerId : optional<uint32_t>
+      · exclude : bool
+    }
+
+    class "TimeRange\n时间范围" as TimeRange <<结构体>> {
+      · beforeSec / beforeNsec
+      · afterSec / afterNsec
+      · hasBefore / hasAfter
+    }
+
+    class "SizeRange\n大小范围" as SizeRange <<结构体>> {
+      · minSize / maxSize
+      · hasMin / hasMax
+    }
+  }
+
+  package "CriteriaFilter\n条件过滤器实现" as CriteriaFilterPkg #E8F5E9 {
+    class "CriteriaFilter\n条件过滤器" as CriteriaFilter {
+      包含阶段（AND + OR）
+      排除阶段（OR）
+    }
+    class "matches()\n单条件匹配" as matchesMethod
+    class "apply()\n执行过滤" as applyMethod
+
+    class "globToRegex()\n通配符→正则表达式" as globToRegex
+    class "matchGlob()\n通配符匹配" as matchGlob
+  }
+}
+
+' === 继承 ===
+NoopFilter -up-|> FilterInterface
+CriteriaFilter -up-|> FilterInterface
+
+' === 结构体包容 ===
+FilterCriteria --> TimeRange : 包含
+FilterCriteria --> SizeRange : 包含
+
+' === 内部调用 ===
+CriteriaFilter --> matchesMethod : 检查单个条件
+CriteriaFilter --> applyMethod : 过滤入口
+CriteriaFilter --> globToRegex : 转换glob
+CriteriaFilter --> matchGlob : 名称/路径匹配
+
+matchesMethod --> FilterCriteria : 读取条件
+
+note left of applyMethod
+  <b>过滤逻辑（两阶段）：</b>
+
+  <b>第一阶段 — 包含过滤：</b>
+  1. 确定有include条件的维度
+  2. 对每个条目，所有活跃维度
+     必须满足（AND）
+  3. 同维度内多个条件OR
+  4. 无include条件的维度跳过
+
+  <b>第二阶段 — 排除过滤：</b>
+  5. 任一exclude条件匹配即剔除
+end note
+
+note right of FilterCriteria
+  <b>六大过滤维度：</b>
+
+  1. <b>路径过滤</b> (pathGlob)
+     --include-path / --exclude-path
+
+  2. <b>类型过滤</b> (fileType)
+     --include-type / --exclude-type
+     支持7种文件类型
+
+  3. <b>名称过滤</b> (nameGlob)
+     --include-name / --exclude-name
+
+  4. <b>时间过滤</b> (timeRange)
+     --mtime-before / --mtime-after
+
+  5. <b>大小过滤</b> (sizeRange)
+     --size-min / --size-max
+
+  6. <b>属主过滤</b> (ownerId)
+     --owner
+end note
+
+note bottom of matchGlob
+  <b>平台差异：</b>
+  POSIX → fnmatch(FNM_PATHNAME)
+  Windows → std::regex_match
+end note
+
+note top of FilterInterface
+  <b>调用者：</b> BackupEngine / buildFilter() 工厂 / GUI::FilterDialog
+end note
+
+@enduml

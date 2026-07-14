@@ -1,0 +1,94 @@
+@startuml
+!theme plain
+skinparam classBorderColor #333333
+skinparam classBackgroundColor #F1F1F1
+
+title 子系统二：核心引擎子系统构件图
+
+package "核心引擎子系统" {
+
+  package "类型定义（types.h）" as Types #E8F0FE {
+    class "FileType\n文件类型枚举" as FileType <<枚举>>
+    class "Metadata\n元数据结构体" as Metadata <<结构体>>
+    class "FileEntry\n文件条目" as FileEntry <<结构体>>
+    class "OperationStats\n操作统计" as OperationStats <<结构体>>
+    class "BackupResult\n备份结果" as BackupResult <<结构体>>
+  }
+
+  package "错误码（error_code.h）" as ErrorCodePkg #FCE4EC {
+    class "ErrorCode\n错误码枚举" as ErrorCode <<枚举>>
+    class "toString()\n错误码转字符串" as toString
+  }
+
+  package "基础工具" as Utils #FFF3E0 {
+    class "Expected<T,E>\n期望值类型" as Expected <<C++23 polyfill>>
+    class "Span<T>\n非拥有视图" as Span <<C++20 polyfill>>
+  }
+
+  package "BackupEngine\n备份引擎" as BackupEnginePkg #E8F5E9 {
+    class "BackupEngine" as BackupEngine <<主类>>
+    class "backup()\n执行备份" as backup_method
+    class "walkAndCollect()\n遍历收集文件" as walkCollect
+    class "filterEntries()\n过滤文件条目" as filterEntries
+    class "writeEntries()\n写入目标位置" as writeEntries
+    class "restoreMetadata()\n恢复元数据" as restoreMeta
+  }
+
+  package "RestoreEngine\n恢复引擎" as RestoreEnginePkg #F3E5F5 {
+    class "RestoreEngine" as RestoreEngine <<主类>>
+    class "restore()\n执行恢复" as restore_method
+    class "restoreDirectory()\n目录模式恢复" as restoreDir
+    class "restoreArchive()\n归档模式恢复" as restoreArchive
+  }
+}
+
+' === 类型关系 ===
+FileType --> FileEntry : 类型字段
+Metadata --> FileEntry : 元数据字段
+OperationStats --> BackupResult : 统计字段
+BackupResult --> ErrorCode : 错误码字段
+
+' === BackupEngine 内部 ===
+BackupEngine --> backup_method : 入口
+backup_method --> walkCollect : 第1步
+backup_method --> filterEntries : 第2步
+backup_method --> writeEntries : 第3步
+backup_method --> restoreMeta : 第4步
+
+BackupEngine ..> Expected : 返回类型
+
+' === RestoreEngine 内部 ===
+RestoreEngine --> restore_method : 入口
+restore_method --> restoreDir : 目录模式
+restore_method --> restoreArchive : 归档模式
+
+RestoreEngine ..> Expected : 返回类型
+
+' === 外部依赖（虚线表示接口依赖） ===
+walkCollect ..> fs_interface : FSAbstraction::walk()
+writeEntries ..> fs_interface : FSAbstraction::write()
+restoreMeta ..> fs_interface : FSAbstraction::restoreMetadata()
+
+filterEntries ..> filter_interface : Filter::apply()
+backup_method ..> packer_interface : Packer::pack()
+restoreArchive ..> packer_interface : Packer::unpack()
+
+note bottom of backup_method
+  <b>备份流程：</b>
+  1. walk() 遍历源目录
+  2. Filter::apply() 过滤
+  3. 逐文件 read→write 或 packer
+  4. restoreMetadata() 恢复元数据
+  5. 返回 BackupResult
+end note
+
+note bottom of restore_method
+  <b>恢复流程：</b>
+  1. 判断归档/目录模式
+  2. 目录：逐文件恢复
+  3. 归档：Packer::unpack()
+  4. 恢复元数据
+  5. 返回 BackupResult
+end note
+
+@enduml
