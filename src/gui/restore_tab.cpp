@@ -1,6 +1,7 @@
 #include "gui/restore_tab.h"
 #include "gui/backup_worker.h"
 #include "gui/gui_style.h"
+#include "gui/gui_utils.h"
 #include "gui/log_widget.h"
 #include "gui/progress_widget.h"
 
@@ -190,7 +191,19 @@ void RestoreTab::onStartRestore()
     auto src = std::filesystem::path(sourcePath_->text().toStdString());
     auto dst = std::filesystem::path(destPath_->text().toStdString());
 
-    worker_ = new BackupWorker(BackupWorker::Restore, src, dst, opts, this);
+    // Create timestamped subdirectory inside chosen destination:
+    //   data/source_R20260715_143000/
+    auto restorePath = makeRestoreSubPath(dst, src);
+    std::error_code ec;
+    std::filesystem::create_directories(restorePath, ec);
+    if (ec) {
+        QMessageBox::warning(this, QStringLiteral("错误"),
+            QStringLiteral("无法创建还原目录: %1").arg(
+                QString::fromStdString(restorePath.string())));
+        return;
+    }
+
+    worker_ = new BackupWorker(BackupWorker::Restore, src, restorePath, opts, this);
 
     connect(worker_, &BackupWorker::progressUpdated,
             this, [this](int pct, QString const& file, int done, int total,

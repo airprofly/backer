@@ -231,6 +231,7 @@ if(BUILD_GUI AND HAVE_QT6)
         src/gui/progress_widget.h
         src/gui/log_widget.h
         src/gui/filter_dialog.h
+        src/gui/gui_utils.h
     )
     set(GUI_RESOURCES
         src/gui/resources/app.qrc

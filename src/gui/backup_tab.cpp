@@ -2,6 +2,7 @@
 #include "gui/backup_worker.h"
 #include "gui/filter_dialog.h"
 #include "gui/gui_style.h"
+#include "gui/gui_utils.h"
 #include "gui/log_widget.h"
 #include "gui/progress_widget.h"
 
@@ -448,7 +449,19 @@ void BackupTab::onStartBackup()
     auto src = std::filesystem::path(sourcePath_->text().toStdString());
     auto dst = std::filesystem::path(destPath_->text().toStdString());
 
-    worker_ = new BackupWorker(BackupWorker::Backup, src, dst, opts, this);
+    // Create timestamped subdirectory inside chosen destination:
+    //   data/source_20260715_143000/
+    auto backupPath = makeBackupSubPath(dst, src);
+    std::error_code ec;
+    std::filesystem::create_directories(backupPath, ec);
+    if (ec) {
+        QMessageBox::warning(this, QStringLiteral("错误"),
+            QStringLiteral("无法创建备份目录: %1").arg(
+                QString::fromStdString(backupPath.string())));
+        return;
+    }
+
+    worker_ = new BackupWorker(BackupWorker::Backup, src, backupPath, opts, this);
 
     connect(worker_, &BackupWorker::progressUpdated,
             this, [this](int pct, QString const& file, int done, int total,
