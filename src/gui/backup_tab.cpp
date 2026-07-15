@@ -464,6 +464,14 @@ void BackupTab::onStartBackup()
         }
     }
 
+    // Compression/encryption require packing (operate on single file, not directory)
+    if (!enablePack_->isChecked() &&
+        (enableCompress_->isChecked() || enableEncrypt_->isChecked())) {
+        QMessageBox::warning(this, QStringLiteral("提示"),
+            QStringLiteral("压缩和加密需要打包功能，请勾选「打包」"));
+        return;
+    }
+
     // Disable UI during backup
     startBtn_->setEnabled(false);
     cancelBtn_->setEnabled(true);
