@@ -280,6 +280,12 @@ void BackupTab::onCompressToggled(bool checked)
 {
     compressAlgo_->setEnabled(checked);
     compressLevel_->setEnabled(checked);
+    if (checked && !enablePack_->isChecked()) {
+        enablePack_->setChecked(true);
+        packFormat_->setCurrentIndex(0); // Tar
+        logWidget_->appendMessage(
+            QStringLiteral("压缩需要打包，已自动启用 Tar 打包"), 1);
+    }
 }
 
 void BackupTab::onEncryptToggled(bool checked)
@@ -287,6 +293,12 @@ void BackupTab::onEncryptToggled(bool checked)
     encryptAlgo_->setEnabled(checked);
     password_->setEnabled(checked);
     confirmPassword_->setEnabled(checked);
+    if (checked && !enablePack_->isChecked()) {
+        enablePack_->setChecked(true);
+        packFormat_->setCurrentIndex(0); // Tar
+        logWidget_->appendMessage(
+            QStringLiteral("加密需要打包，已自动启用 Tar 打包"), 1);
+    }
 }
 
 namespace {
@@ -446,21 +458,6 @@ void BackupTab::onStartBackup()
                 QStringLiteral("两次输入的密码不一致"));
             return;
         }
-        // Encryption requires a pack format (encrypts a single file, not a directory)
-        if (!enablePack_->isChecked()) {
-            enablePack_->setChecked(true);
-            packFormat_->setCurrentIndex(0); // Tar
-            logWidget_->appendMessage(
-                QStringLiteral("加密备份需要打包，已自动启用 Tar 打包"), 1);
-        }
-    }
-
-    // Compression also requires a pack format (compresses a single file)
-    if (enableCompress_->isChecked() && !enablePack_->isChecked()) {
-        enablePack_->setChecked(true);
-        packFormat_->setCurrentIndex(0); // Tar
-        logWidget_->appendMessage(
-            QStringLiteral("压缩备份需要打包，已自动启用 Tar 打包"), 1);
     }
 
     // Disable UI during backup
