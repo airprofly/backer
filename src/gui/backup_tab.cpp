@@ -449,17 +449,10 @@ void BackupTab::onStartBackup()
     auto src = std::filesystem::path(sourcePath_->text().toStdString());
     auto dst = std::filesystem::path(destPath_->text().toStdString());
 
-    // Create timestamped subdirectory inside chosen destination:
-    //   data/source_20260715_143000/
+    // Create timestamped subdirectory inside chosen destination.
+    // The backup engine will create the actual dir (mirror mode) or
+    // write the archive file (pack mode) inside this subpath.
     auto backupPath = makeBackupSubPath(dst, src);
-    std::error_code ec;
-    std::filesystem::create_directories(backupPath, ec);
-    if (ec) {
-        QMessageBox::warning(this, QStringLiteral("错误"),
-            QStringLiteral("无法创建备份目录: %1").arg(
-                QString::fromStdString(backupPath.string())));
-        return;
-    }
 
     worker_ = new BackupWorker(BackupWorker::Backup, src, backupPath, opts, this);
 

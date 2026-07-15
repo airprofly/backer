@@ -191,17 +191,9 @@ void RestoreTab::onStartRestore()
     auto src = std::filesystem::path(sourcePath_->text().toStdString());
     auto dst = std::filesystem::path(destPath_->text().toStdString());
 
-    // Create timestamped subdirectory inside chosen destination:
-    //   data/source_R20260715_143000/
+    // Create timestamped subdirectory inside chosen destination.
+    // The restore engine will create the actual dir inside this subpath.
     auto restorePath = makeRestoreSubPath(dst, src);
-    std::error_code ec;
-    std::filesystem::create_directories(restorePath, ec);
-    if (ec) {
-        QMessageBox::warning(this, QStringLiteral("错误"),
-            QStringLiteral("无法创建还原目录: %1").arg(
-                QString::fromStdString(restorePath.string())));
-        return;
-    }
 
     worker_ = new BackupWorker(BackupWorker::Restore, src, restorePath, opts, this);
 
