@@ -45,7 +45,17 @@ void MainWindow::setupUi()
     connect(backupTab_, &BackupTab::backupFinished,
             this, &MainWindow::onBackupFinished);
     connect(restoreTab_, &RestoreTab::restoreFinished,
-            this, &MainWindow::onBackupFinished);
+            this, [this](bool success, QString const& message) {
+        if (success) {
+            QMessageBox::information(this,
+                QStringLiteral("还原完成"), message);
+            tabWidget_->setCurrentWidget(backupTab_);
+        } else {
+            QMessageBox::critical(this,
+                QStringLiteral("还原失败"), message);
+            // Stay on restore tab for retry
+        }
+    });
 }
 
 void MainWindow::setupMenuBar()
