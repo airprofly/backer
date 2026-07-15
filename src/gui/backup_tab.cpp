@@ -455,6 +455,14 @@ void BackupTab::onStartBackup()
         }
     }
 
+    // Compression also requires a pack format (compresses a single file)
+    if (enableCompress_->isChecked() && !enablePack_->isChecked()) {
+        enablePack_->setChecked(true);
+        packFormat_->setCurrentIndex(0); // Tar
+        logWidget_->appendMessage(
+            QStringLiteral("压缩备份需要打包，已自动启用 Tar 打包"), 1);
+    }
+
     // Disable UI during backup
     startBtn_->setEnabled(false);
     cancelBtn_->setEnabled(true);
