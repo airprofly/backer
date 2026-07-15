@@ -60,14 +60,10 @@ void RestoreTab::setupUi()
     decompressAlgo_->addItems({QStringLiteral("gzip"), QStringLiteral("zstd"), QStringLiteral("lzma")});
     decompressAlgo_->setEnabled(false);
 
-    enableDecrypt_ = new QCheckBox(QStringLiteral("解密"));
-    decryptAlgo_ = new QComboBox();
-    decryptAlgo_->addItems({QStringLiteral("AES-256"), QStringLiteral("SM4")});
-    decryptAlgo_->setEnabled(false);
+    passwordLabel_ = new QLabel(QStringLiteral("解密密码:"));
     password_ = new QLineEdit();
     password_->setEchoMode(QLineEdit::Password);
-    password_->setPlaceholderText(QStringLiteral("密码"));
-    password_->setEnabled(false);
+    password_->setPlaceholderText(QStringLiteral("加密备份时设置的密码（可选）"));
 
     enablePack_ = new QCheckBox(QStringLiteral("打包格式"));
     packFormat_ = new QComboBox();
@@ -77,9 +73,8 @@ void RestoreTab::setupUi()
     optionsLayout->addWidget(enableDecompress_);
     optionsLayout->addWidget(decompressAlgo_);
     optionsLayout->addSpacing(8);
-    optionsLayout->addWidget(enableDecrypt_);
-    optionsLayout->addWidget(decryptAlgo_);
-    optionsLayout->addWidget(password_);
+    optionsLayout->addWidget(passwordLabel_);
+    optionsLayout->addWidget(password_, 1);
     optionsLayout->addSpacing(8);
     optionsLayout->addWidget(enablePack_);
     optionsLayout->addWidget(packFormat_);
@@ -88,10 +83,6 @@ void RestoreTab::setupUi()
 
     connect(enableDecompress_, &QCheckBox::toggled,
             decompressAlgo_, &QComboBox::setEnabled);
-    connect(enableDecrypt_, &QCheckBox::toggled,
-            decryptAlgo_, &QComboBox::setEnabled);
-    connect(enableDecrypt_, &QCheckBox::toggled,
-            password_, &QWidget::setEnabled);
     connect(enablePack_, &QCheckBox::toggled,
             packFormat_, &QComboBox::setEnabled);
 
@@ -165,15 +156,19 @@ void RestoreTab::onStartRestore()
             QStringLiteral("请选择备份源和还原目标目录"));
         return;
     }
-    if (!std::filesystem::exists(sourcePath_->text().toStdString())) {
+    auto srcStr = sourcePath_->text().toStdString();
+    if (!std::filesystem::exists(srcStr)) {
         QMessageBox::warning(this, QStringLiteral("提示"),
             QStringLiteral("备份源路径不存在"));
         return;
     }
 
-    if (enableDecrypt_->isChecked() && password_->text().isEmpty()) {
+    // Auto-detect encryption: check if source ends with .enc
+    bool isEncrypted = (srcStr.size() >= 4 &&
+        srcStr.compare(srcStr.size() - 4, 4, ".enc") == 0);
+    if (isEncrypted && password_->text().isEmpty()) {
         QMessageBox::warning(this, QStringLiteral("提示"),
-            QStringLiteral("请输入解密密码"));
+            QStringLiteral("备份文件已加密，请输入解密密码"));
         return;
     }
 
@@ -187,12 +182,8 @@ void RestoreTab::onStartRestore()
     opts.handleSpecial = handleSpecial_->isChecked();
     if (enableDecompress_->isChecked())
         opts.decompressAlgo = decompressAlgo_->currentText().toStdString();
-    if (enableDecrypt_->isChecked()) {
-        auto algo = decryptAlgo_->currentText();
-        if (algo == QStringLiteral("AES-256"))
-            opts.decryptAlgo = "aes256";
-        else if (algo == QStringLiteral("SM4"))
-            opts.decryptAlgo = "sm4";
+    if (isEncrypted) {
+        // Leave decryptAlgo empty — BackupWorker will auto-try AES then SM4
         opts.password = password_->text().toStdString();
     }
     if (enablePack_->isChecked())

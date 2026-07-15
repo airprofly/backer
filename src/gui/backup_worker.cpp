@@ -117,8 +117,18 @@ void BackupWorker::run()
             auto const& opts = std::get<backer::cli::BackupOptions>(options_);
             resultCode = backer::cli::handleBackup(source_, destination_, opts);
         } else {
-            auto const& opts = std::get<backer::cli::RestoreOptions>(options_);
-            resultCode = backer::cli::handleRestore(source_, destination_, opts);
+            auto opts = std::get<backer::cli::RestoreOptions>(options_);
+            if (!opts.password.empty() && opts.decryptAlgo.empty()) {
+                // Auto-detect: try AES first, fall back to SM4
+                opts.decryptAlgo = "aes256";
+                resultCode = backer::cli::handleRestore(source_, destination_, opts);
+                if (resultCode != 0) {
+                    opts.decryptAlgo = "sm4";
+                    resultCode = backer::cli::handleRestore(source_, destination_, opts);
+                }
+            } else {
+                resultCode = backer::cli::handleRestore(source_, destination_, opts);
+            }
         }
     } catch (std::exception const& e) {
         errorMsg = e.what();

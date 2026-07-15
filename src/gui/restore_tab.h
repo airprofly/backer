@@ -8,6 +8,7 @@
 
 class QCheckBox;
 class QComboBox;
+class QLabel;
 class QLineEdit;
 class QPushButton;
 
@@ -41,9 +42,8 @@ private:
     QLineEdit* destPath_{nullptr};
     QCheckBox* enableDecompress_{nullptr};
     QComboBox* decompressAlgo_{nullptr};
-    QCheckBox* enableDecrypt_{nullptr};
-    QComboBox* decryptAlgo_{nullptr};
     QLineEdit* password_{nullptr};
+    QLabel* passwordLabel_{nullptr};
     QCheckBox* enablePack_{nullptr};
     QComboBox* packFormat_{nullptr};
     QCheckBox* preserveMetadata_{nullptr};
