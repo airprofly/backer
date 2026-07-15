@@ -24,10 +24,14 @@ public:
     // ── Setters (pre-fill from existing config) ─────────────
     void setIncludePaths(QStringList const& paths);
     void setExcludePaths(QStringList const& paths);
+    void setIncludeNames(QStringList const& names);
+    void setExcludeNames(QStringList const& names);
 
     // ── Getters ─────────────────────────────────────────────
     QStringList includePaths() const;
     QStringList excludePaths() const;
+    QStringList includeNames() const;
+    QStringList excludeNames() const;
     QStringList includeTypes() const;
     QStringList excludeTypes() const;
 
@@ -46,6 +50,10 @@ private slots:
     void onRemoveIncludePath();
     void onAddExcludePath();
     void onRemoveExcludePath();
+    void onAddIncludeName();
+    void onRemoveIncludeName();
+    void onAddExcludeName();
+    void onRemoveExcludeName();
 
 private:
     void setupUi();
@@ -53,6 +61,8 @@ private:
     // ── Path filters ────────────────────────────────────────
     QListWidget* includePathList_{nullptr};
     QListWidget* excludePathList_{nullptr};
+    QListWidget* includeNameList_{nullptr};
+    QListWidget* excludeNameList_{nullptr};
 
     // ── Type checkboxes ─────────────────────────────────────
     QCheckBox* typeFile_{nullptr};

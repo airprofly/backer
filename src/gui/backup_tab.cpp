@@ -7,6 +7,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDateTimeEdit>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -110,18 +111,88 @@ void BackupTab::setupUi()
     // ── Filter detail group ───────────────────────────────────
     filterGroup_ = new QGroupBox(QStringLiteral("文件筛选"));
     auto* filterForm = new QFormLayout(filterGroup_);
+
+    // Row 1-2: Path
     includePaths_ = new QLineEdit();
-    includePaths_->setPlaceholderText(QStringLiteral("用逗号分隔的包含路径"));
+    includePaths_->setPlaceholderText(QStringLiteral("用逗号分隔的包含路径 (glob)"));
     excludePaths_ = new QLineEdit();
-    excludePaths_->setPlaceholderText(QStringLiteral("用逗号分隔的排除路径"));
-    includeTypes_ = new QLineEdit();
-    includeTypes_->setPlaceholderText(QStringLiteral("file, dir, symlink, fifo, block, char"));
-    excludeTypes_ = new QLineEdit();
-    excludeTypes_->setPlaceholderText(QStringLiteral("file, dir, symlink, fifo, block, char"));
+    excludePaths_->setPlaceholderText(QStringLiteral("用逗号分隔的排除路径 (glob)"));
     filterForm->addRow(QStringLiteral("包含路径:"), includePaths_);
     filterForm->addRow(QStringLiteral("排除路径:"), excludePaths_);
+
+    // Row 3-4: Type
+    includeTypes_ = new QLineEdit();
+    includeTypes_->setPlaceholderText(QStringLiteral("file, dir, symlink, fifo, block, char, socket"));
+    excludeTypes_ = new QLineEdit();
+    excludeTypes_->setPlaceholderText(QStringLiteral("file, dir, symlink, fifo, block, char, socket"));
     filterForm->addRow(QStringLiteral("包含类型:"), includeTypes_);
     filterForm->addRow(QStringLiteral("排除类型:"), excludeTypes_);
+
+    // Row 5-6: Name
+    includeNames_ = new QLineEdit();
+    includeNames_->setPlaceholderText(QStringLiteral("用逗号分隔的包含名称 (如 *.txt, *.cpp)"));
+    excludeNames_ = new QLineEdit();
+    excludeNames_->setPlaceholderText(QStringLiteral("用逗号分隔的排除名称 (如 *.tmp, *.log)"));
+    filterForm->addRow(QStringLiteral("包含名称:"), includeNames_);
+    filterForm->addRow(QStringLiteral("排除名称:"), excludeNames_);
+
+    // Row 7: Time
+    auto* timeRow = new QHBoxLayout();
+    enableTimeFilter_ = new QCheckBox(QStringLiteral("启用"));
+    mtimeAfter_ = new QDateTimeEdit();
+    mtimeAfter_->setCalendarPopup(true);
+    mtimeAfter_->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm"));
+    mtimeAfter_->setDateTime(QDateTime::currentDateTime().addDays(-7));
+    mtimeAfter_->setEnabled(false);
+    mtimeBefore_ = new QDateTimeEdit();
+    mtimeBefore_->setCalendarPopup(true);
+    mtimeBefore_->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm"));
+    mtimeBefore_->setDateTime(QDateTime::currentDateTime());
+    mtimeBefore_->setEnabled(false);
+    timeRow->addWidget(enableTimeFilter_);
+    timeRow->addWidget(new QLabel(QStringLiteral("修改时间:")));
+    timeRow->addWidget(mtimeAfter_);
+    timeRow->addWidget(new QLabel(QStringLiteral("→")));
+    timeRow->addWidget(mtimeBefore_);
+    timeRow->addStretch();
+    filterForm->addRow(QStringLiteral("时间筛选:"), timeRow);
+
+    // Row 8: Size
+    auto* sizeRow = new QHBoxLayout();
+    enableSizeFilter_ = new QCheckBox(QStringLiteral("启用"));
+    sizeMin_ = new QSpinBox();
+    sizeMin_->setRange(0, 999999999);
+    sizeMin_->setValue(0);
+    sizeMin_->setEnabled(false);
+    sizeMax_ = new QSpinBox();
+    sizeMax_->setRange(0, 999999999);
+    sizeMax_->setValue(0);
+    sizeMax_->setSpecialValueText(QStringLiteral("不限"));
+    sizeMax_->setEnabled(false);
+    sizeUnitMin_ = new QComboBox();
+    sizeUnitMin_->addItems({QStringLiteral("B"), QStringLiteral("KB"),
+                            QStringLiteral("MB"), QStringLiteral("GB")});
+    sizeUnitMin_->setEnabled(false);
+    sizeUnitMax_ = new QComboBox();
+    sizeUnitMax_->addItems({QStringLiteral("B"), QStringLiteral("KB"),
+                            QStringLiteral("MB"), QStringLiteral("GB")});
+    sizeUnitMax_->setEnabled(false);
+    sizeRow->addWidget(enableSizeFilter_);
+    sizeRow->addWidget(new QLabel(QStringLiteral("最小:")));
+    sizeRow->addWidget(sizeMin_);
+    sizeRow->addWidget(sizeUnitMin_);
+    sizeRow->addSpacing(6);
+    sizeRow->addWidget(new QLabel(QStringLiteral("最大:")));
+    sizeRow->addWidget(sizeMax_);
+    sizeRow->addWidget(sizeUnitMax_);
+    sizeRow->addStretch();
+    filterForm->addRow(QStringLiteral("大小筛选:"), sizeRow);
+
+    // Row 9: Owner
+    ownerFilter_ = new QLineEdit();
+    ownerFilter_->setPlaceholderText(QStringLiteral("用户名或 UID"));
+    filterForm->addRow(QStringLiteral("所有者:"), ownerFilter_);
+
     filterGroup_->setVisible(false);
     mainLayout->addWidget(filterGroup_);
 
@@ -169,6 +240,18 @@ void BackupTab::setupConnections()
             filterGroup_, &QGroupBox::setVisible);
     connect(enableFilter_, &QCheckBox::toggled,
             editFilterBtn_, &QPushButton::setEnabled);
+    connect(enableTimeFilter_, &QCheckBox::toggled,
+            mtimeAfter_, &QWidget::setEnabled);
+    connect(enableTimeFilter_, &QCheckBox::toggled,
+            mtimeBefore_, &QWidget::setEnabled);
+    connect(enableSizeFilter_, &QCheckBox::toggled,
+            sizeMin_, &QWidget::setEnabled);
+    connect(enableSizeFilter_, &QCheckBox::toggled,
+            sizeMax_, &QWidget::setEnabled);
+    connect(enableSizeFilter_, &QCheckBox::toggled,
+            sizeUnitMin_, &QWidget::setEnabled);
+    connect(enableSizeFilter_, &QCheckBox::toggled,
+            sizeUnitMax_, &QWidget::setEnabled);
 }
 
 void BackupTab::onBrowseSource()
@@ -205,12 +288,71 @@ void BackupTab::onEncryptToggled(bool checked)
     confirmPassword_->setEnabled(checked);
 }
 
+namespace {
+/// Byte multiplier for size-unit combobox index.
+qint64 unitMult(int index) noexcept
+{
+    static constexpr qint64 kUnits[] = {1LL, 1024LL, 1024LL * 1024, 1024LL * 1024 * 1024};
+    return (index >= 0 && index < 4) ? kUnits[index] : 1;
+}
+} // anonymous namespace
+
 void BackupTab::onEditFilter()
 {
     FilterDialog dlg(this);
+
+    // Pre-fill from current inline values
+    dlg.setIncludePaths(includePaths_->text().split(
+        QRegularExpression(QStringLiteral("[,\\s;]+")), Qt::SkipEmptyParts));
+    dlg.setExcludePaths(excludePaths_->text().split(
+        QRegularExpression(QStringLiteral("[,\\s;]+")), Qt::SkipEmptyParts));
+    dlg.setIncludeNames(includeNames_->text().split(
+        QRegularExpression(QStringLiteral("[,\\s;]+")), Qt::SkipEmptyParts));
+    dlg.setExcludeNames(excludeNames_->text().split(
+        QRegularExpression(QStringLiteral("[,\\s;]+")), Qt::SkipEmptyParts));
+
     if (dlg.exec() == QDialog::Accepted) {
+        // Sync path/name text fields
         includePaths_->setText(dlg.includePaths().join(QStringLiteral(", ")));
         excludePaths_->setText(dlg.excludePaths().join(QStringLiteral(", ")));
+        includeNames_->setText(dlg.includeNames().join(QStringLiteral(", ")));
+        excludeNames_->setText(dlg.excludeNames().join(QStringLiteral(", ")));
+
+        // Sync type checkboxes → text field
+        includeTypes_->setText(dlg.includeTypes().join(QStringLiteral(", ")));
+
+        // Sync time inline controls
+        enableTimeFilter_->setChecked(dlg.hasTimeFilter());
+        mtimeAfter_->setDateTime(dlg.mtimeAfter());
+        mtimeBefore_->setDateTime(dlg.mtimeBefore());
+
+        // Sync size inline controls
+        enableSizeFilter_->setChecked(dlg.hasSizeFilter());
+        qint64 szMin = dlg.sizeMin();
+        qint64 szMax = dlg.sizeMax();
+        // Find best unit (auto-scale to largest unit >= 1)
+        int unitIdx = 0;
+        for (int i = 3; i > 0; --i) {
+            if (szMin > 0 && szMin % unitMult(i) == 0) { unitIdx = i; break; }
+            if (szMax > 0 && szMax % unitMult(i) == 0) { unitIdx = i; break; }
+        }
+        if (szMin > 0 && szMin % unitMult(unitIdx) == 0) {
+            sizeMin_->setValue(static_cast<int>(szMin / unitMult(unitIdx)));
+            sizeUnitMin_->setCurrentIndex(unitIdx);
+        } else {
+            sizeMin_->setValue(0);
+            sizeUnitMin_->setCurrentIndex(0);
+        }
+        if (szMax > 0 && szMax % unitMult(unitIdx) == 0) {
+            sizeMax_->setValue(static_cast<int>(szMax / unitMult(unitIdx)));
+            sizeUnitMax_->setCurrentIndex(unitIdx);
+        } else {
+            sizeMax_->setValue(0);
+            sizeUnitMax_->setCurrentIndex(0);
+        }
+
+        // Sync owner
+        ownerFilter_->setText(dlg.owner());
     }
 }
 
@@ -242,6 +384,28 @@ backer::cli::BackupOptions BackupTab::collectOptions() const
             opts.includeTypes.push_back(s.toStdString());
         for (auto const& s : split(excludeTypes_->text()))
             opts.excludeTypes.push_back(s.toStdString());
+        for (auto const& s : split(includeNames_->text()))
+            opts.includeNames.push_back(s.toStdString());
+        for (auto const& s : split(excludeNames_->text()))
+            opts.excludeNames.push_back(s.toStdString());
+
+        // Time filter (inline controls)
+        if (enableTimeFilter_->isChecked()) {
+            opts.mtimeAfter  = mtimeAfter_->dateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm")).toStdString();
+            opts.mtimeBefore = mtimeBefore_->dateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm")).toStdString();
+        }
+
+        // Size filter (inline controls)
+        if (enableSizeFilter_->isChecked()) {
+            qint64 minBytes = sizeMin_->value() * unitMult(sizeUnitMin_->currentIndex());
+            qint64 maxBytes = sizeMax_->value() * unitMult(sizeUnitMax_->currentIndex());
+            if (minBytes > 0) { opts.hasSizeMin = true; opts.sizeMin = static_cast<uint64_t>(minBytes); }
+            if (maxBytes > 0) { opts.hasSizeMax = true; opts.sizeMax = static_cast<uint64_t>(maxBytes); }
+        }
+
+        // Owner filter
+        if (!ownerFilter_->text().trimmed().isEmpty())
+            opts.owner = ownerFilter_->text().trimmed().toStdString();
     }
 
     return opts;

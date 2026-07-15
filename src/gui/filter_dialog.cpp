@@ -22,7 +22,7 @@ FilterDialog::FilterDialog(QWidget* parent)
     : QDialog(parent)
 {
     setWindowTitle(QStringLiteral("筛选条件编辑器"));
-    setMinimumSize(500, 450);
+    setMinimumSize(560, 600);
     setupUi();
 }
 
@@ -78,6 +78,55 @@ void FilterDialog::setupUi()
             this, &FilterDialog::onAddExcludePath);
     connect(excludeRemoveBtn, &QPushButton::clicked,
             this, &FilterDialog::onRemoveExcludePath);
+
+    // ── Name filters ──────────────────────────────────────────
+    auto* nameGroup = new QGroupBox(QStringLiteral("名称筛选"));
+    auto* nameLayout = new QVBoxLayout(nameGroup);
+
+    // Include names
+    auto* includeNameLabel = new QLabel(QStringLiteral("包含名称:"));
+    auto* includeNameRow = new QHBoxLayout();
+    includeNameList_ = new QListWidget();
+    auto* includeNameAddBtn = new QPushButton(QStringLiteral("+"));
+    auto* includeNameRemoveBtn = new QPushButton(QStringLiteral("-"));
+    includeNameAddBtn->setFixedWidth(32);
+    includeNameRemoveBtn->setFixedWidth(32);
+    includeNameRow->addWidget(includeNameList_, 1);
+    auto* includeNameBtnLayout = new QVBoxLayout();
+    includeNameBtnLayout->addWidget(includeNameAddBtn);
+    includeNameBtnLayout->addWidget(includeNameRemoveBtn);
+    includeNameBtnLayout->addStretch();
+    includeNameRow->addLayout(includeNameBtnLayout);
+    nameLayout->addWidget(includeNameLabel);
+    nameLayout->addLayout(includeNameRow);
+
+    // Exclude names
+    auto* excludeNameLabel = new QLabel(QStringLiteral("排除名称:"));
+    auto* excludeNameRow = new QHBoxLayout();
+    excludeNameList_ = new QListWidget();
+    auto* excludeNameAddBtn = new QPushButton(QStringLiteral("+"));
+    auto* excludeNameRemoveBtn = new QPushButton(QStringLiteral("-"));
+    excludeNameAddBtn->setFixedWidth(32);
+    excludeNameRemoveBtn->setFixedWidth(32);
+    excludeNameRow->addWidget(excludeNameList_, 1);
+    auto* excludeNameBtnLayout = new QVBoxLayout();
+    excludeNameBtnLayout->addWidget(excludeNameAddBtn);
+    excludeNameBtnLayout->addWidget(excludeNameRemoveBtn);
+    excludeNameBtnLayout->addStretch();
+    excludeNameRow->addLayout(excludeNameBtnLayout);
+    nameLayout->addWidget(excludeNameLabel);
+    nameLayout->addLayout(excludeNameRow);
+
+    layout->addWidget(nameGroup);
+
+    connect(includeNameAddBtn, &QPushButton::clicked,
+            this, &FilterDialog::onAddIncludeName);
+    connect(includeNameRemoveBtn, &QPushButton::clicked,
+            this, &FilterDialog::onRemoveIncludeName);
+    connect(excludeNameAddBtn, &QPushButton::clicked,
+            this, &FilterDialog::onAddExcludeName);
+    connect(excludeNameRemoveBtn, &QPushButton::clicked,
+            this, &FilterDialog::onRemoveExcludeName);
 
     // ── Type filters ─────────────────────────────────────────
     auto* typeGroup = new QGroupBox(QStringLiteral("类型筛选"));
@@ -206,6 +255,20 @@ void FilterDialog::setExcludePaths(QStringList const& paths)
         excludePathList_->addItem(p);
 }
 
+void FilterDialog::setIncludeNames(QStringList const& names)
+{
+    includeNameList_->clear();
+    for (auto const& n : names)
+        includeNameList_->addItem(n);
+}
+
+void FilterDialog::setExcludeNames(QStringList const& names)
+{
+    excludeNameList_->clear();
+    for (auto const& n : names)
+        excludeNameList_->addItem(n);
+}
+
 // ── Getters ──────────────────────────────────────────────────────
 
 QStringList FilterDialog::includePaths() const
@@ -221,6 +284,22 @@ QStringList FilterDialog::excludePaths() const
     QStringList result;
     for (int i = 0; i < excludePathList_->count(); ++i)
         result << excludePathList_->item(i)->text();
+    return result;
+}
+
+QStringList FilterDialog::includeNames() const
+{
+    QStringList result;
+    for (int i = 0; i < includeNameList_->count(); ++i)
+        result << includeNameList_->item(i)->text();
+    return result;
+}
+
+QStringList FilterDialog::excludeNames() const
+{
+    QStringList result;
+    for (int i = 0; i < excludeNameList_->count(); ++i)
+        result << excludeNameList_->item(i)->text();
     return result;
 }
 
@@ -322,6 +401,42 @@ void FilterDialog::onRemoveExcludePath()
     auto items = excludePathList_->selectedItems();
     for (auto* item : items)
         delete excludePathList_->takeItem(excludePathList_->row(item));
+}
+
+void FilterDialog::onAddIncludeName()
+{
+    bool ok = false;
+    QString text = QInputDialog::getText(this,
+        QStringLiteral("添加包含名称"),
+        QStringLiteral("文件名模式 (支持 glob, 如 *.txt):"),
+        QLineEdit::Normal, {}, &ok);
+    if (ok && !text.isEmpty())
+        includeNameList_->addItem(text);
+}
+
+void FilterDialog::onRemoveIncludeName()
+{
+    auto items = includeNameList_->selectedItems();
+    for (auto* item : items)
+        delete includeNameList_->takeItem(includeNameList_->row(item));
+}
+
+void FilterDialog::onAddExcludeName()
+{
+    bool ok = false;
+    QString text = QInputDialog::getText(this,
+        QStringLiteral("添加排除名称"),
+        QStringLiteral("文件名模式 (支持 glob, 如 *.tmp):"),
+        QLineEdit::Normal, {}, &ok);
+    if (ok && !text.isEmpty())
+        excludeNameList_->addItem(text);
+}
+
+void FilterDialog::onRemoveExcludeName()
+{
+    auto items = excludeNameList_->selectedItems();
+    for (auto* item : items)
+        delete excludeNameList_->takeItem(excludeNameList_->row(item));
 }
 
 } // namespace backer::gui

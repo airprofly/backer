@@ -10,10 +10,9 @@ namespace backer::gui {
 class BackupTab;
 class RestoreTab;
 class ScheduleTab;
-class SettingsTab;
 
 /// Main application window with tabbed interface for backup, restore,
-/// scheduled tasks, and settings.
+/// and scheduled tasks.
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
@@ -32,7 +31,6 @@ private:
     BackupTab* backupTab_{nullptr};
     RestoreTab* restoreTab_{nullptr};
     ScheduleTab* scheduleTab_{nullptr};
-    SettingsTab* settingsTab_{nullptr};
 };
 
 } // namespace backer::gui
