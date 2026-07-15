@@ -52,39 +52,14 @@ void RestoreTab::setupUi()
     connect(browseSrcBtn, &QPushButton::clicked, this, &RestoreTab::onBrowseSource);
     connect(browseDestBtn, &QPushButton::clicked, this, &RestoreTab::onBrowseDest);
 
-    // ── Decompress / Decrypt / Pack options ───────────────────
-    auto* optionsLayout = new QHBoxLayout();
-
-    enableDecompress_ = new QCheckBox(QStringLiteral("解压缩"));
-    decompressAlgo_ = new QComboBox();
-    decompressAlgo_->addItems({QStringLiteral("gzip"), QStringLiteral("zstd"), QStringLiteral("lzma")});
-    decompressAlgo_->setEnabled(false);
-
-    passwordLabel_ = new QLabel(QStringLiteral("解密密码:"));
+    // ── Password (only needed for encrypted backups) ──────────
+    auto* pwdRow = new QHBoxLayout();
+    pwdRow->addWidget(new QLabel(QStringLiteral("解密密码:")));
     password_ = new QLineEdit();
     password_->setEchoMode(QLineEdit::Password);
     password_->setPlaceholderText(QStringLiteral("加密备份时设置的密码（可选）"));
-
-    enablePack_ = new QCheckBox(QStringLiteral("打包格式"));
-    packFormat_ = new QComboBox();
-    packFormat_->addItems({QStringLiteral("Tar"), QStringLiteral("Zip")});
-    packFormat_->setEnabled(false);
-
-    optionsLayout->addWidget(enableDecompress_);
-    optionsLayout->addWidget(decompressAlgo_);
-    optionsLayout->addSpacing(8);
-    optionsLayout->addWidget(passwordLabel_);
-    optionsLayout->addWidget(password_, 1);
-    optionsLayout->addSpacing(8);
-    optionsLayout->addWidget(enablePack_);
-    optionsLayout->addWidget(packFormat_);
-    optionsLayout->addStretch();
-    mainLayout->addLayout(optionsLayout);
-
-    connect(enableDecompress_, &QCheckBox::toggled,
-            decompressAlgo_, &QComboBox::setEnabled);
-    connect(enablePack_, &QCheckBox::toggled,
-            packFormat_, &QComboBox::setEnabled);
+    pwdRow->addWidget(password_, 1);
+    mainLayout->addLayout(pwdRow);
 
     // ── Restore flags ─────────────────────────────────────────
     auto* flagLayout = new QHBoxLayout();
@@ -163,10 +138,12 @@ void RestoreTab::onStartRestore()
         return;
     }
 
-    // Auto-detect encryption: check if source ends with .enc
-    bool isEncrypted = (srcStr.size() >= 4 &&
-        srcStr.compare(srcStr.size() - 4, 4, ".enc") == 0);
-    if (isEncrypted && password_->text().isEmpty()) {
+    auto src = std::filesystem::path(srcStr);
+    auto dst = std::filesystem::path(destPath_->text().toStdString());
+
+    // Auto-detect all options from the backup filename
+    auto detected = detectRestoreOptions(src);
+    if (detected.isEncrypted && password_->text().isEmpty()) {
         QMessageBox::warning(this, QStringLiteral("提示"),
             QStringLiteral("备份文件已加密，请输入解密密码"));
         return;
@@ -180,20 +157,14 @@ void RestoreTab::onStartRestore()
     cli::RestoreOptions opts;
     opts.preserveMetadata = preserveMetadata_->isChecked();
     opts.handleSpecial = handleSpecial_->isChecked();
-    if (enableDecompress_->isChecked())
-        opts.decompressAlgo = decompressAlgo_->currentText().toStdString();
-    if (isEncrypted) {
+    opts.decompressAlgo = detected.decompressAlgo;
+    opts.packFormat = detected.packFormat;
+    if (detected.isEncrypted) {
         // Leave decryptAlgo empty — BackupWorker will auto-try AES then SM4
         opts.password = password_->text().toStdString();
     }
-    if (enablePack_->isChecked())
-        opts.packFormat = packFormat_->currentText().toLower().toStdString();
-
-    auto src = std::filesystem::path(sourcePath_->text().toStdString());
-    auto dst = std::filesystem::path(destPath_->text().toStdString());
 
     // Create timestamped subdirectory inside chosen destination.
-    // The restore engine will create the actual dir inside this subpath.
     auto restorePath = makeRestoreSubPath(dst, src);
 
     worker_ = new BackupWorker(BackupWorker::Restore, src, restorePath, opts, this);

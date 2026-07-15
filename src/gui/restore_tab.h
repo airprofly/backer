@@ -7,8 +7,6 @@
 #include <filesystem>
 
 class QCheckBox;
-class QComboBox;
-class QLabel;
 class QLineEdit;
 class QPushButton;
 
@@ -18,8 +16,8 @@ class BackupWorker;
 class LogWidget;
 class ProgressWidget;
 
-/// Restore configuration tab — select backup source, target directory,
-/// decompression/pack options, and run restore.
+/// Restore configuration tab — select backup source and target directory.
+/// All format/algorithm detection is automatic from filename.
 class RestoreTab : public QWidget {
     Q_OBJECT
 public:
@@ -40,12 +38,7 @@ private:
 
     QLineEdit* sourcePath_{nullptr};
     QLineEdit* destPath_{nullptr};
-    QCheckBox* enableDecompress_{nullptr};
-    QComboBox* decompressAlgo_{nullptr};
     QLineEdit* password_{nullptr};
-    QLabel* passwordLabel_{nullptr};
-    QCheckBox* enablePack_{nullptr};
-    QComboBox* packFormat_{nullptr};
     QCheckBox* preserveMetadata_{nullptr};
     QCheckBox* handleSpecial_{nullptr};
     QPushButton* startBtn_{nullptr};
