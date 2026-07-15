@@ -171,6 +171,12 @@ void RestoreTab::onStartRestore()
         return;
     }
 
+    if (enableDecrypt_->isChecked() && password_->text().isEmpty()) {
+        QMessageBox::warning(this, QStringLiteral("提示"),
+            QStringLiteral("请输入解密密码"));
+        return;
+    }
+
     startBtn_->setEnabled(false);
     cancelBtn_->setEnabled(true);
     progressWidget_->setRunning(true);
