@@ -415,7 +415,7 @@ void FilterDialog::onAddIncludePath()
     bool ok = false;
     QString text = QInputDialog::getText(this,
         QStringLiteral("添加包含路径"),
-        QStringLiteral("路径模式 (支持 glob):"),
+        QStringLiteral("路径 (支持 glob, 纯路径自动递归):"),
         QLineEdit::Normal, {}, &ok);
     if (ok && !text.isEmpty())
         includePathList_->addItem(text);

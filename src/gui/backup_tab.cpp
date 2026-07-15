@@ -115,16 +115,15 @@ void BackupTab::setupUi()
 
     // Row 1-2: Path
     includePaths_ = new QLineEdit();
-    includePaths_->setPlaceholderText(QStringLiteral("如 core/* 匹配 core 下所有文件"));
+    includePaths_->setPlaceholderText(QStringLiteral("用逗号分隔的包含路径, 如 core, src/*.cpp"));
     includePaths_->setToolTip(QStringLiteral(
-        "路径模式使用 glob 语法，* 不匹配 /（子目录）\n"
-        "例:\n"
-        "  core       → 只匹配 core 目录本身\n"
-        "  core/*     → 匹配 core 下所有直接子项\n"
-        "  core/**/*  → 匹配 core 下所有文件（多级）\n"
-        "  *.cpp      → 只匹配根目录的 .cpp 文件"));
+        "路径过滤语法:\n"
+        "  core          → 包含 core 目录下所有文件（自动递归）\n"
+        "  *.cpp         → 只匹配根目录下的 .cpp 文件\n"
+        "  多个用逗号分隔 → core, src/*.h\n"
+        "支持 glob: *, ?, [...]"));
     excludePaths_ = new QLineEdit();
-    excludePaths_->setPlaceholderText(QStringLiteral("如 *.tmp 排除所有 .tmp 文件"));
+    excludePaths_->setPlaceholderText(QStringLiteral("用逗号分隔的排除路径, 如 *.tmp, build/"));
     excludePaths_->setToolTip(includePaths_->toolTip());
     filterForm->addRow(QStringLiteral("包含路径:"), includePaths_);
     filterForm->addRow(QStringLiteral("排除路径:"), excludePaths_);
@@ -419,10 +418,24 @@ backer::cli::BackupOptions BackupTab::collectOptions() const
             return text.split(QRegularExpression(QStringLiteral("[,\\s;]+")),
                               Qt::SkipEmptyParts);
         };
+        auto expandPath = [](QString const& pattern, auto const& addFn) {
+            if (pattern.contains('*') || pattern.contains('?') || pattern.contains('[')) {
+                addFn(pattern.toStdString());
+                return;
+            }
+            // Plain path (no glob) → add patterns for recursive matching
+            // fnmatch FNM_PATHNAME: * doesn't match /, so generate */ */* */*/* ...
+            addFn(pattern.toStdString());                           // dir itself
+            for (int depth = 1; depth <= 15; ++depth) {
+                QString p = pattern;
+                for (int d = 0; d < depth; ++d) p += QStringLiteral("/*");
+                addFn(p.toStdString());
+            }
+        };
         for (auto const& s : split(includePaths_->text()))
-            opts.includePaths.push_back(s.toStdString());
+            expandPath(s, [&](auto const& p) { opts.includePaths.push_back(p); });
         for (auto const& s : split(excludePaths_->text()))
-            opts.excludePaths.push_back(s.toStdString());
+            expandPath(s, [&](auto const& p) { opts.excludePaths.push_back(p); });
         for (auto const& s : split(includeTypes_->text()))
             opts.includeTypes.push_back(s.toStdString());
         for (auto const& s : split(excludeTypes_->text()))
