@@ -115,9 +115,17 @@ void BackupTab::setupUi()
 
     // Row 1-2: Path
     includePaths_ = new QLineEdit();
-    includePaths_->setPlaceholderText(QStringLiteral("用逗号分隔的包含路径 (glob)"));
+    includePaths_->setPlaceholderText(QStringLiteral("如 core/* 匹配 core 下所有文件"));
+    includePaths_->setToolTip(QStringLiteral(
+        "路径模式使用 glob 语法，* 不匹配 /（子目录）\n"
+        "例:\n"
+        "  core       → 只匹配 core 目录本身\n"
+        "  core/*     → 匹配 core 下所有直接子项\n"
+        "  core/**/*  → 匹配 core 下所有文件（多级）\n"
+        "  *.cpp      → 只匹配根目录的 .cpp 文件"));
     excludePaths_ = new QLineEdit();
-    excludePaths_->setPlaceholderText(QStringLiteral("用逗号分隔的排除路径 (glob)"));
+    excludePaths_->setPlaceholderText(QStringLiteral("如 *.tmp 排除所有 .tmp 文件"));
+    excludePaths_->setToolTip(includePaths_->toolTip());
     filterForm->addRow(QStringLiteral("包含路径:"), includePaths_);
     filterForm->addRow(QStringLiteral("排除路径:"), excludePaths_);
 
