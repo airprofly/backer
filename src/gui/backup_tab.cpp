@@ -285,7 +285,7 @@ void BackupTab::onCompressToggled(bool checked)
         if (packFormat_->currentIndex() != 0) {
             packFormat_->setCurrentIndex(0); // Tar
             logWidget_->appendMessage(
-                QStringLiteral("压缩需要 Tar 打包，已切换至 Tar"), 1);
+                QStringLiteral("已切换至 Tar 打包"), 1);
         }
     }
 }
@@ -300,7 +300,7 @@ void BackupTab::onEncryptToggled(bool checked)
         if (packFormat_->currentIndex() != 0) {
             packFormat_->setCurrentIndex(0); // Tar
             logWidget_->appendMessage(
-                QStringLiteral("加密需要 Tar 打包，已切换至 Tar"), 1);
+                QStringLiteral("已切换至 Tar 打包"), 1);
         }
     }
 }
