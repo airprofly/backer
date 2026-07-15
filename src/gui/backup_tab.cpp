@@ -280,11 +280,13 @@ void BackupTab::onCompressToggled(bool checked)
 {
     compressAlgo_->setEnabled(checked);
     compressLevel_->setEnabled(checked);
-    if (checked && !enablePack_->isChecked()) {
+    if (checked) {
         enablePack_->setChecked(true);
-        packFormat_->setCurrentIndex(0); // Tar
-        logWidget_->appendMessage(
-            QStringLiteral("压缩需要打包，已自动启用 Tar 打包"), 1);
+        if (packFormat_->currentIndex() != 0) {
+            packFormat_->setCurrentIndex(0); // Tar
+            logWidget_->appendMessage(
+                QStringLiteral("压缩需要 Tar 打包，已切换至 Tar"), 1);
+        }
     }
 }
 
@@ -293,11 +295,13 @@ void BackupTab::onEncryptToggled(bool checked)
     encryptAlgo_->setEnabled(checked);
     password_->setEnabled(checked);
     confirmPassword_->setEnabled(checked);
-    if (checked && !enablePack_->isChecked()) {
+    if (checked) {
         enablePack_->setChecked(true);
-        packFormat_->setCurrentIndex(0); // Tar
-        logWidget_->appendMessage(
-            QStringLiteral("加密需要打包，已自动启用 Tar 打包"), 1);
+        if (packFormat_->currentIndex() != 0) {
+            packFormat_->setCurrentIndex(0); // Tar
+            logWidget_->appendMessage(
+                QStringLiteral("加密需要 Tar 打包，已切换至 Tar"), 1);
+        }
     }
 }
 
