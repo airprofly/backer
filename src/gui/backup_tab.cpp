@@ -130,9 +130,16 @@ void BackupTab::setupUi()
 
     // Row 3-4: Type
     includeTypes_ = new QLineEdit();
-    includeTypes_->setPlaceholderText(QStringLiteral("file, dir, symlink, fifo, block, char, socket"));
+    includeTypes_->setPlaceholderText(QStringLiteral("file, dir, symlink, fifo, block, char, socket — 不是后缀!"));
+    includeTypes_->setToolTip(QStringLiteral(
+        "按文件类型过滤（不是后缀名）\n"
+        "可选值: file, dir, symlink, fifo, block, char, socket\n"
+        "例: 只备份普通文件 → file\n"
+        "例: 排除符号链接 → symlink\n\n"
+        "提示: 按后缀名筛选请用「名称」字段，如 *.txt"));
     excludeTypes_ = new QLineEdit();
-    excludeTypes_->setPlaceholderText(QStringLiteral("file, dir, symlink, fifo, block, char, socket"));
+    excludeTypes_->setPlaceholderText(QStringLiteral("file, dir, symlink, fifo, block, char, socket — 不是后缀!"));
+    excludeTypes_->setToolTip(includeTypes_->toolTip());
     filterForm->addRow(QStringLiteral("包含类型:"), includeTypes_);
     filterForm->addRow(QStringLiteral("排除类型:"), excludeTypes_);
 
