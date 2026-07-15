@@ -5,8 +5,6 @@
 #include "gui/log_widget.h"
 #include "gui/progress_widget.h"
 
-#include <QCheckBox>
-#include <QComboBox>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -60,17 +58,6 @@ void RestoreTab::setupUi()
     password_->setPlaceholderText(QStringLiteral("加密备份时设置的密码（可选）"));
     pwdRow->addWidget(password_, 1);
     mainLayout->addLayout(pwdRow);
-
-    // ── Restore flags ─────────────────────────────────────────
-    auto* flagLayout = new QHBoxLayout();
-    preserveMetadata_ = new QCheckBox(QStringLiteral("保留元数据"));
-    preserveMetadata_->setChecked(true);
-    handleSpecial_ = new QCheckBox(QStringLiteral("处理特殊文件"));
-    handleSpecial_->setChecked(true);
-    flagLayout->addWidget(preserveMetadata_);
-    flagLayout->addWidget(handleSpecial_);
-    flagLayout->addStretch();
-    mainLayout->addLayout(flagLayout);
 
     // ── Action buttons ────────────────────────────────────────
     auto* btnLayout = new QHBoxLayout();
@@ -155,8 +142,6 @@ void RestoreTab::onStartRestore()
     logWidget_->clear();
 
     cli::RestoreOptions opts;
-    opts.preserveMetadata = preserveMetadata_->isChecked();
-    opts.handleSpecial = handleSpecial_->isChecked();
     opts.decompressAlgo = detected.decompressAlgo;
     opts.packFormat = detected.packFormat;
     if (detected.isEncrypted) {

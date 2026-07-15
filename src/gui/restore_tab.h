@@ -6,7 +6,6 @@
 
 #include <filesystem>
 
-class QCheckBox;
 class QLineEdit;
 class QPushButton;
 
@@ -40,8 +39,6 @@ private:
     QLineEdit* sourcePath_{nullptr};
     QLineEdit* destPath_{nullptr};
     QLineEdit* password_{nullptr};
-    QCheckBox* preserveMetadata_{nullptr};
-    QCheckBox* handleSpecial_{nullptr};
     QPushButton* startBtn_{nullptr};
     QPushButton* cancelBtn_{nullptr};
     ProgressWidget* progressWidget_{nullptr};
