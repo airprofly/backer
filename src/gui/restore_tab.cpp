@@ -182,7 +182,11 @@ void RestoreTab::onStartRestore()
     if (enableDecompress_->isChecked())
         opts.decompressAlgo = decompressAlgo_->currentText().toStdString();
     if (enableDecrypt_->isChecked()) {
-        opts.decryptAlgo = decryptAlgo_->currentText().toStdString();
+        auto algo = decryptAlgo_->currentText();
+        if (algo == QStringLiteral("AES-256"))
+            opts.decryptAlgo = "aes256";
+        else if (algo == QStringLiteral("SM4"))
+            opts.decryptAlgo = "sm4";
         opts.password = password_->text().toStdString();
     }
     if (enablePack_->isChecked())

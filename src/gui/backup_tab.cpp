@@ -371,6 +371,15 @@ backer::cli::BackupOptions BackupTab::collectOptions() const
         opts.compressLevel = compressLevel_->value();
     }
 
+    if (enableEncrypt_->isChecked()) {
+        auto algo = encryptAlgo_->currentText();
+        if (algo == QStringLiteral("AES-256"))
+            opts.encryptAlgo = "aes256";
+        else if (algo == QStringLiteral("SM4"))
+            opts.encryptAlgo = "sm4";
+        opts.password = password_->text().toStdString();
+    }
+
     // Parse filter fields
     if (enableFilter_->isChecked()) {
         auto split = [](QString const& text) {
