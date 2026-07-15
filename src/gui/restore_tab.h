@@ -31,6 +31,7 @@ private slots:
     void onBrowseDest();
     void onStartRestore();
     void onCancel();
+    void onRestoreFinished(bool success, QString const& msg);
 
 private:
     void setupUi();

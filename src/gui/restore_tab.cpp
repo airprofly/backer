@@ -179,7 +179,7 @@ void RestoreTab::onStartRestore()
     connect(worker_, &BackupWorker::logMessage,
             logWidget_, &LogWidget::appendMessage);
     connect(worker_, &BackupWorker::finished,
-            this, &RestoreTab::onCancel); // re-use onCancel to clean up
+            this, &RestoreTab::onRestoreFinished);
 
     worker_->start();
     logWidget_->appendMessage(QStringLiteral("还原任务已启动"), 0);
@@ -191,23 +191,28 @@ void RestoreTab::onCancel()
         worker_->cancel();
         cancelBtn_->setEnabled(false);
         logWidget_->appendMessage(QStringLiteral("正在取消还原..."), 1);
-        return;
     }
+}
 
-    // Cleanup after completion
+void RestoreTab::onRestoreFinished(bool success, QString const& msg)
+{
     startBtn_->setEnabled(true);
     cancelBtn_->setEnabled(false);
     progressWidget_->setRunning(false);
 
-    QString msg;
+    if (success) {
+        progressWidget_->setValue(100);
+        logWidget_->appendMessage(QStringLiteral("还原完成"), 0);
+    } else {
+        logWidget_->appendMessage(QStringLiteral("还原失败: ") + msg, 2);
+    }
+
+    emit restoreFinished(success, msg);
+
     if (worker_) {
-        // Use last log line as result hint
-        msg = QStringLiteral("还原任务已完成");
         worker_->deleteLater();
         worker_ = nullptr;
     }
-
-    emit restoreFinished(true, msg);
 }
 
 } // namespace backer::gui
