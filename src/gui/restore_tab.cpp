@@ -51,19 +51,35 @@ void RestoreTab::setupUi()
     connect(browseSrcBtn, &QPushButton::clicked, this, &RestoreTab::onBrowseSource);
     connect(browseDestBtn, &QPushButton::clicked, this, &RestoreTab::onBrowseDest);
 
-    // ── Decompress / Pack options ─────────────────────────────
+    // ── Decompress / Decrypt / Pack options ───────────────────
     auto* optionsLayout = new QHBoxLayout();
+
     enableDecompress_ = new QCheckBox(QStringLiteral("解压缩"));
     decompressAlgo_ = new QComboBox();
     decompressAlgo_->addItems({QStringLiteral("gzip"), QStringLiteral("zstd"), QStringLiteral("lzma")});
     decompressAlgo_->setEnabled(false);
+
+    enableDecrypt_ = new QCheckBox(QStringLiteral("解密"));
+    decryptAlgo_ = new QComboBox();
+    decryptAlgo_->addItems({QStringLiteral("AES-256"), QStringLiteral("SM4")});
+    decryptAlgo_->setEnabled(false);
+    password_ = new QLineEdit();
+    password_->setEchoMode(QLineEdit::Password);
+    password_->setPlaceholderText(QStringLiteral("密码"));
+    password_->setEnabled(false);
+
     enablePack_ = new QCheckBox(QStringLiteral("打包格式"));
     packFormat_ = new QComboBox();
     packFormat_->addItems({QStringLiteral("Tar"), QStringLiteral("Zip")});
     packFormat_->setEnabled(false);
+
     optionsLayout->addWidget(enableDecompress_);
     optionsLayout->addWidget(decompressAlgo_);
-    optionsLayout->addSpacing(12);
+    optionsLayout->addSpacing(8);
+    optionsLayout->addWidget(enableDecrypt_);
+    optionsLayout->addWidget(decryptAlgo_);
+    optionsLayout->addWidget(password_);
+    optionsLayout->addSpacing(8);
     optionsLayout->addWidget(enablePack_);
     optionsLayout->addWidget(packFormat_);
     optionsLayout->addStretch();
@@ -71,6 +87,10 @@ void RestoreTab::setupUi()
 
     connect(enableDecompress_, &QCheckBox::toggled,
             decompressAlgo_, &QComboBox::setEnabled);
+    connect(enableDecrypt_, &QCheckBox::toggled,
+            decryptAlgo_, &QComboBox::setEnabled);
+    connect(enableDecrypt_, &QCheckBox::toggled,
+            password_, &QWidget::setEnabled);
     connect(enablePack_, &QCheckBox::toggled,
             packFormat_, &QComboBox::setEnabled);
 
@@ -160,6 +180,10 @@ void RestoreTab::onStartRestore()
     opts.handleSpecial = handleSpecial_->isChecked();
     if (enableDecompress_->isChecked())
         opts.decompressAlgo = decompressAlgo_->currentText().toStdString();
+    if (enableDecrypt_->isChecked()) {
+        opts.decryptAlgo = decryptAlgo_->currentText().toStdString();
+        opts.password = password_->text().toStdString();
+    }
     if (enablePack_->isChecked())
         opts.packFormat = packFormat_->currentText().toLower().toStdString();
 

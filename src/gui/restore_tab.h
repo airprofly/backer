@@ -41,6 +41,9 @@ private:
     QLineEdit* destPath_{nullptr};
     QCheckBox* enableDecompress_{nullptr};
     QComboBox* decompressAlgo_{nullptr};
+    QCheckBox* enableDecrypt_{nullptr};
+    QComboBox* decryptAlgo_{nullptr};
+    QLineEdit* password_{nullptr};
     QCheckBox* enablePack_{nullptr};
     QComboBox* packFormat_{nullptr};
     QCheckBox* preserveMetadata_{nullptr};
