@@ -318,15 +318,24 @@ void BackupTab::onEditFilter()
 {
     FilterDialog dlg(this);
 
-    // Pre-fill from current inline values
-    dlg.setIncludePaths(includePaths_->text().split(
-        QRegularExpression(QStringLiteral("[,\\s;]+")), Qt::SkipEmptyParts));
-    dlg.setExcludePaths(excludePaths_->text().split(
-        QRegularExpression(QStringLiteral("[,\\s;]+")), Qt::SkipEmptyParts));
-    dlg.setIncludeNames(includeNames_->text().split(
-        QRegularExpression(QStringLiteral("[,\\s;]+")), Qt::SkipEmptyParts));
-    dlg.setExcludeNames(excludeNames_->text().split(
-        QRegularExpression(QStringLiteral("[,\\s;]+")), Qt::SkipEmptyParts));
+    // Pre-fill ALL dimensions from current inline values
+    auto split = [](QString const& text) {
+        return text.split(QRegularExpression(QStringLiteral("[,\\s;]+")),
+                          Qt::SkipEmptyParts);
+    };
+    dlg.setIncludePaths(split(includePaths_->text()));
+    dlg.setExcludePaths(split(excludePaths_->text()));
+    dlg.setIncludeNames(split(includeNames_->text()));
+    dlg.setExcludeNames(split(excludeNames_->text()));
+    dlg.setIncludeTypes(split(includeTypes_->text()));
+    dlg.setTimeFilter(enableTimeFilter_->isChecked(),
+                      mtimeAfter_->dateTime(), mtimeBefore_->dateTime());
+    {
+        qint64 minBytes = sizeMin_->value() * unitMult(sizeUnitMin_->currentIndex());
+        qint64 maxBytes = sizeMax_->value() * unitMult(sizeUnitMax_->currentIndex());
+        dlg.setSizeFilter(enableSizeFilter_->isChecked(), minBytes, maxBytes);
+    }
+    dlg.setOwner(ownerFilter_->text());
 
     if (dlg.exec() == QDialog::Accepted) {
         // Sync path/name text fields

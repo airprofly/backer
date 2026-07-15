@@ -269,6 +269,49 @@ void FilterDialog::setExcludeNames(QStringList const& names)
         excludeNameList_->addItem(n);
 }
 
+void FilterDialog::setIncludeTypes(QStringList const& types)
+{
+    typeFile_->setChecked(types.contains(QStringLiteral("file")));
+    typeDir_->setChecked(types.contains(QStringLiteral("dir")));
+    typeSymlink_->setChecked(types.contains(QStringLiteral("symlink")));
+    typeFifo_->setChecked(types.contains(QStringLiteral("fifo")));
+    typeBlock_->setChecked(types.contains(QStringLiteral("block")));
+    typeChar_->setChecked(types.contains(QStringLiteral("char")));
+    typeSocket_->setChecked(types.contains(QStringLiteral("socket")));
+}
+
+void FilterDialog::setTimeFilter(bool enabled, QDateTime const& after, QDateTime const& before)
+{
+    enableTimeFilter_->setChecked(enabled);
+    mtimeAfter_->setDateTime(after);
+    mtimeBefore_->setDateTime(before);
+}
+
+void FilterDialog::setSizeFilter(bool enabled, qint64 minBytes, qint64 maxBytes)
+{
+    enableSizeFilter_->setChecked(enabled);
+    // Convert bytes back to best-fit unit
+    auto guessUnit = [](qint64 bytes) {
+        if (bytes == 0) return 0;
+        for (int i = 3; i > 0; --i) {
+            qint64 mult = unitMultiplier(i);
+            if (bytes >= mult && bytes % mult == 0) return i;
+        }
+        return 0;
+    };
+    int ui = guessUnit(minBytes > 0 ? minBytes : maxBytes);
+    qint64 mult = unitMultiplier(ui);
+    sizeMin_->setValue(minBytes > 0 ? static_cast<int>(minBytes / mult) : 0);
+    sizeUnitMin_->setCurrentIndex(minBytes > 0 ? ui : 0);
+    sizeMax_->setValue(maxBytes > 0 ? static_cast<int>(maxBytes / mult) : 0);
+    sizeUnitMax_->setCurrentIndex(maxBytes > 0 ? ui : 0);
+}
+
+void FilterDialog::setOwner(QString const& owner)
+{
+    owner_->setText(owner);
+}
+
 // ── Getters ──────────────────────────────────────────────────────
 
 QStringList FilterDialog::includePaths() const

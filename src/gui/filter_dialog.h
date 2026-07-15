@@ -26,6 +26,10 @@ public:
     void setExcludePaths(QStringList const& paths);
     void setIncludeNames(QStringList const& names);
     void setExcludeNames(QStringList const& names);
+    void setIncludeTypes(QStringList const& types);
+    void setTimeFilter(bool enabled, QDateTime const& after, QDateTime const& before);
+    void setSizeFilter(bool enabled, qint64 minBytes, qint64 maxBytes);
+    void setOwner(QString const& owner);
 
     // ── Getters ─────────────────────────────────────────────
     QStringList includePaths() const;
