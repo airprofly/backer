@@ -22,19 +22,27 @@ Backer 是一款 **Linux 平台的数据备份还原工具**，采用 **C++17** 
 backer/
 ├── CMakeLists.txt            # 根构建配置（FetchContent 自动拉取依赖）
 ├── Dockerfile                # Multi-stage Docker 构建
+├── docker-bake.hcl           # Docker Bake 多平台构建
 ├── docker-compose.yml        # Compose 编排
 ├── .dockerignore             # 构建上下文精简
-├── .github/                  # CI: workflows/ci.yml（lint → 构建测试 → Valgrind → Docker）
+├── .github/                  # CI/CD: 三平台构建测试 + 发布 + 镜像推送
 ├── .claude/                  # Claude Code AI 辅助配置
-├── cmake/                    # CMake 模块（FetchQt6.cmake）
 ├── .vscode/                  # VS Code 编辑器配置
+├── .gitignore
 ├── CLAUDE.md                 # AI 辅助开发指南
 ├── LICENSE                   # Apache 2.0
+├── cppcheck-suppressions.txt # 静态分析抑制规则
+├── cppcheck-report.txt       # 静态分析报告
+├── cmake/                    # CMake 模块（FetchQt6.cmake）
 ├── docs/
 │   ├── architecture-design.md     # 分层架构 + 管道模式
 │   ├── requirements.md            # 需求规格说明
 │   ├── technology-selection.md    # 技术选型记录
 │   ├── reportDetails.md           # 课程报告详情
+│   ├── usage.md                   # 使用文档
+│   ├── ppt.md                     # 课程答辩提纲
+│   ├── diagrams/                  # 架构图源文件（PlantUML）
+│   ├── images/                    # 文档配图
 │   └── plans/                     # 分阶段实现计划
 ├── src/                      # 源代码
 │   ├── main.cpp              # 程序入口
@@ -47,12 +55,10 @@ backer/
 │   ├── compress/             # 压缩模块（gzip/zstd/lzma）
 │   ├── crypto/               # 加密模块（AES/SM4）
 │   ├── gui/                  # Qt 6 图形界面
-│   ├── scheduler/            # 定时备份
-│   ├── watch/                # 实时监控（规划中）
-│   └── network/              # 网络备份（规划中）
+│   └── scheduler/            # 定时备份
 ├── tests/                    # Google Test 单元测试
 ├── scripts/                  # 辅助脚本
-├── logs/                     # 测试日志输出（.gitignore）
+├── logs/                     # 测试日志（gtest/ctest/valgrind）
 └── data/                     # 测试数据（.gitignore）
 ```
 
@@ -102,7 +108,7 @@ docker build -t backer .
 - ✅ **定时备份** — Cron 表达式调度 + 快照数据淘汰
 - 🔲 **网络备份** — gRPC + Protocol Buffers 远程备份
 
-## 🏗️ 架构设计
+## 🏗️ 架构设计f
 
 详见 [架构设计文档](docs/architecture-design.md)。
 
