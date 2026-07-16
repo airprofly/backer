@@ -1,0 +1,245 @@
+src/core/backup_engine.cpp:146:19: style: Variable 'content' can be declared as reference to const [constVariableReference]
+            auto& content = readResult.value();
+                  ^
+src/core/restore_engine.cpp:148:19: style: Variable 'content' can be declared as reference to const [constVariableReference]
+            auto& content = readResult.value();
+                  ^
+tests/core/backup_engine_test.cpp:68:1: error: syntax error [syntaxError]
+TEST_F(BackupEngineTest, BackupBasic) {
+^
+tests/fs/metadata_test.cpp:44:1: error: syntax error [syntaxError]
+TEST_F(MetadataTest, ReadMetadataRegular) {
+^
+tests/core/restore_engine_test.cpp:77:1: error: syntax error [syntaxError]
+TEST_F(RestoreEngineTest, RestoreBasic) {
+^
+tests/fs/special_file_test.cpp:43:1: error: syntax error [syntaxError]
+TEST_F(SpecialFileTest, DetectRegularFile) {
+^
+tests/pack/tar_packer_test.cpp:149:1: error: syntax error [syntaxError]
+TEST_F(TarPackerTest, PackSingleRegularFile) {
+^
+tests/filter/criteria_filter_test.cpp:35:1: error: syntax error [syntaxError]
+TEST(CriteriaFilterTest, IncludePathGlob)
+^
+tests/compress/compressor_test.cpp:17:1: error: syntax error [syntaxError]
+TEST_P(CompressorTest, RoundTripEmpty) {
+^
+tests/compress/compressor_factory_test.cpp:19:1: error: syntax error [syntaxError]
+TEST(BuildCompressorTest, CreateZstd) {
+^
+tests/pack/zip_packer_test.cpp:151:1: error: syntax error [syntaxError]
+TEST_F(ZipPackerTest, FormatName) {
+^
+tests/crypto/openssl_encryptor_test.cpp:16:1: error: syntax error [syntaxError]
+TEST_P(EncryptorTest, RoundTripEmpty) {
+^
+tests/crypto/encryptor_factory_test.cpp:16:1: error: syntax error [syntaxError]
+TEST(BuildEncryptorTest, CreateAes256FullName) {
+^
+tests/scheduler/ccronexpr_test.cpp:30:1: error: syntax error [syntaxError]
+TEST(CcronexprTest, DailyAt2am) {
+^
+tests/scheduler/retention_policy_test.cpp:31:1: error: syntax error [syntaxError]
+TEST(RetentionTest, ParseTimestampInvalidFormat) {
+^
+build/backer-gui_autogen/MXUWEOXILK/moc_backup_tab.cpp:22:0: error: #error "The header file 'backup_tab.h' doesn't include <QObject>." [preprocessorErrorDirective]
+#error "The header file 'backup_tab.h' doesn't include <QObject>."
+^
+src/gui/main_window.h:21:9: error: There is an unknown macro here somewhere. Configuration is required. If slots is a macro then please configure it. [unknownMacro]
+private slots:
+        ^
+tests/scheduler/backup_scheduler_test.cpp:21:1: error: syntax error [syntaxError]
+TEST(SchedulerTest, AddAndListJobs) {
+^
+src/gui/schedule_tab.h:19:9: error: There is an unknown macro here somewhere. Configuration is required. If slots is a macro then please configure it. [unknownMacro]
+private slots:
+        ^
+src/gui/progress_widget.h:17:8: error: There is an unknown macro here somewhere. Configuration is required. If slots is a macro then please configure it. [unknownMacro]
+public slots:
+       ^
+src/gui/backup_tab.h:35:9: error: There is an unknown macro here somewhere. Configuration is required. If slots is a macro then please configure it. [unknownMacro]
+private slots:
+        ^
+src/gui/log_widget.h:17:8: error: There is an unknown macro here somewhere. Configuration is required. If slots is a macro then please configure it. [unknownMacro]
+public slots:
+       ^
+src/gui/restore_tab.h:28:9: error: There is an unknown macro here somewhere. Configuration is required. If slots is a macro then please configure it. [unknownMacro]
+private slots:
+        ^
+src/gui/backup_worker.h:60:8: error: There is an unknown macro here somewhere. Configuration is required. If slots is a macro then please configure it. [unknownMacro]
+public slots:
+       ^
+src/pack/tar_packer.cpp:67:22: warning: Opposite inner 'if' condition leads to a dead code block. [oppositeInnerCondition]
+        if (slashPos == 0) break;
+                     ^
+src/pack/tar_packer.cpp:56:54: note: outer condition: slashPos>0
+    while (slashPos != std::string::npos && slashPos > 0) {
+                                                     ^
+src/pack/tar_packer.cpp:67:22: note: opposite inner condition: slashPos==0
+        if (slashPos == 0) break;
+                     ^
+src/gui/filter_dialog.h:52:9: error: There is an unknown macro here somewhere. Configuration is required. If slots is a macro then please configure it. [unknownMacro]
+private slots:
+        ^
+src/pack/tar_packer.cpp:255:14: style: Variable 'pad' can be declared as const array [constVariable]
+        char pad[kBlockSize] = {};
+             ^
+src/pack/tar_packer.cpp:345:10: style: Variable 'end' can be declared as const array [constVariable]
+    char end[kBlockSize * 2] = {};
+         ^
+src/crypto/openssl_encryptor.cpp:26:27: style: The scope of the variable 'buf' can be reduced. [variableScope]
+    std::array<char, 256> buf{};
+                          ^
+src/filters/criteria_filter.cpp:202:74: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+                        && matchGlob(pathStr, c.pathGlob.value(), true)) {
+                                                                         ^
+src/filters/criteria_filter.cpp:214:62: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+                        && entry.type == c.fileType.value()) {
+                                                             ^
+src/filters/criteria_filter.cpp:227:75: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+                        && matchGlob(nameStr, c.nameGlob.value(), false)) {
+                                                                          ^
+src/filters/criteria_filter.cpp:275:73: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+                        && entry.metadata.ownerId == c.ownerId.value()) {
+                                                                        ^
+src/scheduler/backup_scheduler.cpp:58:45: style: Consider using std::count_if algorithm instead of a raw loop. [useStlAlgorithm]
+    for (char c : cronExpr) { if (c == ' ') fieldCount++; }
+                                            ^
+src/main.cpp:30:0: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        if (v == val) return std::string{};
+^
+src/cli/commands.cpp:226:24: style: Condition 'resolveUser(options.owner,uid)' is always false [knownConditionTrueFalse]
+        if (resolveUser(options.owner, uid)) {
+                       ^
+src/cli/commands.cpp:226:24: note: Calling function 'resolveUser' returns 0
+        if (resolveUser(options.owner, uid)) {
+                       ^
+src/cli/commands.cpp:226:24: note: Condition 'resolveUser(options.owner,uid)' is always false
+        if (resolveUser(options.owner, uid)) {
+                       ^
+src/cli/commands.cpp:108:57: style: Parameter 'uid' can be declared as reference to const [constParameterReference]
+bool resolveUser(std::string const& userName, uint32_t& uid) {
+                                                        ^
+src/cli/commands.cpp:728:34: warning: Either the condition 'args.size()<4' is redundant or size of 'args' can be 4. Expression 'args[4]' causes access out of bounds. [containerOutOfBounds]
+        job.destination    = args[4];
+                                 ^
+src/cli/commands.cpp:717:25: note: Assuming that condition 'args.size()<4' is not redundant
+        if (args.size() < 4) {
+                        ^
+src/cli/commands.cpp:728:34: note: Access out of bounds
+        job.destination    = args[4];
+                                 ^
+src/cli/commands.cpp:770:29: style: Consider using std::replace_if algorithm instead of a raw loop. [useStlAlgorithm]
+            if (c == ' ') c = '_';
+                            ^
+src/cli/commands.cpp:776:13: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+            for (auto const& j : jobs) if (j.id == id) return true;
+            ^
+src/cli/commands.cpp:838:34: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+            if (j.id == args[1]) {
+                                 ^
+src/scheduler/backup_scheduler.cpp:118:0: style: The function 'addJob' is never used. [unusedFunction]
+BackupScheduler::addJob(ScheduleJob const& job) {
+^
+src/core/backup_engine.cpp:20:0: style: The function 'backup' is never used. [unusedFunction]
+BackupResult BackupEngine::backup(
+^
+src/fs/path_mapper.cpp:22:0: style: The function 'backupToRelative' is never used. [unusedFunction]
+std::filesystem::path PathMapper::backupToRelative(
+^
+src/compress/build_compressor.cpp:8:0: style: The function 'buildCompressor' is never used. [unusedFunction]
+std::unique_ptr<Compressor> buildCompressor(std::string_view name, int level) {
+^
+src/crypto/build_encryptor.cpp:6:0: style: The function 'buildEncryptor' is never used. [unusedFunction]
+std::unique_ptr<Encryptor> buildEncryptor(std::string_view name) {
+^
+src/compress/lzma_compressor.cpp:13:0: style: The function 'compress' is never used. [unusedFunction]
+Expected<void, ErrorCode> LzmaCompressor::compress(
+^
+src/compress/lzma_compressor.cpp:56:0: style: The function 'decompress' is never used. [unusedFunction]
+Expected<void, ErrorCode> LzmaCompressor::decompress(
+^
+src/crypto/openssl_encryptor.cpp:217:0: style: The function 'decrypt' is never used. [unusedFunction]
+Expected<void, ErrorCode> OpenSslEncryptor::decrypt(
+^
+src/compress/lzma_compressor.cpp:19:0: style: The function 'defaultLevel' is never used. [unusedFunction]
+
+^
+src/fs/special_file.cpp:21:0: style: The function 'detectFileType' is never used. [unusedFunction]
+Expected<FileType, ErrorCode> detectFileType(std::filesystem::path const& path)
+^
+src/scheduler/backup_scheduler.cpp:163:0: style: The function 'enableJob' is never used. [unusedFunction]
+BackupScheduler::enableJob(std::string_view jobId, bool enabled) {
+^
+src/crypto/openssl_encryptor.cpp:109:0: style: The function 'encrypt' is never used. [unusedFunction]
+Expected<void, ErrorCode> OpenSslEncryptor::encrypt(
+^
+src/scheduler/schedule_store.cpp:32:0: style: The function 'filePath' is never used. [unusedFunction]
+            default:   out += c;
+^
+src/storage/local_storage.cpp:159:0: style: The function 'fileSize' is never used. [unusedFunction]
+LocalStorage::fileSize(std::filesystem::path const& path)
+^
+src/scheduler/backup_scheduler.cpp:190:0: style: The function 'findJob' is never used. [unusedFunction]
+ScheduleJob const* BackupScheduler::findJob(std::string_view jobId) const {
+^
+src/storage/local_storage.cpp:42:0: style: The function 'isDirectory' is never used. [unusedFunction]
+Expected<bool, ErrorCode> LocalStorage::isDirectory(
+^
+src/main.cpp:104:0: style: The function 'isRunning' is never used. [unusedFunction]
+        ->check([&](std::string const& /*val*/) { backupHasSizeMin = true; return std::string{}; });
+^
+src/compress/lzma_compressor.cpp:9:0: style: The function 'isValidLevel' is never used. [unusedFunction]
+bool LzmaCompressor::isValidLevel(int level) const {
+^
+src/storage/local_storage.cpp:71:0: style: The function 'listDirectory' is never used. [unusedFunction]
+LocalStorage::listDirectory(std::filesystem::path const& path)
+^
+src/scheduler/backup_scheduler.cpp:200:0: style: The function 'listJobs' is never used. [unusedFunction]
+std::vector<JobInfo> BackupScheduler::listJobs() const {
+^
+src/scheduler/backup_scheduler.cpp:86:0: style: The function 'makeSnapshotPath' is never used. [unusedFunction]
+BackupScheduler::makeSnapshotPath(std::filesystem::path const& base) {
+^
+src/fs/metadata.cpp:192:0: style: The function 'metadataFromJson' is never used. [unusedFunction]
+std::optional<Metadata> metadataFromJson(std::string const& json)
+^
+src/fs/metadata.cpp:176:0: style: The function 'metadataToJson' is never used. [unusedFunction]
+std::string metadataToJson(Metadata const& meta)
+^
+src/crypto/key_derivation.cpp:56:0: style: The function 'randomBytes' is never used. [unusedFunction]
+Expected<std::vector<char>, ErrorCode> KeyDerivation::randomBytes(size_t length) {
+^
+src/storage/local_storage.cpp:96:0: style: The function 'readFile' is never used. [unusedFunction]
+LocalStorage::readFile(std::filesystem::path const& path)
+^
+src/fs/special_file.cpp:61:0: style: The function 'readSymlink' is never used. [unusedFunction]
+Expected<std::string, ErrorCode> readSymlink(std::filesystem::path const& path)
+^
+src/scheduler/backup_scheduler.cpp:146:0: style: The function 'removeJob' is never used. [unusedFunction]
+BackupScheduler::removeJob(std::string_view jobId) {
+^
+src/core/restore_engine.cpp:19:0: style: The function 'restore' is never used. [unusedFunction]
+BackupResult RestoreEngine::restore(
+^
+src/scheduler/backup_scheduler.cpp:290:0: style: The function 'run' is never used. [unusedFunction]
+void BackupScheduler::run() {
+^
+src/scheduler/schedule_store.cpp:290:0: style: The function 'save' is never used. [unusedFunction]
+ScheduleStore::save(std::vector<ScheduleJob> const& jobs) {
+^
+src/scheduler/retention_policy.cpp:61:0: style: The function 'scanSnapshots' is never used. [unusedFunction]
+RetentionPolicy::scanSnapshots(std::filesystem::path const& directory) {
+^
+src/scheduler/retention_policy.cpp:90:0: style: The function 'selectForRemoval' is never used. [unusedFunction]
+RetentionPolicy::selectForRemoval(
+^
+src/crypto/build_encryptor.cpp:34:0: style: The function 'suffix' is never used. [unusedFunction]
+
+^
+src/storage/local_storage.cpp:126:0: style: The function 'writeFile' is never used. [unusedFunction]
+LocalStorage::writeFile(
+^
+nofile:0:0: information: Active checkers: There was critical errors (use --checkers-report=<filename> to see details) [checkersReport]
+

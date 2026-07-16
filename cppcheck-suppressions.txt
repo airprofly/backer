@@ -1,0 +1,41 @@
+# ========== Backer Project cppcheck Suppressions ==========
+# 格式：[error-id]:[file-pattern]:[line]
+# file-pattern 中 * 通配任意字符
+
+# ========== 第三方依赖（FetchContent 拉取），__deps 目录全部跳过 ==========
+*:build/_deps/*
+
+# ========== 第三方库已知风格问题 ==========
+# ccronexpr — C 代码库，不动
+*:src/scheduler/ccronexpr.c
+*:src/scheduler/ccronexpr.h
+
+# ========== GUI 相关 ==========
+# Qt moc 生成的调用 cppcheck 看不见
+unusedFunction:src/gui/*
+# Qt 信号/槽参数风格
+constParameter:src/gui/*
+constVariable:src/gui/*
+constParameterReference:src/gui/*
+# Qt 元对象系统
+noOperatorEq:src/gui/*
+noCopyConstructor:src/gui/*
+noDestructor:src/gui/*
+uninitMemberVar:src/gui/*
+
+# ========== 自研基础设施（设计意图明确） ==========
+# Expected<T,E> 的隐式构造函数是故意设计，用于便捷返回 T 或 E
+noExplicitConstructor:src/core/expected.h
+# span 的隐式构造遵循 std::span 惯例
+noExplicitConstructor:src/core/span.h
+
+# ========== 已知误报 ==========
+# criteria_filter.cpp: queryDims() 在初始化赋值后通过 FilterQuery 填充这些变量
+# cppcheck 静态分析看不到过滤查询的运行时效果
+knownConditionTrueFalse:src/filters/criteria_filter.cpp
+
+# ========== informational（非告警，--enable=all 默认包含） ==========
+normalCheckLevelMaxBranches:*
+
+# ========== 系统头 ==========
+missingIncludeSystem
