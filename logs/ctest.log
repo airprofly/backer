@@ -1,0 +1,572 @@
+Internal ctest changing into directory: /home/airprofly/codeFolder/backer/build
+Test project /home/airprofly/codeFolder/backer/build
+        Start   1: BackupEngineTest.BackupBasic
+  1/283 Test   #1: BackupEngineTest.BackupBasic ...........................................   Passed    0.01 sec
+        Start   2: BackupEngineTest.BackupContentMatches
+  2/283 Test   #2: BackupEngineTest.BackupContentMatches ..................................   Passed    0.00 sec
+        Start   3: BackupEngineTest.BackupWithEmptyDir
+  3/283 Test   #3: BackupEngineTest.BackupWithEmptyDir ....................................   Passed    0.00 sec
+        Start   4: BackupEngineTest.BackupNonExistentSource
+  4/283 Test   #4: BackupEngineTest.BackupNonExistentSource ...............................   Passed    0.00 sec
+        Start   5: BackupEngineTest.BackupEmptyDirectory
+  5/283 Test   #5: BackupEngineTest.BackupEmptyDirectory ..................................   Passed    0.00 sec
+        Start   6: BackupEngineTest.BackupBinaryFile
+  6/283 Test   #6: BackupEngineTest.BackupBinaryFile ......................................   Passed    0.00 sec
+        Start   7: BackupEngineTest.BackupDeepNestedDirectories
+  7/283 Test   #7: BackupEngineTest.BackupDeepNestedDirectories ...........................   Passed    0.01 sec
+        Start   8: BackupEngineTest.BackupFileAsSourceFails
+  8/283 Test   #8: BackupEngineTest.BackupFileAsSourceFails ...............................   Passed    0.00 sec
+        Start   9: BackupEngineTest.BackupUnicodeFilenames
+  9/283 Test   #9: BackupEngineTest.BackupUnicodeFilenames ................................   Passed    0.00 sec
+        Start  10: BackupEngineTest.BackupIdempotency
+ 10/283 Test  #10: BackupEngineTest.BackupIdempotency .....................................   Passed    0.00 sec
+        Start  11: BackupEngineTest.BackupLargeFile
+ 11/283 Test  #11: BackupEngineTest.BackupLargeFile .......................................   Passed    0.01 sec
+        Start  12: BackupEngineTest.BackupMixedContent
+ 12/283 Test  #12: BackupEngineTest.BackupMixedContent ....................................   Passed    0.00 sec
+        Start  13: BackupEngineTest.BackupSingleFile
+ 13/283 Test  #13: BackupEngineTest.BackupSingleFile ......................................   Passed    0.00 sec
+        Start  14: BackupEngineTest.BackupNestedEmptyDirs
+ 14/283 Test  #14: BackupEngineTest.BackupNestedEmptyDirs .................................   Passed    0.00 sec
+        Start  15: BackupEngineTest.BackupSymlinks
+ 15/283 Test  #15: BackupEngineTest.BackupSymlinks ........................................   Passed    0.00 sec
+        Start  16: BackupEngineTest.BackupSymlinkToFileInSameDir
+ 16/283 Test  #16: BackupEngineTest.BackupSymlinkToFileInSameDir ..........................   Passed    0.00 sec
+        Start  17: BackupEngineTest.BackupPreservesPermissions
+ 17/283 Test  #17: BackupEngineTest.BackupPreservesPermissions ............................   Passed    0.00 sec
+        Start  18: BackupEngineTest.BackupWithFilterIncludeType
+ 18/283 Test  #18: BackupEngineTest.BackupWithFilterIncludeType ...........................   Passed    0.00 sec
+        Start  19: BackupEngineTest.BackupWithFilterExcludePath
+ 19/283 Test  #19: BackupEngineTest.BackupWithFilterExcludePath ...........................   Passed    0.00 sec
+        Start  20: BackupEngineTest.BackupWithFilterAllExcluded
+ 20/283 Test  #20: BackupEngineTest.BackupWithFilterAllExcluded ...........................   Passed    0.00 sec
+        Start  21: BackupEngineTest.BackupWithTarPacker
+ 21/283 Test  #21: BackupEngineTest.BackupWithTarPacker ...................................   Passed    0.00 sec
+        Start  22: BackupEngineTest.BackupWithFilterAndPacker
+ 22/283 Test  #22: BackupEngineTest.BackupWithFilterAndPacker .............................   Passed    0.00 sec
+        Start  23: RestoreEngineTest.RestoreBasic
+ 23/283 Test  #23: RestoreEngineTest.RestoreBasic .........................................   Passed    0.00 sec
+        Start  24: RestoreEngineTest.RestoreContentMatches
+ 24/283 Test  #24: RestoreEngineTest.RestoreContentMatches ................................   Passed    0.00 sec
+        Start  25: RestoreEngineTest.RestorePreservesEmptyDirs
+ 25/283 Test  #25: RestoreEngineTest.RestorePreservesEmptyDirs ............................   Passed    0.00 sec
+        Start  26: RestoreEngineTest.RestoreNonExistentSource
+ 26/283 Test  #26: RestoreEngineTest.RestoreNonExistentSource .............................   Passed    0.00 sec
+        Start  27: RestoreEngineTest.BackupRestoreEndToEnd
+ 27/283 Test  #27: RestoreEngineTest.BackupRestoreEndToEnd ................................   Passed    0.00 sec
+        Start  28: RestoreEngineTest.BackupRestoreComplexTree
+ 28/283 Test  #28: RestoreEngineTest.BackupRestoreComplexTree .............................   Passed    0.01 sec
+        Start  29: RestoreEngineTest.RestoreBinaryFile
+ 29/283 Test  #29: RestoreEngineTest.RestoreBinaryFile ....................................   Passed    0.00 sec
+        Start  30: RestoreEngineTest.RestoreUnicodeFilenames
+ 30/283 Test  #30: RestoreEngineTest.RestoreUnicodeFilenames ..............................   Passed    0.00 sec
+        Start  31: RestoreEngineTest.RestoreLargeFile
+ 31/283 Test  #31: RestoreEngineTest.RestoreLargeFile .....................................   Passed    0.01 sec
+        Start  32: RestoreEngineTest.RestoreIdempotency
+ 32/283 Test  #32: RestoreEngineTest.RestoreIdempotency ...................................   Passed    0.00 sec
+        Start  33: RestoreEngineTest.RestoreOverwriteDifferentContent
+ 33/283 Test  #33: RestoreEngineTest.RestoreOverwriteDifferentContent .....................   Passed    0.00 sec
+        Start  34: RestoreEngineTest.BackupRestoreRoundTripLargeTree
+ 34/283 Test  #34: RestoreEngineTest.BackupRestoreRoundTripLargeTree ......................   Passed    0.01 sec
+        Start  35: RestoreEngineTest.BackupRestoreWithSymlinks
+ 35/283 Test  #35: RestoreEngineTest.BackupRestoreWithSymlinks ............................   Passed    0.00 sec
+        Start  36: RestoreEngineTest.BackupRestoreDanglingSymlink
+ 36/283 Test  #36: RestoreEngineTest.BackupRestoreDanglingSymlink .........................   Passed    0.00 sec
+        Start  37: RestoreEngineTest.BackupRestorePreservesPermissions
+ 37/283 Test  #37: RestoreEngineTest.BackupRestorePreservesPermissions ....................   Passed    0.00 sec
+        Start  38: RestoreEngineTest.BackupRestoreWithFifo
+ 38/283 Test  #38: RestoreEngineTest.BackupRestoreWithFifo ................................   Passed    0.00 sec
+        Start  39: RestoreEngineTest.RestoreFromTarArchive
+ 39/283 Test  #39: RestoreEngineTest.RestoreFromTarArchive ................................   Passed    0.00 sec
+        Start  40: RestoreEngineTest.RestoreFromTarArchiveEmptyDir
+ 40/283 Test  #40: RestoreEngineTest.RestoreFromTarArchiveEmptyDir ........................   Passed    0.00 sec
+        Start  41: MetadataTest.ReadMetadataRegular
+ 41/283 Test  #41: MetadataTest.ReadMetadataRegular .......................................   Passed    0.00 sec
+        Start  42: MetadataTest.ReadMetadataNonExistent
+ 42/283 Test  #42: MetadataTest.ReadMetadataNonExistent ...................................   Passed    0.00 sec
+        Start  43: MetadataTest.ReadMetadataDirectory
+ 43/283 Test  #43: MetadataTest.ReadMetadataDirectory .....................................   Passed    0.00 sec
+        Start  44: MetadataTest.RestorePermissions
+ 44/283 Test  #44: MetadataTest.RestorePermissions ........................................   Passed    0.00 sec
+        Start  45: MetadataTest.MetadataJsonRoundTrip
+ 45/283 Test  #45: MetadataTest.MetadataJsonRoundTrip .....................................   Passed    0.00 sec
+        Start  46: MetadataTest.RestoreTimestamps
+ 46/283 Test  #46: MetadataTest.RestoreTimestamps .........................................   Passed    0.00 sec
+        Start  47: MetadataTest.RestoreSetuidBit
+ 47/283 Test  #47: MetadataTest.RestoreSetuidBit ..........................................   Passed    0.00 sec
+        Start  48: MetadataTest.canRestoreOwnership
+ 48/283 Test  #48: MetadataTest.canRestoreOwnership .......................................   Passed    0.00 sec
+        Start  49: MetadataTest.ReadMetadataSymlink
+ 49/283 Test  #49: MetadataTest.ReadMetadataSymlink .......................................   Passed    0.00 sec
+        Start  50: SpecialFileTest.DetectRegularFile
+ 50/283 Test  #50: SpecialFileTest.DetectRegularFile ......................................   Passed    0.00 sec
+        Start  51: SpecialFileTest.DetectDirectory
+ 51/283 Test  #51: SpecialFileTest.DetectDirectory ........................................   Passed    0.00 sec
+        Start  52: SpecialFileTest.DetectNonExistent
+ 52/283 Test  #52: SpecialFileTest.DetectNonExistent ......................................   Passed    0.00 sec
+        Start  53: SpecialFileTest.SymlinkRoundTrip
+ 53/283 Test  #53: SpecialFileTest.SymlinkRoundTrip .......................................   Passed    0.00 sec
+        Start  54: SpecialFileTest.CreateSymlinkInNestedDir
+ 54/283 Test  #54: SpecialFileTest.CreateSymlinkInNestedDir ...............................   Passed    0.00 sec
+        Start  55: SpecialFileTest.DetectSymlink
+ 55/283 Test  #55: SpecialFileTest.DetectSymlink ..........................................   Passed    0.00 sec
+        Start  56: SpecialFileTest.DetectFifo
+ 56/283 Test  #56: SpecialFileTest.DetectFifo .............................................   Passed    0.00 sec
+        Start  57: SpecialFileTest.ReadSymlinkDangling
+ 57/283 Test  #57: SpecialFileTest.ReadSymlinkDangling ....................................   Passed    0.00 sec
+        Start  58: SpecialFileTest.CreateFifoAndDetect
+ 58/283 Test  #58: SpecialFileTest.CreateFifoAndDetect ....................................   Passed    0.00 sec
+        Start  59: SpecialFileTest.CreateFifoWithPermissions
+ 59/283 Test  #59: SpecialFileTest.CreateFifoWithPermissions ..............................   Passed    0.00 sec
+        Start  60: SpecialFileTest.CreateDeviceAsNonRoot
+ 60/283 Test  #60: SpecialFileTest.CreateDeviceAsNonRoot ..................................   Passed    0.00 sec
+        Start  61: SpecialFileTest.DetectUnicodeFilename
+ 61/283 Test  #61: SpecialFileTest.DetectUnicodeFilename ..................................   Passed    0.00 sec
+        Start  62: CriteriaFilterTest.IncludePathGlob
+ 62/283 Test  #62: CriteriaFilterTest.IncludePathGlob .....................................   Passed    0.00 sec
+        Start  63: CriteriaFilterTest.IncludePathGlobRecursive
+ 63/283 Test  #63: CriteriaFilterTest.IncludePathGlobRecursive ............................   Passed    0.00 sec
+        Start  64: CriteriaFilterTest.IncludeNameGlob
+ 64/283 Test  #64: CriteriaFilterTest.IncludeNameGlob .....................................   Passed    0.00 sec
+        Start  65: CriteriaFilterTest.IncludeFileType
+ 65/283 Test  #65: CriteriaFilterTest.IncludeFileType .....................................   Passed    0.00 sec
+        Start  66: CriteriaFilterTest.IncludeTimeRange
+ 66/283 Test  #66: CriteriaFilterTest.IncludeTimeRange ....................................   Passed    0.00 sec
+        Start  67: CriteriaFilterTest.IncludeTimeRangeBefore
+ 67/283 Test  #67: CriteriaFilterTest.IncludeTimeRangeBefore ..............................   Passed    0.00 sec
+        Start  68: CriteriaFilterTest.IncludeSizeRange
+ 68/283 Test  #68: CriteriaFilterTest.IncludeSizeRange ....................................   Passed    0.00 sec
+        Start  69: CriteriaFilterTest.IncludeOwner
+ 69/283 Test  #69: CriteriaFilterTest.IncludeOwner ........................................   Passed    0.00 sec
+        Start  70: CriteriaFilterTest.ExcludeType
+ 70/283 Test  #70: CriteriaFilterTest.ExcludeType .........................................   Passed    0.00 sec
+        Start  71: CriteriaFilterTest.ExcludePathGlob
+ 71/283 Test  #71: CriteriaFilterTest.ExcludePathGlob .....................................   Passed    0.00 sec
+        Start  72: CriteriaFilterTest.ExcludeOverridesInclude
+ 72/283 Test  #72: CriteriaFilterTest.ExcludeOverridesInclude .............................   Passed    0.00 sec
+        Start  73: CriteriaFilterTest.IncludeAcrossDimensionsAnd
+ 73/283 Test  #73: CriteriaFilterTest.IncludeAcrossDimensionsAnd ..........................   Passed    0.00 sec
+        Start  74: CriteriaFilterTest.IncludeSameDimensionOr
+ 74/283 Test  #74: CriteriaFilterTest.IncludeSameDimensionOr ..............................   Passed    0.00 sec
+        Start  75: CriteriaFilterTest.SingleCriterionAndFields
+ 75/283 Test  #75: CriteriaFilterTest.SingleCriterionAndFields ............................   Passed    0.00 sec
+        Start  76: CriteriaFilterTest.NoIncludeCriteriaAllPass
+ 76/283 Test  #76: CriteriaFilterTest.NoIncludeCriteriaAllPass ............................   Passed    0.00 sec
+        Start  77: CriteriaFilterTest.EmptyCriteriaPassesAll
+ 77/283 Test  #77: CriteriaFilterTest.EmptyCriteriaPassesAll ..............................   Passed    0.00 sec
+        Start  78: CriteriaFilterTest.EmptyInput
+ 78/283 Test  #78: CriteriaFilterTest.EmptyInput ..........................................   Passed    0.00 sec
+        Start  79: CriteriaFilterTest.AllFilteredOut
+ 79/283 Test  #79: CriteriaFilterTest.AllFilteredOut ......................................   Passed    0.00 sec
+        Start  80: CriteriaFilterTest.NoopFilterPassesAll
+ 80/283 Test  #80: CriteriaFilterTest.NoopFilterPassesAll .................................   Passed    0.00 sec
+        Start  81: CriteriaFilterTest.NoopFilterEmptyInput
+ 81/283 Test  #81: CriteriaFilterTest.NoopFilterEmptyInput ................................   Passed    0.00 sec
+        Start  82: CriteriaFilterTest.IncludeWildcardQuestionMark
+ 82/283 Test  #82: CriteriaFilterTest.IncludeWildcardQuestionMark .........................   Passed    0.00 sec
+        Start  83: CriteriaFilterTest.IncludeBracketGlob
+ 83/283 Test  #83: CriteriaFilterTest.IncludeBracketGlob ..................................   Passed    0.00 sec
+        Start  84: CriteriaFilterTest.SizeExactlyAtMin
+ 84/283 Test  #84: CriteriaFilterTest.SizeExactlyAtMin ....................................   Passed    0.00 sec
+        Start  85: CriteriaFilterTest.SizeExactlyAtMax
+ 85/283 Test  #85: CriteriaFilterTest.SizeExactlyAtMax ....................................   Passed    0.00 sec
+        Start  86: CriteriaFilterTest.SizeZeroBytes
+ 86/283 Test  #86: CriteriaFilterTest.SizeZeroBytes .......................................   Passed    0.00 sec
+        Start  87: CriteriaFilterTest.TimeExactlyAtBoundary
+ 87/283 Test  #87: CriteriaFilterTest.TimeExactlyAtBoundary ...............................   Passed    0.00 sec
+        Start  88: CriteriaFilterTest.IncludeAcrossSomeMatch
+ 88/283 Test  #88: CriteriaFilterTest.IncludeAcrossSomeMatch ..............................   Passed    0.00 sec
+        Start  89: CriteriaFilterTest.IncludePathWithSpaces
+ 89/283 Test  #89: CriteriaFilterTest.IncludePathWithSpaces ...............................   Passed    0.00 sec
+        Start  90: CriteriaFilterTest.ExcludeMultipleCriteria
+ 90/283 Test  #90: CriteriaFilterTest.ExcludeMultipleCriteria .............................   Passed    0.00 sec
+        Start  91: CriteriaFilterTest.LargeEntryList
+ 91/283 Test  #91: CriteriaFilterTest.LargeEntryList ......................................   Passed    0.00 sec
+        Start  92: TarPackerTest.PackSingleRegularFile
+ 92/283 Test  #92: TarPackerTest.PackSingleRegularFile ....................................   Passed    0.00 sec
+        Start  93: TarPackerTest.PackUnpackRoundTrip
+ 93/283 Test  #93: TarPackerTest.PackUnpackRoundTrip ......................................   Passed    0.00 sec
+        Start  94: TarPackerTest.PackDirectory
+ 94/283 Test  #94: TarPackerTest.PackDirectory ............................................   Passed    0.00 sec
+        Start  95: TarPackerTest.PackSymlink
+ 95/283 Test  #95: TarPackerTest.PackSymlink ..............................................   Passed    0.00 sec
+        Start  96: TarPackerTest.PackFifo
+ 96/283 Test  #96: TarPackerTest.PackFifo .................................................   Passed    0.00 sec
+        Start  97: TarPackerTest.PackDevice
+ 97/283 Test  #97: TarPackerTest.PackDevice ...............................................   Passed    0.00 sec
+        Start  98: TarPackerTest.PackEmptyFile
+ 98/283 Test  #98: TarPackerTest.PackEmptyFile ............................................   Passed    0.00 sec
+        Start  99: TarPackerTest.PackLongPath
+ 99/283 Test  #99: TarPackerTest.PackLongPath .............................................   Passed    0.00 sec
+        Start 100: TarPackerTest.PackMultipleEntries
+100/283 Test #100: TarPackerTest.PackMultipleEntries ......................................   Passed    0.00 sec
+        Start 101: TarPackerTest.EmptyEntryList
+101/283 Test #101: TarPackerTest.EmptyEntryList ...........................................   Passed    0.00 sec
+        Start 102: TarPackerTest.ValidChecksum
+102/283 Test #102: TarPackerTest.ValidChecksum ............................................   Passed    0.00 sec
+        Start 103: TarPackerTest.RejectInvalidArchive
+103/283 Test #103: TarPackerTest.RejectInvalidArchive .....................................   Passed    0.00 sec
+        Start 104: TarPackerTest.FormatName
+104/283 Test #104: TarPackerTest.FormatName ...............................................   Passed    0.00 sec
+        Start 105: TarPackerTest.PackFileSpanningMultipleBlocks
+105/283 Test #105: TarPackerTest.PackFileSpanningMultipleBlocks ...........................   Passed    0.00 sec
+        Start 106: TarPackerTest.PackExactBlockSizeFile
+106/283 Test #106: TarPackerTest.PackExactBlockSizeFile ...................................   Passed    0.00 sec
+        Start 107: TarPackerTest.PackBinaryDataAllBytes
+107/283 Test #107: TarPackerTest.PackBinaryDataAllBytes ...................................   Passed    0.00 sec
+        Start 108: TarPackerTest.PackDeeplyNestedStructure
+108/283 Test #108: TarPackerTest.PackDeeplyNestedStructure ................................   Passed    0.00 sec
+        Start 109: TarPackerTest.PackFileNameBoundary
+109/283 Test #109: TarPackerTest.PackFileNameBoundary .....................................   Passed    0.00 sec
+        Start 110: TarPackerTest.MetadataPreservedInRoundTrip
+110/283 Test #110: TarPackerTest.MetadataPreservedInRoundTrip .............................   Passed    0.00 sec
+        Start 111: TarPackerTest.PackManySmallFiles
+111/283 Test #111: TarPackerTest.PackManySmallFiles .......................................   Passed    0.00 sec
+        Start 112: ZipPackerTest.FormatName
+112/283 Test #112: ZipPackerTest.FormatName ...............................................   Passed    0.00 sec
+        Start 113: ZipPackerTest.PackSingleRegularFile
+113/283 Test #113: ZipPackerTest.PackSingleRegularFile ....................................   Passed    0.00 sec
+        Start 114: ZipPackerTest.PackUnpackRoundTrip
+114/283 Test #114: ZipPackerTest.PackUnpackRoundTrip ......................................   Passed    0.00 sec
+        Start 115: ZipPackerTest.PackDirectory
+115/283 Test #115: ZipPackerTest.PackDirectory ............................................   Passed    0.00 sec
+        Start 116: ZipPackerTest.PackSymlink
+116/283 Test #116: ZipPackerTest.PackSymlink ..............................................   Passed    0.00 sec
+        Start 117: ZipPackerTest.PackFifo
+117/283 Test #117: ZipPackerTest.PackFifo .................................................   Passed    0.00 sec
+        Start 118: ZipPackerTest.PackDevice
+118/283 Test #118: ZipPackerTest.PackDevice ...............................................   Passed    0.00 sec
+        Start 119: ZipPackerTest.PackEmptyFile
+119/283 Test #119: ZipPackerTest.PackEmptyFile ............................................   Passed    0.00 sec
+        Start 120: ZipPackerTest.EmptyEntryList
+120/283 Test #120: ZipPackerTest.EmptyEntryList ...........................................   Passed    0.00 sec
+        Start 121: ZipPackerTest.RejectInvalidArchive
+121/283 Test #121: ZipPackerTest.RejectInvalidArchive .....................................   Passed    0.00 sec
+        Start 122: ZipPackerTest.RejectZipWithoutMetadata
+122/283 Test #122: ZipPackerTest.RejectZipWithoutMetadata .................................   Passed    0.00 sec
+        Start 123: ZipPackerTest.PackMultipleEntries
+123/283 Test #123: ZipPackerTest.PackMultipleEntries ......................................   Passed    0.00 sec
+        Start 124: ZipPackerTest.PackBinaryDataAllBytes
+124/283 Test #124: ZipPackerTest.PackBinaryDataAllBytes ...................................   Passed    0.00 sec
+        Start 125: ZipPackerTest.MetadataPreservedInRoundTrip
+125/283 Test #125: ZipPackerTest.MetadataPreservedInRoundTrip .............................   Passed    0.00 sec
+        Start 126: ZipPackerTest.SymlinkWithMetadata
+126/283 Test #126: ZipPackerTest.SymlinkWithMetadata ......................................   Passed    0.00 sec
+        Start 127: ZipPackerTest.PackLargeFile
+127/283 Test #127: ZipPackerTest.PackLargeFile ............................................   Passed    0.04 sec
+        Start 128: ZipPackerTest.PackDeeplyNestedStructure
+128/283 Test #128: ZipPackerTest.PackDeeplyNestedStructure ................................   Passed    0.00 sec
+        Start 129: ZipPackerTest.PackManySmallFiles
+129/283 Test #129: ZipPackerTest.PackManySmallFiles .......................................   Passed    0.00 sec
+        Start 130: ZipPackerTest.PackAllTypes
+130/283 Test #130: ZipPackerTest.PackAllTypes .............................................   Passed    0.00 sec
+        Start 131: BuildCompressorTest.CreateGzip
+131/283 Test #131: BuildCompressorTest.CreateGzip .........................................   Passed    0.00 sec
+        Start 132: BuildCompressorTest.CreateZstd
+132/283 Test #132: BuildCompressorTest.CreateZstd .........................................   Passed    0.00 sec
+        Start 133: BuildCompressorTest.CreateLzma
+133/283 Test #133: BuildCompressorTest.CreateLzma .........................................   Passed    0.00 sec
+        Start 134: BuildCompressorTest.UnknownAlgorithmReturnsNull
+134/283 Test #134: BuildCompressorTest.UnknownAlgorithmReturnsNull ........................   Passed    0.00 sec
+        Start 135: BuildCompressorTest.CaseSensitiveLookup
+135/283 Test #135: BuildCompressorTest.CaseSensitiveLookup ................................   Passed    0.00 sec
+        Start 136: BuildCompressorTest.PartialNameRejected
+136/283 Test #136: BuildCompressorTest.PartialNameRejected ................................   Passed    0.00 sec
+        Start 137: BuildCompressorTest.DefaultLevelZero
+137/283 Test #137: BuildCompressorTest.DefaultLevelZero ...................................   Passed    0.00 sec
+        Start 138: BuildCompressorTest.RoundTrip
+138/283 Test #138: BuildCompressorTest.RoundTrip ..........................................   Passed    0.00 sec
+        Start 139: BuildEncryptorTest.CreateAes256
+139/283 Test #139: BuildEncryptorTest.CreateAes256 ........................................   Passed    0.00 sec
+        Start 140: BuildEncryptorTest.CreateAes256FullName
+140/283 Test #140: BuildEncryptorTest.CreateAes256FullName ................................   Passed    0.00 sec
+        Start 141: BuildEncryptorTest.CreateSm4
+141/283 Test #141: BuildEncryptorTest.CreateSm4 ...........................................   Passed    0.00 sec
+        Start 142: BuildEncryptorTest.UnknownAlgorithmReturnsNull
+142/283 Test #142: BuildEncryptorTest.UnknownAlgorithmReturnsNull .........................   Passed    0.00 sec
+        Start 143: BuildEncryptorTest.UnknownAlgorithmEmpty
+143/283 Test #143: BuildEncryptorTest.UnknownAlgorithmEmpty ...............................   Passed    0.00 sec
+        Start 144: BuildEncryptorTest.CaseSensitiveLookup
+144/283 Test #144: BuildEncryptorTest.CaseSensitiveLookup .................................   Passed    0.00 sec
+        Start 145: BuildEncryptorTest.PartialNameRejected
+145/283 Test #145: BuildEncryptorTest.PartialNameRejected .................................   Passed    0.00 sec
+        Start 146: BuildEncryptorTest.RoundTrip
+146/283 Test #146: BuildEncryptorTest.RoundTrip ...........................................   Passed    0.13 sec
+        Start 147: CcronexprTest.DailyAt2am
+147/283 Test #147: CcronexprTest.DailyAt2am ...............................................   Passed    0.00 sec
+        Start 148: CcronexprTest.DailyAt2amBeforeMidnight
+148/283 Test #148: CcronexprTest.DailyAt2amBeforeMidnight .................................   Passed    0.00 sec
+        Start 149: CcronexprTest.EveryHour
+149/283 Test #149: CcronexprTest.EveryHour ................................................   Passed    0.00 sec
+        Start 150: CcronexprTest.Every15Min
+150/283 Test #150: CcronexprTest.Every15Min ...............................................   Passed    0.00 sec
+        Start 151: CcronexprTest.Every15MinFromOffset
+151/283 Test #151: CcronexprTest.Every15MinFromOffset .....................................   Passed    0.00 sec
+        Start 152: CcronexprTest.WeekdaysOnly
+152/283 Test #152: CcronexprTest.WeekdaysOnly .............................................   Passed    0.00 sec
+        Start 153: CcronexprTest.WeeklyOnSunday
+153/283 Test #153: CcronexprTest.WeeklyOnSunday ...........................................   Passed    0.00 sec
+        Start 154: CcronexprTest.RangeHours
+154/283 Test #154: CcronexprTest.RangeHours ...............................................   Passed    0.00 sec
+        Start 155: CcronexprTest.InvalidExpression
+155/283 Test #155: CcronexprTest.InvalidExpression ........................................   Passed    0.00 sec
+        Start 156: CcronexprTest.NeverFires
+156/283 Test #156: CcronexprTest.NeverFires ...............................................   Passed    0.00 sec
+        Start 157: SnapshotPathTest.ProducesTimestampedName
+157/283 Test #157: SnapshotPathTest.ProducesTimestampedName ...............................   Passed    0.00 sec
+        Start 158: RetentionTest.ParseTimestampValid
+158/283 Test #158: RetentionTest.ParseTimestampValid ......................................   Passed    0.00 sec
+        Start 159: RetentionTest.ParseTimestampInvalidFormat
+159/283 Test #159: RetentionTest.ParseTimestampInvalidFormat ..............................   Passed    0.00 sec
+        Start 160: RetentionTest.ParseTimestampWrongLength
+160/283 Test #160: RetentionTest.ParseTimestampWrongLength ................................   Passed    0.00 sec
+        Start 161: RetentionTest.KeepAllWhenUnlimited
+161/283 Test #161: RetentionTest.KeepAllWhenUnlimited .....................................   Passed    0.00 sec
+        Start 162: RetentionTest.KeepAllWhenDisabled
+162/283 Test #162: RetentionTest.KeepAllWhenDisabled ......................................   Passed    0.00 sec
+        Start 163: RetentionTest.RemoveOldestWhenExceedingCount
+163/283 Test #163: RetentionTest.RemoveOldestWhenExceedingCount ...........................   Passed    0.00 sec
+        Start 164: RetentionTest.RemoveMultipleOldest
+164/283 Test #164: RetentionTest.RemoveMultipleOldest .....................................   Passed    0.00 sec
+        Start 165: RetentionTest.KeepExactCount
+165/283 Test #165: RetentionTest.KeepExactCount ...........................................   Passed    0.00 sec
+        Start 166: RetentionTest.RemoveOlderThanDays
+166/283 Test #166: RetentionTest.RemoveOlderThanDays ......................................   Passed    0.00 sec
+        Start 167: RetentionTest.MixedBothConstraints
+167/283 Test #167: RetentionTest.MixedBothConstraints .....................................   Passed    0.00 sec
+        Start 168: RetentionTest.EmptyList
+168/283 Test #168: RetentionTest.EmptyList ................................................   Passed    0.00 sec
+        Start 169: RetentionTest.SingleSnapshot
+169/283 Test #169: RetentionTest.SingleSnapshot ...........................................   Passed    0.00 sec
+        Start 170: RetentionTest.NonMatchingNamesAreSkipped
+170/283 Test #170: RetentionTest.NonMatchingNamesAreSkipped ...............................   Passed    0.00 sec
+        Start 171: SchedulerTest.AddAndListJobs
+171/283 Test #171: SchedulerTest.AddAndListJobs ...........................................   Passed    0.00 sec
+        Start 172: SchedulerTest.RemoveJob
+172/283 Test #172: SchedulerTest.RemoveJob ................................................   Passed    0.00 sec
+        Start 173: SchedulerTest.RemoveNonExistent
+173/283 Test #173: SchedulerTest.RemoveNonExistent ........................................   Passed    0.00 sec
+        Start 174: SchedulerTest.EnableDisableJob
+174/283 Test #174: SchedulerTest.EnableDisableJob .........................................   Passed    0.00 sec
+        Start 175: SchedulerTest.FindJob
+175/283 Test #175: SchedulerTest.FindJob ..................................................   Passed    0.00 sec
+        Start 176: SchedulerTest.StopWithoutRun
+176/283 Test #176: SchedulerTest.StopWithoutRun ...........................................   Passed    0.00 sec
+        Start 177: SchedulerTest.RunAndStop
+177/283 Test #177: SchedulerTest.RunAndStop ...............................................   Passed    0.10 sec
+        Start 178: SchedulerTest.AddJobWithCustomId
+178/283 Test #178: SchedulerTest.AddJobWithCustomId .......................................   Passed    0.00 sec
+        Start 179: ScheduleStoreTest.SaveAndLoad
+179/283 Test #179: ScheduleStoreTest.SaveAndLoad ..........................................   Passed    0.00 sec
+        Start 180: ScheduleStoreTest.LoadNonExistent
+180/283 Test #180: ScheduleStoreTest.LoadNonExistent ......................................   Passed    0.00 sec
+        Start 181: ScheduleStoreTest.SaveMultipleAndLoad
+181/283 Test #181: ScheduleStoreTest.SaveMultipleAndLoad ..................................   Passed    0.00 sec
+        Start 182: RetentionScanTest.ScansTimestampedDirs
+182/283 Test #182: RetentionScanTest.ScansTimestampedDirs .................................   Passed    0.00 sec
+        Start 183: RetentionScanTest.EmptyDir
+183/283 Test #183: RetentionScanTest.EmptyDir .............................................   Passed    0.00 sec
+        Start 184: AllCompressors/CompressorTest.RoundTripSmall/"gzip"
+184/283 Test #184: AllCompressors/CompressorTest.RoundTripSmall/"gzip" ....................   Passed    0.00 sec
+        Start 185: AllCompressors/CompressorTest.RoundTripSmall/"zstd"
+185/283 Test #185: AllCompressors/CompressorTest.RoundTripSmall/"zstd" ....................   Passed    0.00 sec
+        Start 186: AllCompressors/CompressorTest.RoundTripSmall/"lzma"
+186/283 Test #186: AllCompressors/CompressorTest.RoundTripSmall/"lzma" ....................   Passed    0.00 sec
+        Start 187: AllCompressors/CompressorTest.RoundTripEmpty/"gzip"
+187/283 Test #187: AllCompressors/CompressorTest.RoundTripEmpty/"gzip" ....................   Passed    0.00 sec
+        Start 188: AllCompressors/CompressorTest.RoundTripEmpty/"zstd"
+188/283 Test #188: AllCompressors/CompressorTest.RoundTripEmpty/"zstd" ....................   Passed    0.00 sec
+        Start 189: AllCompressors/CompressorTest.RoundTripEmpty/"lzma"
+189/283 Test #189: AllCompressors/CompressorTest.RoundTripEmpty/"lzma" ....................   Passed    0.00 sec
+        Start 190: AllCompressors/CompressorTest.RoundTripSingleByte/"gzip"
+190/283 Test #190: AllCompressors/CompressorTest.RoundTripSingleByte/"gzip" ...............   Passed    0.00 sec
+        Start 191: AllCompressors/CompressorTest.RoundTripSingleByte/"zstd"
+191/283 Test #191: AllCompressors/CompressorTest.RoundTripSingleByte/"zstd" ...............   Passed    0.00 sec
+        Start 192: AllCompressors/CompressorTest.RoundTripSingleByte/"lzma"
+192/283 Test #192: AllCompressors/CompressorTest.RoundTripSingleByte/"lzma" ...............   Passed    0.00 sec
+        Start 193: AllCompressors/CompressorTest.RoundTrip1KB/"gzip"
+193/283 Test #193: AllCompressors/CompressorTest.RoundTrip1KB/"gzip" ......................   Passed    0.00 sec
+        Start 194: AllCompressors/CompressorTest.RoundTrip1KB/"zstd"
+194/283 Test #194: AllCompressors/CompressorTest.RoundTrip1KB/"zstd" ......................   Passed    0.00 sec
+        Start 195: AllCompressors/CompressorTest.RoundTrip1KB/"lzma"
+195/283 Test #195: AllCompressors/CompressorTest.RoundTrip1KB/"lzma" ......................   Passed    0.01 sec
+        Start 196: AllCompressors/CompressorTest.RoundTrip64KB/"gzip"
+196/283 Test #196: AllCompressors/CompressorTest.RoundTrip64KB/"gzip" .....................   Passed    0.00 sec
+        Start 197: AllCompressors/CompressorTest.RoundTrip64KB/"zstd"
+197/283 Test #197: AllCompressors/CompressorTest.RoundTrip64KB/"zstd" .....................   Passed    0.00 sec
+        Start 198: AllCompressors/CompressorTest.RoundTrip64KB/"lzma"
+198/283 Test #198: AllCompressors/CompressorTest.RoundTrip64KB/"lzma" .....................   Passed    0.02 sec
+        Start 199: AllCompressors/CompressorTest.RoundTrip1MiB/"gzip"
+199/283 Test #199: AllCompressors/CompressorTest.RoundTrip1MiB/"gzip" .....................   Passed    0.03 sec
+        Start 200: AllCompressors/CompressorTest.RoundTrip1MiB/"zstd"
+200/283 Test #200: AllCompressors/CompressorTest.RoundTrip1MiB/"zstd" .....................   Passed    0.01 sec
+        Start 201: AllCompressors/CompressorTest.RoundTrip1MiB/"lzma"
+201/283 Test #201: AllCompressors/CompressorTest.RoundTrip1MiB/"lzma" .....................   Passed    0.22 sec
+        Start 202: AllCompressors/CompressorTest.RoundTripCompressible1MiB/"gzip"
+202/283 Test #202: AllCompressors/CompressorTest.RoundTripCompressible1MiB/"gzip" .........   Passed    0.01 sec
+        Start 203: AllCompressors/CompressorTest.RoundTripCompressible1MiB/"zstd"
+203/283 Test #203: AllCompressors/CompressorTest.RoundTripCompressible1MiB/"zstd" .........   Passed    0.00 sec
+        Start 204: AllCompressors/CompressorTest.RoundTripCompressible1MiB/"lzma"
+204/283 Test #204: AllCompressors/CompressorTest.RoundTripCompressible1MiB/"lzma" .........   Passed    0.01 sec
+        Start 205: AllCompressors/CompressorTest.RoundTripBinary/"gzip"
+205/283 Test #205: AllCompressors/CompressorTest.RoundTripBinary/"gzip" ...................   Passed    0.00 sec
+        Start 206: AllCompressors/CompressorTest.RoundTripBinary/"zstd"
+206/283 Test #206: AllCompressors/CompressorTest.RoundTripBinary/"zstd" ...................   Passed    0.00 sec
+        Start 207: AllCompressors/CompressorTest.RoundTripBinary/"lzma"
+207/283 Test #207: AllCompressors/CompressorTest.RoundTripBinary/"lzma" ...................   Passed    0.00 sec
+        Start 208: AllCompressors/CompressorTest.DefaultLevelIsValid/"gzip"
+208/283 Test #208: AllCompressors/CompressorTest.DefaultLevelIsValid/"gzip" ...............   Passed    0.00 sec
+        Start 209: AllCompressors/CompressorTest.DefaultLevelIsValid/"zstd"
+209/283 Test #209: AllCompressors/CompressorTest.DefaultLevelIsValid/"zstd" ...............   Passed    0.00 sec
+        Start 210: AllCompressors/CompressorTest.DefaultLevelIsValid/"lzma"
+210/283 Test #210: AllCompressors/CompressorTest.DefaultLevelIsValid/"lzma" ...............   Passed    0.00 sec
+        Start 211: AllCompressors/CompressorTest.NegativeLevelInvalid/"gzip"
+211/283 Test #211: AllCompressors/CompressorTest.NegativeLevelInvalid/"gzip" ..............   Passed    0.00 sec
+        Start 212: AllCompressors/CompressorTest.NegativeLevelInvalid/"zstd"
+212/283 Test #212: AllCompressors/CompressorTest.NegativeLevelInvalid/"zstd" ..............   Passed    0.00 sec
+        Start 213: AllCompressors/CompressorTest.NegativeLevelInvalid/"lzma"
+213/283 Test #213: AllCompressors/CompressorTest.NegativeLevelInvalid/"lzma" ..............   Passed    0.00 sec
+        Start 214: AllCompressors/CompressorTest.ExtremeLevelInvalid/"gzip"
+214/283 Test #214: AllCompressors/CompressorTest.ExtremeLevelInvalid/"gzip" ...............   Passed    0.00 sec
+        Start 215: AllCompressors/CompressorTest.ExtremeLevelInvalid/"zstd"
+215/283 Test #215: AllCompressors/CompressorTest.ExtremeLevelInvalid/"zstd" ...............   Passed    0.00 sec
+        Start 216: AllCompressors/CompressorTest.ExtremeLevelInvalid/"lzma"
+216/283 Test #216: AllCompressors/CompressorTest.ExtremeLevelInvalid/"lzma" ...............   Passed    0.00 sec
+        Start 217: AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/"gzip"
+217/283 Test #217: AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/"gzip" ....   Passed    0.01 sec
+        Start 218: AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/"zstd"
+218/283 Test #218: AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/"zstd" ....   Passed    0.02 sec
+        Start 219: AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/"lzma"
+219/283 Test #219: AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/"lzma" ....   Passed    0.07 sec
+        Start 220: AllCompressors/CompressorTest.DecompressGarbageFails/"gzip"
+220/283 Test #220: AllCompressors/CompressorTest.DecompressGarbageFails/"gzip" ............   Passed    0.00 sec
+        Start 221: AllCompressors/CompressorTest.DecompressGarbageFails/"zstd"
+221/283 Test #221: AllCompressors/CompressorTest.DecompressGarbageFails/"zstd" ............   Passed    0.00 sec
+        Start 222: AllCompressors/CompressorTest.DecompressGarbageFails/"lzma"
+222/283 Test #222: AllCompressors/CompressorTest.DecompressGarbageFails/"lzma" ............   Passed    0.00 sec
+        Start 223: AllCompressors/CompressorTest.DecompressTruncatedFails/"gzip"
+223/283 Test #223: AllCompressors/CompressorTest.DecompressTruncatedFails/"gzip" ..........   Passed    0.00 sec
+        Start 224: AllCompressors/CompressorTest.DecompressTruncatedFails/"zstd"
+224/283 Test #224: AllCompressors/CompressorTest.DecompressTruncatedFails/"zstd" ..........   Passed    0.00 sec
+        Start 225: AllCompressors/CompressorTest.DecompressTruncatedFails/"lzma"
+225/283 Test #225: AllCompressors/CompressorTest.DecompressTruncatedFails/"lzma" ..........   Passed    0.01 sec
+        Start 226: AllCompressors/CompressorTest.CompressAppendsToExistingOutput/"gzip"
+226/283 Test #226: AllCompressors/CompressorTest.CompressAppendsToExistingOutput/"gzip" ...   Passed    0.00 sec
+        Start 227: AllCompressors/CompressorTest.CompressAppendsToExistingOutput/"zstd"
+227/283 Test #227: AllCompressors/CompressorTest.CompressAppendsToExistingOutput/"zstd" ...   Passed    0.00 sec
+        Start 228: AllCompressors/CompressorTest.CompressAppendsToExistingOutput/"lzma"
+228/283 Test #228: AllCompressors/CompressorTest.CompressAppendsToExistingOutput/"lzma" ...   Passed    0.00 sec
+        Start 229: AllEncryptors/EncryptorTest.RoundTripSmall/"aes256"
+229/283 Test #229: AllEncryptors/EncryptorTest.RoundTripSmall/"aes256" ....................   Passed    0.04 sec
+        Start 230: AllEncryptors/EncryptorTest.RoundTripSmall/"sm4"
+230/283 Test #230: AllEncryptors/EncryptorTest.RoundTripSmall/"sm4" .......................   Passed    0.09 sec
+        Start 231: AllEncryptors/EncryptorTest.RoundTripEmpty/"aes256"
+231/283 Test #231: AllEncryptors/EncryptorTest.RoundTripEmpty/"aes256" ....................   Passed    0.04 sec
+        Start 232: AllEncryptors/EncryptorTest.RoundTripEmpty/"sm4"
+232/283 Test #232: AllEncryptors/EncryptorTest.RoundTripEmpty/"sm4" .......................   Passed    0.09 sec
+        Start 233: AllEncryptors/EncryptorTest.RoundTripSingleByte/"aes256"
+233/283 Test #233: AllEncryptors/EncryptorTest.RoundTripSingleByte/"aes256" ...............   Passed    0.04 sec
+        Start 234: AllEncryptors/EncryptorTest.RoundTripSingleByte/"sm4"
+234/283 Test #234: AllEncryptors/EncryptorTest.RoundTripSingleByte/"sm4" ..................   Passed    0.09 sec
+        Start 235: AllEncryptors/EncryptorTest.RoundTrip1KB/"aes256"
+235/283 Test #235: AllEncryptors/EncryptorTest.RoundTrip1KB/"aes256" ......................   Passed    0.04 sec
+        Start 236: AllEncryptors/EncryptorTest.RoundTrip1KB/"sm4"
+236/283 Test #236: AllEncryptors/EncryptorTest.RoundTrip1KB/"sm4" .........................   Passed    0.09 sec
+        Start 237: AllEncryptors/EncryptorTest.RoundTrip64KB/"aes256"
+237/283 Test #237: AllEncryptors/EncryptorTest.RoundTrip64KB/"aes256" .....................   Passed    0.04 sec
+        Start 238: AllEncryptors/EncryptorTest.RoundTrip64KB/"sm4"
+238/283 Test #238: AllEncryptors/EncryptorTest.RoundTrip64KB/"sm4" ........................   Passed    0.09 sec
+        Start 239: AllEncryptors/EncryptorTest.RoundTrip1MiB/"aes256"
+239/283 Test #239: AllEncryptors/EncryptorTest.RoundTrip1MiB/"aes256" .....................   Passed    0.05 sec
+        Start 240: AllEncryptors/EncryptorTest.RoundTrip1MiB/"sm4"
+240/283 Test #240: AllEncryptors/EncryptorTest.RoundTrip1MiB/"sm4" ........................   Passed    0.10 sec
+        Start 241: AllEncryptors/EncryptorTest.RoundTripCompressible1MiB/"aes256"
+241/283 Test #241: AllEncryptors/EncryptorTest.RoundTripCompressible1MiB/"aes256" .........   Passed    0.04 sec
+        Start 242: AllEncryptors/EncryptorTest.RoundTripCompressible1MiB/"sm4"
+242/283 Test #242: AllEncryptors/EncryptorTest.RoundTripCompressible1MiB/"sm4" ............   Passed    0.10 sec
+        Start 243: AllEncryptors/EncryptorTest.RoundTripBinary/"aes256"
+243/283 Test #243: AllEncryptors/EncryptorTest.RoundTripBinary/"aes256" ...................   Passed    0.04 sec
+        Start 244: AllEncryptors/EncryptorTest.RoundTripBinary/"sm4"
+244/283 Test #244: AllEncryptors/EncryptorTest.RoundTripBinary/"sm4" ......................   Passed    0.09 sec
+        Start 245: AllEncryptors/EncryptorTest.WrongPasswordFails/"aes256"
+245/283 Test #245: AllEncryptors/EncryptorTest.WrongPasswordFails/"aes256" ................   Passed    0.04 sec
+        Start 246: AllEncryptors/EncryptorTest.WrongPasswordFails/"sm4"
+246/283 Test #246: AllEncryptors/EncryptorTest.WrongPasswordFails/"sm4" ...................   Passed    0.09 sec
+        Start 247: AllEncryptors/EncryptorTest.EmptyPassword/"aes256"
+247/283 Test #247: AllEncryptors/EncryptorTest.EmptyPassword/"aes256" .....................   Passed    0.00 sec
+        Start 248: AllEncryptors/EncryptorTest.EmptyPassword/"sm4"
+248/283 Test #248: AllEncryptors/EncryptorTest.EmptyPassword/"sm4" ........................   Passed    0.00 sec
+        Start 249: AllEncryptors/EncryptorTest.PasswordWithSpaces/"aes256"
+249/283 Test #249: AllEncryptors/EncryptorTest.PasswordWithSpaces/"aes256" ................   Passed    0.04 sec
+        Start 250: AllEncryptors/EncryptorTest.PasswordWithSpaces/"sm4"
+250/283 Test #250: AllEncryptors/EncryptorTest.PasswordWithSpaces/"sm4" ...................   Passed    0.09 sec
+        Start 251: AllEncryptors/EncryptorTest.CorruptedCiphertextFails/"aes256"
+251/283 Test #251: AllEncryptors/EncryptorTest.CorruptedCiphertextFails/"aes256" ..........   Passed    0.04 sec
+        Start 252: AllEncryptors/EncryptorTest.CorruptedCiphertextFails/"sm4"
+252/283 Test #252: AllEncryptors/EncryptorTest.CorruptedCiphertextFails/"sm4" .............   Passed    0.09 sec
+        Start 253: AllEncryptors/EncryptorTest.CorruptedHeaderMagicFails/"aes256"
+253/283 Test #253: AllEncryptors/EncryptorTest.CorruptedHeaderMagicFails/"aes256" .........   Passed    0.02 sec
+        Start 254: AllEncryptors/EncryptorTest.CorruptedHeaderMagicFails/"sm4"
+254/283 Test #254: AllEncryptors/EncryptorTest.CorruptedHeaderMagicFails/"sm4" ............   Passed    0.05 sec
+        Start 255: AllEncryptors/EncryptorTest.TruncatedInputFails/"aes256"
+255/283 Test #255: AllEncryptors/EncryptorTest.TruncatedInputFails/"aes256" ...............   Passed    0.02 sec
+        Start 256: AllEncryptors/EncryptorTest.TruncatedInputFails/"sm4"
+256/283 Test #256: AllEncryptors/EncryptorTest.TruncatedInputFails/"sm4" ..................   Passed    0.05 sec
+        Start 257: AllEncryptors/EncryptorTest.GarbageInputFails/"aes256"
+257/283 Test #257: AllEncryptors/EncryptorTest.GarbageInputFails/"aes256" .................   Passed    0.00 sec
+        Start 258: AllEncryptors/EncryptorTest.GarbageInputFails/"sm4"
+258/283 Test #258: AllEncryptors/EncryptorTest.GarbageInputFails/"sm4" ....................   Passed    0.00 sec
+        Start 259: AllEncryptors/EncryptorTest.EncryptAppendsToExistingOutput/"aes256"
+259/283 Test #259: AllEncryptors/EncryptorTest.EncryptAppendsToExistingOutput/"aes256" ....   Passed    0.02 sec
+        Start 260: AllEncryptors/EncryptorTest.EncryptAppendsToExistingOutput/"sm4"
+260/283 Test #260: AllEncryptors/EncryptorTest.EncryptAppendsToExistingOutput/"sm4" .......   Passed    0.05 sec
+        Start 261: AllEncryptors/EncryptorTest.UnicodePassword/"aes256"
+261/283 Test #261: AllEncryptors/EncryptorTest.UnicodePassword/"aes256" ...................   Passed    0.04 sec
+        Start 262: AllEncryptors/EncryptorTest.UnicodePassword/"sm4"
+262/283 Test #262: AllEncryptors/EncryptorTest.UnicodePassword/"sm4" ......................   Passed    0.08 sec
+        Start 263: example
+263/283 Test #263: example ................................................................   Passed    0.00 sec
+        Start 264: example64
+264/283 Test #264: example64 ..............................................................   Passed    0.00 sec
+        Start 265: test_bcj_exact_size
+265/283 Test #265: test_bcj_exact_size ....................................................   Passed    0.00 sec
+        Start 266: test_block_header
+266/283 Test #266: test_block_header ......................................................   Passed    0.00 sec
+        Start 267: test_check
+267/283 Test #267: test_check .............................................................   Passed    0.01 sec
+        Start 268: test_filter_flags
+268/283 Test #268: test_filter_flags ......................................................   Passed    0.00 sec
+        Start 269: test_filter_str
+269/283 Test #269: test_filter_str ........................................................   Passed    0.00 sec
+        Start 270: test_hardware
+270/283 Test #270: test_hardware ..........................................................   Passed    0.00 sec
+        Start 271: test_index
+271/283 Test #271: test_index .............................................................   Passed    0.00 sec
+        Start 272: test_index_hash
+272/283 Test #272: test_index_hash ........................................................   Passed    0.00 sec
+        Start 273: test_lzip_decoder
+273/283 Test #273: test_lzip_decoder ......................................................   Passed    0.01 sec
+        Start 274: test_memlimit
+274/283 Test #274: test_memlimit ..........................................................   Passed    0.00 sec
+        Start 275: test_stream_flags
+275/283 Test #275: test_stream_flags ......................................................   Passed    0.00 sec
+        Start 276: test_vli
+276/283 Test #276: test_vli ...............................................................   Passed    0.00 sec
+        Start 277: test_microlzma
+277/283 Test #277: test_microlzma .........................................................   Passed    0.01 sec
+        Start 278: test_scripts.sh
+278/283 Test #278: test_scripts.sh ........................................................   Passed    0.07 sec
+        Start 279: test_suffix.sh
+279/283 Test #279: test_suffix.sh .........................................................   Passed    0.01 sec
+        Start 280: test_compress_generated_abc
+280/283 Test #280: test_compress_generated_abc ............................................   Passed    0.06 sec
+        Start 281: test_compress_generated_text
+281/283 Test #281: test_compress_generated_text ...........................................   Passed    0.42 sec
+        Start 282: test_compress_generated_random
+282/283 Test #282: test_compress_generated_random .........................................   Passed    0.87 sec
+        Start 283: test_files.sh
+283/283 Test #283: test_files.sh ..........................................................   Passed    0.09 sec
+
+100% tests passed, 0 tests failed out of 283
+
+Total Test time (real) =   4.62 sec

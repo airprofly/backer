@@ -1,0 +1,50 @@
+@startuml backer-component
+skinparam backgroundColor #FEFEFE
+skinparam componentBorderColor #2C3E50
+skinparam componentBackgroundColor #ECF0F1
+skinparam arrowColor #2C3E50
+
+title 构件图 - 物理体系结构
+
+package "可执行构件" {
+  [backer-cli] as CLI_EXE <<executable>>
+  [backer-gui] as GUI_EXE <<executable>>
+}
+
+package "业务逻辑" {
+  [Backup Engine]
+  [Restore Engine]
+  [Backup Scheduler]
+}
+
+package "管道构件" {
+  [Filter Library]
+  component "Packer Library" {
+    [Tar]
+    [Zip]
+  }
+  component "Compress Library" {
+    [Gzip]
+    [Zstd]
+  }
+  component "Crypto Library" {
+    [AES-256-GCM]
+    [SM4-CBC]
+  }
+}
+
+package "基础设施" {
+  [FS Abstraction]
+  [Metadata Manager]
+}
+
+CLI_EXE --> [Backup Engine] : uses
+CLI_EXE --> [Backup Scheduler] : uses
+GUI_EXE --> [Backup Engine] : uses
+[Backup Engine] --> [FS Abstraction] : uses
+[Restore Engine] --> [FS Abstraction] : uses
+[Backup Engine] --> [Packer Library] : uses
+[Backup Engine] --> [Compress Library] : uses
+[Backup Engine] --> [Crypto Library] : uses
+[Backup Engine] --> [Filter Library] : uses
+@enduml

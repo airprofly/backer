@@ -1,0 +1,36 @@
+@startuml backer-class
+skinparam backgroundColor #FEFEFE
+skinparam classBorderColor #2C3E50
+skinparam classBackgroundColor #ECF0F1
+skinparam arrowColor #2C3E50
+
+class "CLI Commands" {
+  + handleBackup(source, dest) : int
+  + handleRestore(source, dest) : int
+}
+
+class BackupEngine {
+  + backup(source, dest) : BackupResult
+}
+
+class RestoreEngine {
+  + restore(source, dest) : BackupResult
+}
+
+class BackupScheduler {
+  + addJob(job)
+  + run()
+}
+
+interface FSAbstraction {
+  + {abstract} walk(root)
+  + {abstract} read(path)
+}
+
+"CLI Commands" --> BackupEngine
+"CLI Commands" --> RestoreEngine
+"CLI Commands" --> BackupScheduler
+
+BackupEngine --> FSAbstraction
+RestoreEngine --> FSAbstraction
+@enduml

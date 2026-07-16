@@ -1,0 +1,118 @@
+==36164== Memcheck, a memory error detector
+==36164== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==36164== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==36164== Command: ./build/backer_test --gtest_filter=BackupEngineTest.*
+==36164== 
+Running main() from /home/airprofly/codeFolder/backer/build/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = BackupEngineTest.*
+[==========] Running 22 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 22 tests from BackupEngineTest
+[ RUN      ] BackupEngineTest.BackupBasic
+[2026-07-15 23:59:46.259] [info] BackupEngine: found 7 entries in /tmp/backer_test/BackupBasic/source
+[2026-07-15 23:59:46.303] [info] Backup complete: 4 files, 3 dirs, 4129 bytes in 0.1s
+[       OK ] BackupEngineTest.BackupBasic (118 ms)
+[ RUN      ] BackupEngineTest.BackupContentMatches
+[2026-07-15 23:59:46.316] [info] BackupEngine: found 7 entries in /tmp/backer_test/BackupContentMatches/source
+[2026-07-15 23:59:46.319] [info] Backup complete: 4 files, 3 dirs, 4129 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupContentMatches (12 ms)
+[ RUN      ] BackupEngineTest.BackupWithEmptyDir
+[2026-07-15 23:59:46.328] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupWithEmptyDir/source
+[2026-07-15 23:59:46.329] [info] Backup complete: 0 files, 1 dirs, 0 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithEmptyDir (4 ms)
+[ RUN      ] BackupEngineTest.BackupNonExistentSource
+[2026-07-15 23:59:46.333] [error] Source path does not exist: /tmp/backer_test/BackupNonExistentSource/nonexistent
+[       OK ] BackupEngineTest.BackupNonExistentSource (3 ms)
+[ RUN      ] BackupEngineTest.BackupEmptyDirectory
+[2026-07-15 23:59:46.336] [info] BackupEngine: found 0 entries in /tmp/backer_test/BackupEmptyDirectory/source
+[2026-07-15 23:59:46.336] [info] Backup complete: 0 files, 0 dirs, 0 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupEmptyDirectory (3 ms)
+[ RUN      ] BackupEngineTest.BackupBinaryFile
+[2026-07-15 23:59:46.341] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupBinaryFile/source
+[2026-07-15 23:59:46.343] [info] Backup complete: 1 files, 0 dirs, 65537 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupBinaryFile (9 ms)
+[ RUN      ] BackupEngineTest.BackupDeepNestedDirectories
+[2026-07-15 23:59:46.358] [info] BackupEngine: found 21 entries in /tmp/backer_test/BackupDeepNestedDirectories/source
+[2026-07-15 23:59:46.362] [info] Backup complete: 1 files, 20 dirs, 9 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupDeepNestedDirectories (27 ms)
+[ RUN      ] BackupEngineTest.BackupFileAsSourceFails
+[2026-07-15 23:59:46.377] [error] Source is not a directory: /tmp/backer_test/BackupFileAsSourceFails/source/afile.txt
+[       OK ] BackupEngineTest.BackupFileAsSourceFails (4 ms)
+[ RUN      ] BackupEngineTest.BackupUnicodeFilenames
+[2026-07-15 23:59:46.382] [info] BackupEngine: found 3 entries in /tmp/backer_test/BackupUnicodeFilenames/source
+[2026-07-15 23:59:46.383] [info] Backup complete: 3 files, 0 dirs, 43 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupUnicodeFilenames (8 ms)
+[ RUN      ] BackupEngineTest.BackupIdempotency
+[2026-07-15 23:59:46.390] [info] BackupEngine: found 7 entries in /tmp/backer_test/BackupIdempotency/source
+[2026-07-15 23:59:46.392] [info] Backup complete: 4 files, 3 dirs, 4129 bytes in 0.0s
+[2026-07-15 23:59:46.393] [info] BackupEngine: found 7 entries in /tmp/backer_test/BackupIdempotency/source
+[2026-07-15 23:59:46.394] [info] Backup complete: 4 files, 3 dirs, 4129 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupIdempotency (11 ms)
+[ RUN      ] BackupEngineTest.BackupLargeFile
+[2026-07-15 23:59:46.406] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupLargeFile/source
+[2026-07-15 23:59:46.410] [info] Backup complete: 1 files, 0 dirs, 1048576 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupLargeFile (39 ms)
+[ RUN      ] BackupEngineTest.BackupMixedContent
+[2026-07-15 23:59:46.445] [info] BackupEngine: found 9 entries in /tmp/backer_test/BackupMixedContent/source
+[2026-07-15 23:59:46.447] [info] Backup complete: 4 files, 5 dirs, 25 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupMixedContent (12 ms)
+[ RUN      ] BackupEngineTest.BackupSingleFile
+[2026-07-15 23:59:46.453] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupSingleFile/source
+[2026-07-15 23:59:46.453] [info] Backup complete: 1 files, 0 dirs, 8 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupSingleFile (4 ms)
+[ RUN      ] BackupEngineTest.BackupNestedEmptyDirs
+[2026-07-15 23:59:46.460] [info] BackupEngine: found 5 entries in /tmp/backer_test/BackupNestedEmptyDirs/source
+[2026-07-15 23:59:46.461] [info] Backup complete: 0 files, 5 dirs, 0 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupNestedEmptyDirs (10 ms)
+[ RUN      ] BackupEngineTest.BackupSymlinks
+[2026-07-15 23:59:46.472] [info] BackupEngine: found 3 entries in /tmp/backer_test/BackupSymlinks/source
+[2026-07-15 23:59:46.473] [info] Backup complete: 2 files, 1 dirs, 14 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupSymlinks (11 ms)
+[ RUN      ] BackupEngineTest.BackupSymlinkToFileInSameDir
+[2026-07-15 23:59:46.481] [info] BackupEngine: found 2 entries in /tmp/backer_test/BackupSymlinkToFileInSameDir/source
+[2026-07-15 23:59:46.481] [info] Backup complete: 2 files, 0 dirs, 8 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupSymlinkToFileInSameDir (6 ms)
+[ RUN      ] BackupEngineTest.BackupPreservesPermissions
+[2026-07-15 23:59:46.488] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupPreservesPermissions/source
+[2026-07-15 23:59:46.488] [info] Backup complete: 1 files, 0 dirs, 20 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupPreservesPermissions (5 ms)
+[ RUN      ] BackupEngineTest.BackupWithFilterIncludeType
+[2026-07-15 23:59:46.496] [info] BackupEngine: found 4 entries in /tmp/backer_test/BackupWithFilterIncludeType/source
+[2026-07-15 23:59:46.503] [info] CriteriaFilter: 4 → 2 entries after filtering
+[2026-07-15 23:59:46.504] [info] Backup complete: 2 files, 0 dirs, 9 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithFilterIncludeType (17 ms)
+[ RUN      ] BackupEngineTest.BackupWithFilterExcludePath
+[2026-07-15 23:59:46.512] [info] BackupEngine: found 4 entries in /tmp/backer_test/BackupWithFilterExcludePath/source
+[2026-07-15 23:59:46.514] [info] CriteriaFilter: 4 → 2 entries after filtering
+[2026-07-15 23:59:46.515] [info] Backup complete: 1 files, 1 dirs, 4 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithFilterExcludePath (9 ms)
+[ RUN      ] BackupEngineTest.BackupWithFilterAllExcluded
+[2026-07-15 23:59:46.521] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupWithFilterAllExcluded/source
+[2026-07-15 23:59:46.521] [info] CriteriaFilter: 1 → 0 entries after filtering
+[2026-07-15 23:59:46.522] [info] Backup complete: 0 files, 0 dirs, 0 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithFilterAllExcluded (5 ms)
+[ RUN      ] BackupEngineTest.BackupWithTarPacker
+[2026-07-15 23:59:46.527] [info] BackupEngine: found 4 entries in /tmp/backer_test/BackupWithTarPacker/source
+[2026-07-15 23:59:46.528] [info] BackupEngine: packing 4 entries as tar
+[2026-07-15 23:59:46.542] [info] Backup complete (archive mode): 3 files, 1 dirs, 21 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithTarPacker (35 ms)
+[ RUN      ] BackupEngineTest.BackupWithFilterAndPacker
+[2026-07-15 23:59:46.564] [info] BackupEngine: found 4 entries in /tmp/backer_test/BackupWithFilterAndPacker/source
+[2026-07-15 23:59:46.565] [info] CriteriaFilter: 4 → 2 entries after filtering
+[2026-07-15 23:59:46.565] [info] BackupEngine: packing 2 entries as tar
+[2026-07-15 23:59:46.566] [info] Backup complete (archive mode): 2 files, 0 dirs, 23 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithFilterAndPacker (13 ms)
+[----------] 22 tests from BackupEngineTest (380 ms total)
+
+[----------] Global test environment tear-down
+[==========] 22 tests from 1 test suite ran. (399 ms total)
+[  PASSED  ] 22 tests.
+==36164== 
+==36164== HEAP SUMMARY:
+==36164==     in use at exit: 0 bytes in 0 blocks
+==36164==   total heap usage: 7,852 allocs, 7,852 frees, 19,829,185 bytes allocated
+==36164== 
+==36164== All heap blocks were freed -- no leaks are possible
+==36164== 
+==36164== For lists of detected and suppressed errors, rerun with: -s
+==36164== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -1,0 +1,761 @@
+Running main() from /home/airprofly/codeFolder/backer/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[==========] Running 262 tests from 17 test suites.
+[----------] Global test environment set-up.
+[----------] 22 tests from BackupEngineTest
+[ RUN      ] BackupEngineTest.BackupBasic
+[2026-07-16 00:02:24.047] [info] BackupEngine: found 7 entries in /tmp/backer_test/BackupBasic/source
+[2026-07-16 00:02:24.048] [info] Backup complete: 4 files, 3 dirs, 4129 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupBasic (1 ms)
+[ RUN      ] BackupEngineTest.BackupContentMatches
+[2026-07-16 00:02:24.049] [info] BackupEngine: found 7 entries in /tmp/backer_test/BackupContentMatches/source
+[2026-07-16 00:02:24.049] [info] Backup complete: 4 files, 3 dirs, 4129 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupContentMatches (1 ms)
+[ RUN      ] BackupEngineTest.BackupWithEmptyDir
+[2026-07-16 00:02:24.050] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupWithEmptyDir/source
+[2026-07-16 00:02:24.050] [info] Backup complete: 0 files, 1 dirs, 0 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithEmptyDir (0 ms)
+[ RUN      ] BackupEngineTest.BackupNonExistentSource
+[2026-07-16 00:02:24.050] [error] Source path does not exist: /tmp/backer_test/BackupNonExistentSource/nonexistent
+[       OK ] BackupEngineTest.BackupNonExistentSource (0 ms)
+[ RUN      ] BackupEngineTest.BackupEmptyDirectory
+[2026-07-16 00:02:24.050] [info] BackupEngine: found 0 entries in /tmp/backer_test/BackupEmptyDirectory/source
+[2026-07-16 00:02:24.051] [info] Backup complete: 0 files, 0 dirs, 0 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupEmptyDirectory (0 ms)
+[ RUN      ] BackupEngineTest.BackupBinaryFile
+[2026-07-16 00:02:24.051] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupBinaryFile/source
+[2026-07-16 00:02:24.051] [info] Backup complete: 1 files, 0 dirs, 65537 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupBinaryFile (0 ms)
+[ RUN      ] BackupEngineTest.BackupDeepNestedDirectories
+[2026-07-16 00:02:24.053] [info] BackupEngine: found 21 entries in /tmp/backer_test/BackupDeepNestedDirectories/source
+[2026-07-16 00:02:24.055] [info] Backup complete: 1 files, 20 dirs, 9 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupDeepNestedDirectories (4 ms)
+[ RUN      ] BackupEngineTest.BackupFileAsSourceFails
+[2026-07-16 00:02:24.056] [error] Source is not a directory: /tmp/backer_test/BackupFileAsSourceFails/source/afile.txt
+[       OK ] BackupEngineTest.BackupFileAsSourceFails (0 ms)
+[ RUN      ] BackupEngineTest.BackupUnicodeFilenames
+[2026-07-16 00:02:24.056] [info] BackupEngine: found 3 entries in /tmp/backer_test/BackupUnicodeFilenames/source
+[2026-07-16 00:02:24.056] [info] Backup complete: 3 files, 0 dirs, 43 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupUnicodeFilenames (0 ms)
+[ RUN      ] BackupEngineTest.BackupIdempotency
+[2026-07-16 00:02:24.057] [info] BackupEngine: found 7 entries in /tmp/backer_test/BackupIdempotency/source
+[2026-07-16 00:02:24.058] [info] Backup complete: 4 files, 3 dirs, 4129 bytes in 0.0s
+[2026-07-16 00:02:24.058] [info] BackupEngine: found 7 entries in /tmp/backer_test/BackupIdempotency/source
+[2026-07-16 00:02:24.058] [info] Backup complete: 4 files, 3 dirs, 4129 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupIdempotency (2 ms)
+[ RUN      ] BackupEngineTest.BackupLargeFile
+[2026-07-16 00:02:24.060] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupLargeFile/source
+[2026-07-16 00:02:24.061] [info] Backup complete: 1 files, 0 dirs, 1048576 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupLargeFile (3 ms)
+[ RUN      ] BackupEngineTest.BackupMixedContent
+[2026-07-16 00:02:24.064] [info] BackupEngine: found 9 entries in /tmp/backer_test/BackupMixedContent/source
+[2026-07-16 00:02:24.064] [info] Backup complete: 4 files, 5 dirs, 25 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupMixedContent (1 ms)
+[ RUN      ] BackupEngineTest.BackupSingleFile
+[2026-07-16 00:02:24.065] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupSingleFile/source
+[2026-07-16 00:02:24.065] [info] Backup complete: 1 files, 0 dirs, 8 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupSingleFile (0 ms)
+[ RUN      ] BackupEngineTest.BackupNestedEmptyDirs
+[2026-07-16 00:02:24.066] [info] BackupEngine: found 5 entries in /tmp/backer_test/BackupNestedEmptyDirs/source
+[2026-07-16 00:02:24.066] [info] Backup complete: 0 files, 5 dirs, 0 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupNestedEmptyDirs (1 ms)
+[ RUN      ] BackupEngineTest.BackupSymlinks
+[2026-07-16 00:02:24.067] [info] BackupEngine: found 3 entries in /tmp/backer_test/BackupSymlinks/source
+[2026-07-16 00:02:24.067] [info] Backup complete: 2 files, 1 dirs, 14 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupSymlinks (0 ms)
+[ RUN      ] BackupEngineTest.BackupSymlinkToFileInSameDir
+[2026-07-16 00:02:24.067] [info] BackupEngine: found 2 entries in /tmp/backer_test/BackupSymlinkToFileInSameDir/source
+[2026-07-16 00:02:24.067] [info] Backup complete: 2 files, 0 dirs, 8 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupSymlinkToFileInSameDir (0 ms)
+[ RUN      ] BackupEngineTest.BackupPreservesPermissions
+[2026-07-16 00:02:24.067] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupPreservesPermissions/source
+[2026-07-16 00:02:24.068] [info] Backup complete: 1 files, 0 dirs, 20 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupPreservesPermissions (0 ms)
+[ RUN      ] BackupEngineTest.BackupWithFilterIncludeType
+[2026-07-16 00:02:24.068] [info] BackupEngine: found 4 entries in /tmp/backer_test/BackupWithFilterIncludeType/source
+[2026-07-16 00:02:24.068] [info] CriteriaFilter: 4 → 2 entries after filtering
+[2026-07-16 00:02:24.068] [info] Backup complete: 2 files, 0 dirs, 9 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithFilterIncludeType (0 ms)
+[ RUN      ] BackupEngineTest.BackupWithFilterExcludePath
+[2026-07-16 00:02:24.069] [info] BackupEngine: found 4 entries in /tmp/backer_test/BackupWithFilterExcludePath/source
+[2026-07-16 00:02:24.069] [info] CriteriaFilter: 4 → 2 entries after filtering
+[2026-07-16 00:02:24.069] [info] Backup complete: 1 files, 1 dirs, 4 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithFilterExcludePath (0 ms)
+[ RUN      ] BackupEngineTest.BackupWithFilterAllExcluded
+[2026-07-16 00:02:24.069] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupWithFilterAllExcluded/source
+[2026-07-16 00:02:24.069] [info] CriteriaFilter: 1 → 0 entries after filtering
+[2026-07-16 00:02:24.069] [info] Backup complete: 0 files, 0 dirs, 0 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithFilterAllExcluded (0 ms)
+[ RUN      ] BackupEngineTest.BackupWithTarPacker
+[2026-07-16 00:02:24.070] [info] BackupEngine: found 4 entries in /tmp/backer_test/BackupWithTarPacker/source
+[2026-07-16 00:02:24.070] [info] BackupEngine: packing 4 entries as tar
+[2026-07-16 00:02:24.070] [info] Backup complete (archive mode): 3 files, 1 dirs, 21 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithTarPacker (0 ms)
+[ RUN      ] BackupEngineTest.BackupWithFilterAndPacker
+[2026-07-16 00:02:24.071] [info] BackupEngine: found 4 entries in /tmp/backer_test/BackupWithFilterAndPacker/source
+[2026-07-16 00:02:24.071] [info] CriteriaFilter: 4 → 2 entries after filtering
+[2026-07-16 00:02:24.071] [info] BackupEngine: packing 2 entries as tar
+[2026-07-16 00:02:24.071] [info] Backup complete (archive mode): 2 files, 0 dirs, 23 bytes in 0.0s
+[       OK ] BackupEngineTest.BackupWithFilterAndPacker (0 ms)
+[----------] 22 tests from BackupEngineTest (24 ms total)
+
+[----------] 18 tests from RestoreEngineTest
+[ RUN      ] RestoreEngineTest.RestoreBasic
+[2026-07-16 00:02:24.071] [info] BackupEngine: found 5 entries in /tmp/backer_test/RestoreBasic/source
+[2026-07-16 00:02:24.072] [info] Backup complete: 3 files, 2 dirs, 4120 bytes in 0.0s
+[2026-07-16 00:02:24.072] [info] RestoreEngine: found 5 entries in /tmp/backer_test/RestoreBasic/backup
+[2026-07-16 00:02:24.072] [info] Restore complete: 3 files, 2 dirs, 4120 bytes in 0.0s
+[       OK ] RestoreEngineTest.RestoreBasic (1 ms)
+[ RUN      ] RestoreEngineTest.RestoreContentMatches
+[2026-07-16 00:02:24.073] [info] BackupEngine: found 5 entries in /tmp/backer_test/RestoreContentMatches/source
+[2026-07-16 00:02:24.073] [info] Backup complete: 3 files, 2 dirs, 4120 bytes in 0.0s
+[2026-07-16 00:02:24.073] [info] RestoreEngine: found 5 entries in /tmp/backer_test/RestoreContentMatches/backup
+[2026-07-16 00:02:24.073] [info] Restore complete: 3 files, 2 dirs, 4120 bytes in 0.0s
+[       OK ] RestoreEngineTest.RestoreContentMatches (1 ms)
+[ RUN      ] RestoreEngineTest.RestorePreservesEmptyDirs
+[2026-07-16 00:02:24.074] [info] BackupEngine: found 1 entries in /tmp/backer_test/RestorePreservesEmptyDirs/source
+[2026-07-16 00:02:24.074] [info] Backup complete: 0 files, 1 dirs, 0 bytes in 0.0s
+[2026-07-16 00:02:24.074] [info] RestoreEngine: found 1 entries in /tmp/backer_test/RestorePreservesEmptyDirs/backup
+[2026-07-16 00:02:24.074] [info] Restore complete: 0 files, 1 dirs, 0 bytes in 0.0s
+[       OK ] RestoreEngineTest.RestorePreservesEmptyDirs (0 ms)
+[ RUN      ] RestoreEngineTest.RestoreNonExistentSource
+[2026-07-16 00:02:24.074] [error] Backup source does not exist: /tmp/backer_test/RestoreNonExistentSource/nonexistent_backup
+[       OK ] RestoreEngineTest.RestoreNonExistentSource (0 ms)
+[ RUN      ] RestoreEngineTest.BackupRestoreEndToEnd
+[2026-07-16 00:02:24.075] [info] BackupEngine: found 9 entries in /tmp/backer_test/BackupRestoreEndToEnd/source
+[2026-07-16 00:02:24.076] [info] Backup complete: 5 files, 4 dirs, 87 bytes in 0.0s
+[2026-07-16 00:02:24.076] [info] RestoreEngine: found 9 entries in /tmp/backer_test/BackupRestoreEndToEnd/backup
+[2026-07-16 00:02:24.076] [info] Restore complete: 5 files, 4 dirs, 87 bytes in 0.0s
+[       OK ] RestoreEngineTest.BackupRestoreEndToEnd (1 ms)
+[ RUN      ] RestoreEngineTest.BackupRestoreComplexTree
+[2026-07-16 00:02:24.078] [info] BackupEngine: found 18 entries in /tmp/backer_test/BackupRestoreComplexTree/source
+[2026-07-16 00:02:24.079] [info] Backup complete: 4 files, 14 dirs, 47 bytes in 0.0s
+[2026-07-16 00:02:24.079] [info] RestoreEngine: found 18 entries in /tmp/backer_test/BackupRestoreComplexTree/backup
+[2026-07-16 00:02:24.081] [info] Restore complete: 4 files, 14 dirs, 47 bytes in 0.0s
+[       OK ] RestoreEngineTest.BackupRestoreComplexTree (5 ms)
+[ RUN      ] RestoreEngineTest.RestoreBinaryFile
+[2026-07-16 00:02:24.082] [info] BackupEngine: found 1 entries in /tmp/backer_test/RestoreBinaryFile/source
+[2026-07-16 00:02:24.082] [info] Backup complete: 1 files, 0 dirs, 131072 bytes in 0.0s
+[2026-07-16 00:02:24.082] [info] RestoreEngine: found 1 entries in /tmp/backer_test/RestoreBinaryFile/backup
+[2026-07-16 00:02:24.083] [info] Restore complete: 1 files, 0 dirs, 131072 bytes in 0.0s
+[       OK ] RestoreEngineTest.RestoreBinaryFile (0 ms)
+[ RUN      ] RestoreEngineTest.RestoreUnicodeFilenames
+[2026-07-16 00:02:24.083] [info] BackupEngine: found 3 entries in /tmp/backer_test/RestoreUnicodeFilenames/source
+[2026-07-16 00:02:24.083] [info] Backup complete: 3 files, 0 dirs, 43 bytes in 0.0s
+[2026-07-16 00:02:24.083] [info] RestoreEngine: found 3 entries in /tmp/backer_test/RestoreUnicodeFilenames/backup
+[2026-07-16 00:02:24.083] [info] Restore complete: 3 files, 0 dirs, 43 bytes in 0.0s
+[       OK ] RestoreEngineTest.RestoreUnicodeFilenames (0 ms)
+[ RUN      ] RestoreEngineTest.RestoreLargeFile
+[2026-07-16 00:02:24.084] [info] BackupEngine: found 1 entries in /tmp/backer_test/RestoreLargeFile/source
+[2026-07-16 00:02:24.085] [info] Backup complete: 1 files, 0 dirs, 1048576 bytes in 0.0s
+[2026-07-16 00:02:24.085] [info] RestoreEngine: found 1 entries in /tmp/backer_test/RestoreLargeFile/backup
+[2026-07-16 00:02:24.086] [info] Restore complete: 1 files, 0 dirs, 1048576 bytes in 0.0s
+[       OK ] RestoreEngineTest.RestoreLargeFile (4 ms)
+[ RUN      ] RestoreEngineTest.RestoreIdempotency
+[2026-07-16 00:02:24.088] [info] BackupEngine: found 5 entries in /tmp/backer_test/RestoreIdempotency/source
+[2026-07-16 00:02:24.089] [info] Backup complete: 3 files, 2 dirs, 4120 bytes in 0.0s
+[2026-07-16 00:02:24.089] [info] RestoreEngine: found 5 entries in /tmp/backer_test/RestoreIdempotency/backup
+[2026-07-16 00:02:24.089] [info] Restore complete: 3 files, 2 dirs, 4120 bytes in 0.0s
+[2026-07-16 00:02:24.090] [info] RestoreEngine: found 5 entries in /tmp/backer_test/RestoreIdempotency/backup
+[2026-07-16 00:02:24.090] [info] Restore complete: 3 files, 2 dirs, 4120 bytes in 0.0s
+[       OK ] RestoreEngineTest.RestoreIdempotency (2 ms)
+[ RUN      ] RestoreEngineTest.RestoreOverwriteDifferentContent
+[2026-07-16 00:02:24.090] [info] BackupEngine: found 1 entries in /tmp/backer_test/RestoreOverwriteDifferentContent/source
+[2026-07-16 00:02:24.091] [info] Backup complete: 1 files, 0 dirs, 9 bytes in 0.0s
+[2026-07-16 00:02:24.091] [info] RestoreEngine: found 1 entries in /tmp/backer_test/RestoreOverwriteDifferentContent/backup
+[2026-07-16 00:02:24.091] [info] Restore complete: 1 files, 0 dirs, 9 bytes in 0.0s
+[2026-07-16 00:02:24.091] [info] BackupEngine: found 1 entries in /tmp/backer_test/RestoreOverwriteDifferentContent/source
+[2026-07-16 00:02:24.091] [info] Backup complete: 1 files, 0 dirs, 9 bytes in 0.0s
+[2026-07-16 00:02:24.091] [info] RestoreEngine: found 1 entries in /tmp/backer_test/RestoreOverwriteDifferentContent/backup
+[2026-07-16 00:02:24.091] [info] Restore complete: 1 files, 0 dirs, 9 bytes in 0.0s
+[       OK ] RestoreEngineTest.RestoreOverwriteDifferentContent (1 ms)
+[ RUN      ] RestoreEngineTest.BackupRestoreRoundTripLargeTree
+[2026-07-16 00:02:24.093] [info] BackupEngine: found 20 entries in /tmp/backer_test/BackupRestoreRoundTripLargeTree/source
+[2026-07-16 00:02:24.095] [info] Backup complete: 10 files, 10 dirs, 98 bytes in 0.0s
+[2026-07-16 00:02:24.095] [info] RestoreEngine: found 20 entries in /tmp/backer_test/BackupRestoreRoundTripLargeTree/backup
+[2026-07-16 00:02:24.097] [info] Restore complete: 10 files, 10 dirs, 98 bytes in 0.0s
+[       OK ] RestoreEngineTest.BackupRestoreRoundTripLargeTree (6 ms)
+[ RUN      ] RestoreEngineTest.BackupRestoreWithSymlinks
+[2026-07-16 00:02:24.098] [info] BackupEngine: found 4 entries in /tmp/backer_test/BackupRestoreWithSymlinks/source
+[2026-07-16 00:02:24.098] [info] Backup complete: 3 files, 1 dirs, 14 bytes in 0.0s
+[2026-07-16 00:02:24.098] [info] RestoreEngine: found 4 entries in /tmp/backer_test/BackupRestoreWithSymlinks/backup
+[2026-07-16 00:02:24.099] [info] Restore complete: 3 files, 1 dirs, 14 bytes in 0.0s
+[       OK ] RestoreEngineTest.BackupRestoreWithSymlinks (1 ms)
+[ RUN      ] RestoreEngineTest.BackupRestoreDanglingSymlink
+[2026-07-16 00:02:24.099] [info] BackupEngine: found 1 entries in /tmp/backer_test/BackupRestoreDanglingSymlink/source
+[2026-07-16 00:02:24.099] [info] Backup complete: 1 files, 0 dirs, 0 bytes in 0.0s
+[2026-07-16 00:02:24.099] [info] RestoreEngine: found 1 entries in /tmp/backer_test/BackupRestoreDanglingSymlink/backup
+[2026-07-16 00:02:24.100] [info] Restore complete: 1 files, 0 dirs, 0 bytes in 0.0s
+[       OK ] RestoreEngineTest.BackupRestoreDanglingSymlink (0 ms)
+[ RUN      ] RestoreEngineTest.BackupRestorePreservesPermissions
+[2026-07-16 00:02:24.100] [info] BackupEngine: found 2 entries in /tmp/backer_test/BackupRestorePreservesPermissions/source
+[2026-07-16 00:02:24.100] [info] Backup complete: 2 files, 0 dirs, 25 bytes in 0.0s
+[2026-07-16 00:02:24.100] [info] RestoreEngine: found 2 entries in /tmp/backer_test/BackupRestorePreservesPermissions/backup
+[2026-07-16 00:02:24.100] [info] Restore complete: 2 files, 0 dirs, 25 bytes in 0.0s
+[       OK ] RestoreEngineTest.BackupRestorePreservesPermissions (0 ms)
+[ RUN      ] RestoreEngineTest.BackupRestoreWithFifo
+[2026-07-16 00:02:24.100] [info] BackupEngine: found 2 entries in /tmp/backer_test/BackupRestoreWithFifo/source
+[2026-07-16 00:02:24.101] [info] Backup complete: 2 files, 0 dirs, 14 bytes in 0.0s
+[2026-07-16 00:02:24.101] [info] RestoreEngine: found 2 entries in /tmp/backer_test/BackupRestoreWithFifo/backup
+[2026-07-16 00:02:24.101] [info] Restore complete: 2 files, 0 dirs, 14 bytes in 0.0s
+[       OK ] RestoreEngineTest.BackupRestoreWithFifo (0 ms)
+[ RUN      ] RestoreEngineTest.RestoreFromTarArchive
+[2026-07-16 00:02:24.101] [info] BackupEngine: found 3 entries in /tmp/backer_test/RestoreFromTarArchive/source
+[2026-07-16 00:02:24.101] [info] BackupEngine: packing 3 entries as tar
+[2026-07-16 00:02:24.101] [info] Backup complete (archive mode): 2 files, 1 dirs, 28 bytes in 0.0s
+[2026-07-16 00:02:24.102] [info] RestoreEngine: unpacking /tmp/backer_test/RestoreFromTarArchive/backup/backup.tar as tar
+[2026-07-16 00:02:24.102] [info] Restore complete (archive mode): /tmp/backer_test/RestoreFromTarArchive/backup/backup.tar in 0.0s
+[       OK ] RestoreEngineTest.RestoreFromTarArchive (1 ms)
+[ RUN      ] RestoreEngineTest.RestoreFromTarArchiveEmptyDir
+[2026-07-16 00:02:24.102] [info] BackupEngine: found 1 entries in /tmp/backer_test/RestoreFromTarArchiveEmptyDir/source
+[2026-07-16 00:02:24.102] [info] BackupEngine: packing 1 entries as tar
+[2026-07-16 00:02:24.102] [info] Backup complete (archive mode): 0 files, 1 dirs, 0 bytes in 0.0s
+[2026-07-16 00:02:24.102] [info] RestoreEngine: unpacking /tmp/backer_test/RestoreFromTarArchiveEmptyDir/backup/backup.tar as tar
+[2026-07-16 00:02:24.102] [info] Restore complete (archive mode): /tmp/backer_test/RestoreFromTarArchiveEmptyDir/backup/backup.tar in 0.0s
+[       OK ] RestoreEngineTest.RestoreFromTarArchiveEmptyDir (0 ms)
+[----------] 18 tests from RestoreEngineTest (31 ms total)
+
+[----------] 9 tests from MetadataTest
+[ RUN      ] MetadataTest.ReadMetadataRegular
+[       OK ] MetadataTest.ReadMetadataRegular (0 ms)
+[ RUN      ] MetadataTest.ReadMetadataNonExistent
+[2026-07-16 00:02:24.103] [error] readMetadata: lstat(/tmp/backer_test/ReadMetadataNonExistent/no_such_file) failed: No such file or directory
+[       OK ] MetadataTest.ReadMetadataNonExistent (0 ms)
+[ RUN      ] MetadataTest.ReadMetadataDirectory
+[       OK ] MetadataTest.ReadMetadataDirectory (0 ms)
+[ RUN      ] MetadataTest.RestorePermissions
+[       OK ] MetadataTest.RestorePermissions (0 ms)
+[ RUN      ] MetadataTest.MetadataJsonRoundTrip
+[       OK ] MetadataTest.MetadataJsonRoundTrip (0 ms)
+[ RUN      ] MetadataTest.RestoreTimestamps
+[       OK ] MetadataTest.RestoreTimestamps (0 ms)
+[ RUN      ] MetadataTest.RestoreSetuidBit
+[       OK ] MetadataTest.RestoreSetuidBit (0 ms)
+[ RUN      ] MetadataTest.canRestoreOwnership
+[       OK ] MetadataTest.canRestoreOwnership (0 ms)
+[ RUN      ] MetadataTest.ReadMetadataSymlink
+[       OK ] MetadataTest.ReadMetadataSymlink (0 ms)
+[----------] 9 tests from MetadataTest (1 ms total)
+
+[----------] 12 tests from SpecialFileTest
+[ RUN      ] SpecialFileTest.DetectRegularFile
+[       OK ] SpecialFileTest.DetectRegularFile (0 ms)
+[ RUN      ] SpecialFileTest.DetectDirectory
+[       OK ] SpecialFileTest.DetectDirectory (0 ms)
+[ RUN      ] SpecialFileTest.DetectNonExistent
+[2026-07-16 00:02:24.104] [error] detectFileType: lstat(/tmp/backer_test/DetectNonExistent/noexist) failed: No such file or directory
+[       OK ] SpecialFileTest.DetectNonExistent (0 ms)
+[ RUN      ] SpecialFileTest.SymlinkRoundTrip
+[       OK ] SpecialFileTest.SymlinkRoundTrip (0 ms)
+[ RUN      ] SpecialFileTest.CreateSymlinkInNestedDir
+[       OK ] SpecialFileTest.CreateSymlinkInNestedDir (0 ms)
+[ RUN      ] SpecialFileTest.DetectSymlink
+[       OK ] SpecialFileTest.DetectSymlink (0 ms)
+[ RUN      ] SpecialFileTest.DetectFifo
+[       OK ] SpecialFileTest.DetectFifo (0 ms)
+[ RUN      ] SpecialFileTest.ReadSymlinkDangling
+[       OK ] SpecialFileTest.ReadSymlinkDangling (0 ms)
+[ RUN      ] SpecialFileTest.CreateFifoAndDetect
+[       OK ] SpecialFileTest.CreateFifoAndDetect (0 ms)
+[ RUN      ] SpecialFileTest.CreateFifoWithPermissions
+[       OK ] SpecialFileTest.CreateFifoWithPermissions (0 ms)
+[ RUN      ] SpecialFileTest.CreateDeviceAsNonRoot
+[2026-07-16 00:02:24.106] [error] createDevice: mknod(/tmp/backer_test/CreateDeviceAsNonRoot/null_clone, major=1, minor=3) failed: Operation not permitted
+[       OK ] SpecialFileTest.CreateDeviceAsNonRoot (0 ms)
+[ RUN      ] SpecialFileTest.DetectUnicodeFilename
+[       OK ] SpecialFileTest.DetectUnicodeFilename (0 ms)
+[----------] 12 tests from SpecialFileTest (2 ms total)
+
+[----------] 30 tests from CriteriaFilterTest
+[ RUN      ] CriteriaFilterTest.IncludePathGlob
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 4 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.IncludePathGlob (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludePathGlobRecursive
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.IncludePathGlobRecursive (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeNameGlob
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 2 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeNameGlob (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeFileType
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 2 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeFileType (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeTimeRange
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 2 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeTimeRange (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeTimeRangeBefore
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 2 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeTimeRangeBefore (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeSizeRange
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeSizeRange (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeOwner
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 2 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeOwner (0 ms)
+[ RUN      ] CriteriaFilterTest.ExcludeType
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 2 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.ExcludeType (0 ms)
+[ RUN      ] CriteriaFilterTest.ExcludePathGlob
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 2 entries after filtering
+[       OK ] CriteriaFilterTest.ExcludePathGlob (0 ms)
+[ RUN      ] CriteriaFilterTest.ExcludeOverridesInclude
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.ExcludeOverridesInclude (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeAcrossDimensionsAnd
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeAcrossDimensionsAnd (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeSameDimensionOr
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 4 → 2 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeSameDimensionOr (0 ms)
+[ RUN      ] CriteriaFilterTest.SingleCriterionAndFields
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.SingleCriterionAndFields (0 ms)
+[ RUN      ] CriteriaFilterTest.NoIncludeCriteriaAllPass
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 2 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.NoIncludeCriteriaAllPass (0 ms)
+[ RUN      ] CriteriaFilterTest.EmptyCriteriaPassesAll
+[       OK ] CriteriaFilterTest.EmptyCriteriaPassesAll (0 ms)
+[ RUN      ] CriteriaFilterTest.EmptyInput
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 0 → 0 entries after filtering
+[       OK ] CriteriaFilterTest.EmptyInput (0 ms)
+[ RUN      ] CriteriaFilterTest.AllFilteredOut
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 2 → 0 entries after filtering
+[       OK ] CriteriaFilterTest.AllFilteredOut (0 ms)
+[ RUN      ] CriteriaFilterTest.NoopFilterPassesAll
+[       OK ] CriteriaFilterTest.NoopFilterPassesAll (0 ms)
+[ RUN      ] CriteriaFilterTest.NoopFilterEmptyInput
+[       OK ] CriteriaFilterTest.NoopFilterEmptyInput (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeWildcardQuestionMark
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 4 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeWildcardQuestionMark (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeBracketGlob
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 2 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeBracketGlob (0 ms)
+[ RUN      ] CriteriaFilterTest.SizeExactlyAtMin
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 2 entries after filtering
+[       OK ] CriteriaFilterTest.SizeExactlyAtMin (0 ms)
+[ RUN      ] CriteriaFilterTest.SizeExactlyAtMax
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 2 entries after filtering
+[       OK ] CriteriaFilterTest.SizeExactlyAtMax (0 ms)
+[ RUN      ] CriteriaFilterTest.SizeZeroBytes
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 2 → 2 entries after filtering
+[       OK ] CriteriaFilterTest.SizeZeroBytes (0 ms)
+[ RUN      ] CriteriaFilterTest.TimeExactlyAtBoundary
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 2 entries after filtering
+[       OK ] CriteriaFilterTest.TimeExactlyAtBoundary (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludeAcrossSomeMatch
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 4 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.IncludeAcrossSomeMatch (0 ms)
+[ RUN      ] CriteriaFilterTest.IncludePathWithSpaces
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 2 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.IncludePathWithSpaces (0 ms)
+[ RUN      ] CriteriaFilterTest.ExcludeMultipleCriteria
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 3 → 1 entries after filtering
+[       OK ] CriteriaFilterTest.ExcludeMultipleCriteria (0 ms)
+[ RUN      ] CriteriaFilterTest.LargeEntryList
+[2026-07-16 00:02:24.106] [info] CriteriaFilter: 1000 → 500 entries after filtering
+[       OK ] CriteriaFilterTest.LargeEntryList (0 ms)
+[----------] 30 tests from CriteriaFilterTest (0 ms total)
+
+[----------] 20 tests from TarPackerTest
+[ RUN      ] TarPackerTest.PackSingleRegularFile
+[       OK ] TarPackerTest.PackSingleRegularFile (0 ms)
+[ RUN      ] TarPackerTest.PackUnpackRoundTrip
+[       OK ] TarPackerTest.PackUnpackRoundTrip (0 ms)
+[ RUN      ] TarPackerTest.PackDirectory
+[       OK ] TarPackerTest.PackDirectory (0 ms)
+[ RUN      ] TarPackerTest.PackSymlink
+[       OK ] TarPackerTest.PackSymlink (0 ms)
+[ RUN      ] TarPackerTest.PackFifo
+[       OK ] TarPackerTest.PackFifo (0 ms)
+[ RUN      ] TarPackerTest.PackDevice
+[       OK ] TarPackerTest.PackDevice (0 ms)
+[ RUN      ] TarPackerTest.PackEmptyFile
+[       OK ] TarPackerTest.PackEmptyFile (0 ms)
+[ RUN      ] TarPackerTest.PackLongPath
+[       OK ] TarPackerTest.PackLongPath (0 ms)
+[ RUN      ] TarPackerTest.PackMultipleEntries
+[2026-07-16 00:02:24.106] [warning] TarPacker: unreadable file /test/src/dir1/f1.txt, skipping content: Path not found
+[2026-07-16 00:02:24.106] [warning] TarPacker: unreadable file /test/src/dir2/f2.txt, skipping content: Path not found
+[       OK ] TarPackerTest.PackMultipleEntries (0 ms)
+[ RUN      ] TarPackerTest.EmptyEntryList
+[       OK ] TarPackerTest.EmptyEntryList (0 ms)
+[ RUN      ] TarPackerTest.ValidChecksum
+[       OK ] TarPackerTest.ValidChecksum (0 ms)
+[ RUN      ] TarPackerTest.RejectInvalidArchive
+[2026-07-16 00:02:24.106] [error] TarPacker: truncated or invalid archive
+[       OK ] TarPackerTest.RejectInvalidArchive (0 ms)
+[ RUN      ] TarPackerTest.FormatName
+[       OK ] TarPackerTest.FormatName (0 ms)
+[ RUN      ] TarPackerTest.PackFileSpanningMultipleBlocks
+[       OK ] TarPackerTest.PackFileSpanningMultipleBlocks (0 ms)
+[ RUN      ] TarPackerTest.PackExactBlockSizeFile
+[       OK ] TarPackerTest.PackExactBlockSizeFile (0 ms)
+[ RUN      ] TarPackerTest.PackBinaryDataAllBytes
+[       OK ] TarPackerTest.PackBinaryDataAllBytes (0 ms)
+[ RUN      ] TarPackerTest.PackDeeplyNestedStructure
+[       OK ] TarPackerTest.PackDeeplyNestedStructure (0 ms)
+[ RUN      ] TarPackerTest.PackFileNameBoundary
+[       OK ] TarPackerTest.PackFileNameBoundary (0 ms)
+[ RUN      ] TarPackerTest.MetadataPreservedInRoundTrip
+[       OK ] TarPackerTest.MetadataPreservedInRoundTrip (0 ms)
+[ RUN      ] TarPackerTest.PackManySmallFiles
+[       OK ] TarPackerTest.PackManySmallFiles (0 ms)
+[----------] 20 tests from TarPackerTest (0 ms total)
+
+[----------] 19 tests from ZipPackerTest
+[ RUN      ] ZipPackerTest.FormatName
+[       OK ] ZipPackerTest.FormatName (0 ms)
+[ RUN      ] ZipPackerTest.PackSingleRegularFile
+[       OK ] ZipPackerTest.PackSingleRegularFile (0 ms)
+[ RUN      ] ZipPackerTest.PackUnpackRoundTrip
+[       OK ] ZipPackerTest.PackUnpackRoundTrip (0 ms)
+[ RUN      ] ZipPackerTest.PackDirectory
+[       OK ] ZipPackerTest.PackDirectory (0 ms)
+[ RUN      ] ZipPackerTest.PackSymlink
+[       OK ] ZipPackerTest.PackSymlink (0 ms)
+[ RUN      ] ZipPackerTest.PackFifo
+[       OK ] ZipPackerTest.PackFifo (0 ms)
+[ RUN      ] ZipPackerTest.PackDevice
+[       OK ] ZipPackerTest.PackDevice (0 ms)
+[ RUN      ] ZipPackerTest.PackEmptyFile
+[       OK ] ZipPackerTest.PackEmptyFile (0 ms)
+[ RUN      ] ZipPackerTest.EmptyEntryList
+[       OK ] ZipPackerTest.EmptyEntryList (0 ms)
+[ RUN      ] ZipPackerTest.RejectInvalidArchive
+[2026-07-16 00:02:24.107] [error] ZipPacker: invalid or corrupted zip archive
+[       OK ] ZipPackerTest.RejectInvalidArchive (0 ms)
+[ RUN      ] ZipPackerTest.RejectZipWithoutMetadata
+[2026-07-16 00:02:24.107] [error] ZipPacker: archive missing .backer_zip_meta entry
+[       OK ] ZipPackerTest.RejectZipWithoutMetadata (0 ms)
+[ RUN      ] ZipPackerTest.PackMultipleEntries
+[2026-07-16 00:02:24.107] [warning] ZipPacker: unreadable file /test/src/dir1/f1.txt, skipping content: Path not found
+[2026-07-16 00:02:24.107] [warning] ZipPacker: unreadable file /test/src/dir2/f2.txt, skipping content: Path not found
+[       OK ] ZipPackerTest.PackMultipleEntries (0 ms)
+[ RUN      ] ZipPackerTest.PackBinaryDataAllBytes
+[       OK ] ZipPackerTest.PackBinaryDataAllBytes (0 ms)
+[ RUN      ] ZipPackerTest.MetadataPreservedInRoundTrip
+[       OK ] ZipPackerTest.MetadataPreservedInRoundTrip (0 ms)
+[ RUN      ] ZipPackerTest.SymlinkWithMetadata
+[       OK ] ZipPackerTest.SymlinkWithMetadata (0 ms)
+[ RUN      ] ZipPackerTest.PackLargeFile
+[       OK ] ZipPackerTest.PackLargeFile (35 ms)
+[ RUN      ] ZipPackerTest.PackDeeplyNestedStructure
+[       OK ] ZipPackerTest.PackDeeplyNestedStructure (0 ms)
+[ RUN      ] ZipPackerTest.PackManySmallFiles
+[       OK ] ZipPackerTest.PackManySmallFiles (0 ms)
+[ RUN      ] ZipPackerTest.PackAllTypes
+[       OK ] ZipPackerTest.PackAllTypes (0 ms)
+[----------] 19 tests from ZipPackerTest (36 ms total)
+
+[----------] 8 tests from BuildCompressorTest
+[ RUN      ] BuildCompressorTest.CreateGzip
+[       OK ] BuildCompressorTest.CreateGzip (0 ms)
+[ RUN      ] BuildCompressorTest.CreateZstd
+[       OK ] BuildCompressorTest.CreateZstd (0 ms)
+[ RUN      ] BuildCompressorTest.CreateLzma
+[       OK ] BuildCompressorTest.CreateLzma (0 ms)
+[ RUN      ] BuildCompressorTest.UnknownAlgorithmReturnsNull
+[       OK ] BuildCompressorTest.UnknownAlgorithmReturnsNull (0 ms)
+[ RUN      ] BuildCompressorTest.CaseSensitiveLookup
+[       OK ] BuildCompressorTest.CaseSensitiveLookup (0 ms)
+[ RUN      ] BuildCompressorTest.PartialNameRejected
+[       OK ] BuildCompressorTest.PartialNameRejected (0 ms)
+[ RUN      ] BuildCompressorTest.DefaultLevelZero
+[       OK ] BuildCompressorTest.DefaultLevelZero (0 ms)
+[ RUN      ] BuildCompressorTest.RoundTrip
+[       OK ] BuildCompressorTest.RoundTrip (0 ms)
+[----------] 8 tests from BuildCompressorTest (0 ms total)
+
+[----------] 8 tests from BuildEncryptorTest
+[ RUN      ] BuildEncryptorTest.CreateAes256
+[       OK ] BuildEncryptorTest.CreateAes256 (0 ms)
+[ RUN      ] BuildEncryptorTest.CreateAes256FullName
+[       OK ] BuildEncryptorTest.CreateAes256FullName (0 ms)
+[ RUN      ] BuildEncryptorTest.CreateSm4
+[       OK ] BuildEncryptorTest.CreateSm4 (0 ms)
+[ RUN      ] BuildEncryptorTest.UnknownAlgorithmReturnsNull
+[       OK ] BuildEncryptorTest.UnknownAlgorithmReturnsNull (0 ms)
+[ RUN      ] BuildEncryptorTest.UnknownAlgorithmEmpty
+[       OK ] BuildEncryptorTest.UnknownAlgorithmEmpty (0 ms)
+[ RUN      ] BuildEncryptorTest.CaseSensitiveLookup
+[       OK ] BuildEncryptorTest.CaseSensitiveLookup (0 ms)
+[ RUN      ] BuildEncryptorTest.PartialNameRejected
+[       OK ] BuildEncryptorTest.PartialNameRejected (0 ms)
+[ RUN      ] BuildEncryptorTest.RoundTrip
+[       OK ] BuildEncryptorTest.RoundTrip (121 ms)
+[----------] 8 tests from BuildEncryptorTest (121 ms total)
+
+[----------] 10 tests from CcronexprTest
+[ RUN      ] CcronexprTest.DailyAt2am
+[       OK ] CcronexprTest.DailyAt2am (0 ms)
+[ RUN      ] CcronexprTest.DailyAt2amBeforeMidnight
+[       OK ] CcronexprTest.DailyAt2amBeforeMidnight (0 ms)
+[ RUN      ] CcronexprTest.EveryHour
+[       OK ] CcronexprTest.EveryHour (0 ms)
+[ RUN      ] CcronexprTest.Every15Min
+[       OK ] CcronexprTest.Every15Min (0 ms)
+[ RUN      ] CcronexprTest.Every15MinFromOffset
+[       OK ] CcronexprTest.Every15MinFromOffset (0 ms)
+[ RUN      ] CcronexprTest.WeekdaysOnly
+[       OK ] CcronexprTest.WeekdaysOnly (0 ms)
+[ RUN      ] CcronexprTest.WeeklyOnSunday
+[       OK ] CcronexprTest.WeeklyOnSunday (0 ms)
+[ RUN      ] CcronexprTest.RangeHours
+[       OK ] CcronexprTest.RangeHours (0 ms)
+[ RUN      ] CcronexprTest.InvalidExpression
+[2026-07-16 00:02:24.265] [error] Failed to parse cron expression 'not-a-cron': Invalid number of fields, expression must consist of 6 fields
+[       OK ] CcronexprTest.InvalidExpression (0 ms)
+[ RUN      ] CcronexprTest.NeverFires
+[2026-07-16 00:02:24.266] [warning] Cron expression '0 0 30 2 *' will never fire again
+[       OK ] CcronexprTest.NeverFires (0 ms)
+[----------] 10 tests from CcronexprTest (0 ms total)
+
+[----------] 1 test from SnapshotPathTest
+[ RUN      ] SnapshotPathTest.ProducesTimestampedName
+[       OK ] SnapshotPathTest.ProducesTimestampedName (0 ms)
+[----------] 1 test from SnapshotPathTest (0 ms total)
+
+[----------] 13 tests from RetentionTest
+[ RUN      ] RetentionTest.ParseTimestampValid
+[       OK ] RetentionTest.ParseTimestampValid (0 ms)
+[ RUN      ] RetentionTest.ParseTimestampInvalidFormat
+[       OK ] RetentionTest.ParseTimestampInvalidFormat (0 ms)
+[ RUN      ] RetentionTest.ParseTimestampWrongLength
+[       OK ] RetentionTest.ParseTimestampWrongLength (0 ms)
+[ RUN      ] RetentionTest.KeepAllWhenUnlimited
+[       OK ] RetentionTest.KeepAllWhenUnlimited (0 ms)
+[ RUN      ] RetentionTest.KeepAllWhenDisabled
+[       OK ] RetentionTest.KeepAllWhenDisabled (0 ms)
+[ RUN      ] RetentionTest.RemoveOldestWhenExceedingCount
+[       OK ] RetentionTest.RemoveOldestWhenExceedingCount (0 ms)
+[ RUN      ] RetentionTest.RemoveMultipleOldest
+[       OK ] RetentionTest.RemoveMultipleOldest (0 ms)
+[ RUN      ] RetentionTest.KeepExactCount
+[       OK ] RetentionTest.KeepExactCount (0 ms)
+[ RUN      ] RetentionTest.RemoveOlderThanDays
+[       OK ] RetentionTest.RemoveOlderThanDays (0 ms)
+[ RUN      ] RetentionTest.MixedBothConstraints
+[       OK ] RetentionTest.MixedBothConstraints (0 ms)
+[ RUN      ] RetentionTest.EmptyList
+[       OK ] RetentionTest.EmptyList (0 ms)
+[ RUN      ] RetentionTest.SingleSnapshot
+[       OK ] RetentionTest.SingleSnapshot (0 ms)
+[ RUN      ] RetentionTest.NonMatchingNamesAreSkipped
+[       OK ] RetentionTest.NonMatchingNamesAreSkipped (0 ms)
+[----------] 13 tests from RetentionTest (0 ms total)
+
+[----------] 8 tests from SchedulerTest
+[ RUN      ] SchedulerTest.AddAndListJobs
+[       OK ] SchedulerTest.AddAndListJobs (0 ms)
+[ RUN      ] SchedulerTest.RemoveJob
+[       OK ] SchedulerTest.RemoveJob (0 ms)
+[ RUN      ] SchedulerTest.RemoveNonExistent
+[       OK ] SchedulerTest.RemoveNonExistent (0 ms)
+[ RUN      ] SchedulerTest.EnableDisableJob
+[       OK ] SchedulerTest.EnableDisableJob (0 ms)
+[ RUN      ] SchedulerTest.FindJob
+[       OK ] SchedulerTest.FindJob (0 ms)
+[ RUN      ] SchedulerTest.StopWithoutRun
+[       OK ] SchedulerTest.StopWithoutRun (0 ms)
+[ RUN      ] SchedulerTest.RunAndStop
+[2026-07-16 00:02:24.266] [info] [Scheduler] Event loop started
+[2026-07-16 00:02:24.372] [info] [Scheduler] Event loop stopped
+[       OK ] SchedulerTest.RunAndStop (106 ms)
+[ RUN      ] SchedulerTest.AddJobWithCustomId
+[       OK ] SchedulerTest.AddJobWithCustomId (0 ms)
+[----------] 8 tests from SchedulerTest (106 ms total)
+
+[----------] 3 tests from ScheduleStoreTest
+[ RUN      ] ScheduleStoreTest.SaveAndLoad
+[       OK ] ScheduleStoreTest.SaveAndLoad (0 ms)
+[ RUN      ] ScheduleStoreTest.LoadNonExistent
+[2026-07-16 00:02:24.373] [info] Schedule file not found (first run): /tmp/backer_schedule_test.json
+[       OK ] ScheduleStoreTest.LoadNonExistent (0 ms)
+[ RUN      ] ScheduleStoreTest.SaveMultipleAndLoad
+[       OK ] ScheduleStoreTest.SaveMultipleAndLoad (0 ms)
+[----------] 3 tests from ScheduleStoreTest (0 ms total)
+
+[----------] 2 tests from RetentionScanTest
+[ RUN      ] RetentionScanTest.ScansTimestampedDirs
+[       OK ] RetentionScanTest.ScansTimestampedDirs (0 ms)
+[ RUN      ] RetentionScanTest.EmptyDir
+[       OK ] RetentionScanTest.EmptyDir (0 ms)
+[----------] 2 tests from RetentionScanTest (0 ms total)
+
+[----------] 45 tests from AllCompressors/CompressorTest
+[ RUN      ] AllCompressors/CompressorTest.RoundTripSmall/0
+[       OK ] AllCompressors/CompressorTest.RoundTripSmall/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripSmall/1
+[       OK ] AllCompressors/CompressorTest.RoundTripSmall/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripSmall/2
+[       OK ] AllCompressors/CompressorTest.RoundTripSmall/2 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripEmpty/0
+[       OK ] AllCompressors/CompressorTest.RoundTripEmpty/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripEmpty/1
+[       OK ] AllCompressors/CompressorTest.RoundTripEmpty/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripEmpty/2
+[       OK ] AllCompressors/CompressorTest.RoundTripEmpty/2 (4 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripSingleByte/0
+[       OK ] AllCompressors/CompressorTest.RoundTripSingleByte/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripSingleByte/1
+[       OK ] AllCompressors/CompressorTest.RoundTripSingleByte/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripSingleByte/2
+[       OK ] AllCompressors/CompressorTest.RoundTripSingleByte/2 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTrip1KB/0
+[       OK ] AllCompressors/CompressorTest.RoundTrip1KB/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTrip1KB/1
+[       OK ] AllCompressors/CompressorTest.RoundTrip1KB/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTrip1KB/2
+[       OK ] AllCompressors/CompressorTest.RoundTrip1KB/2 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTrip64KB/0
+[       OK ] AllCompressors/CompressorTest.RoundTrip64KB/0 (1 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTrip64KB/1
+[       OK ] AllCompressors/CompressorTest.RoundTrip64KB/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTrip64KB/2
+[       OK ] AllCompressors/CompressorTest.RoundTrip64KB/2 (8 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTrip1MiB/0
+[       OK ] AllCompressors/CompressorTest.RoundTrip1MiB/0 (25 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTrip1MiB/1
+[       OK ] AllCompressors/CompressorTest.RoundTrip1MiB/1 (2 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTrip1MiB/2
+[       OK ] AllCompressors/CompressorTest.RoundTrip1MiB/2 (187 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripCompressible1MiB/0
+[       OK ] AllCompressors/CompressorTest.RoundTripCompressible1MiB/0 (2 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripCompressible1MiB/1
+[       OK ] AllCompressors/CompressorTest.RoundTripCompressible1MiB/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripCompressible1MiB/2
+[       OK ] AllCompressors/CompressorTest.RoundTripCompressible1MiB/2 (12 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripBinary/0
+[       OK ] AllCompressors/CompressorTest.RoundTripBinary/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripBinary/1
+[       OK ] AllCompressors/CompressorTest.RoundTripBinary/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.RoundTripBinary/2
+[       OK ] AllCompressors/CompressorTest.RoundTripBinary/2 (1 ms)
+[ RUN      ] AllCompressors/CompressorTest.DefaultLevelIsValid/0
+[       OK ] AllCompressors/CompressorTest.DefaultLevelIsValid/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.DefaultLevelIsValid/1
+[       OK ] AllCompressors/CompressorTest.DefaultLevelIsValid/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.DefaultLevelIsValid/2
+[       OK ] AllCompressors/CompressorTest.DefaultLevelIsValid/2 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.NegativeLevelInvalid/0
+[       OK ] AllCompressors/CompressorTest.NegativeLevelInvalid/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.NegativeLevelInvalid/1
+[       OK ] AllCompressors/CompressorTest.NegativeLevelInvalid/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.NegativeLevelInvalid/2
+[       OK ] AllCompressors/CompressorTest.NegativeLevelInvalid/2 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.ExtremeLevelInvalid/0
+[       OK ] AllCompressors/CompressorTest.ExtremeLevelInvalid/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.ExtremeLevelInvalid/1
+[       OK ] AllCompressors/CompressorTest.ExtremeLevelInvalid/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.ExtremeLevelInvalid/2
+[       OK ] AllCompressors/CompressorTest.ExtremeLevelInvalid/2 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/0
+[       OK ] AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/0 (4 ms)
+[ RUN      ] AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/1
+[       OK ] AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/1 (16 ms)
+[ RUN      ] AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/2
+[       OK ] AllCompressors/CompressorTest.FactoryAppliesCompressionLevel/2 (61 ms)
+[ RUN      ] AllCompressors/CompressorTest.DecompressGarbageFails/0
+[       OK ] AllCompressors/CompressorTest.DecompressGarbageFails/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.DecompressGarbageFails/1
+[       OK ] AllCompressors/CompressorTest.DecompressGarbageFails/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.DecompressGarbageFails/2
+[       OK ] AllCompressors/CompressorTest.DecompressGarbageFails/2 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.DecompressTruncatedFails/0
+[       OK ] AllCompressors/CompressorTest.DecompressTruncatedFails/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.DecompressTruncatedFails/1
+[       OK ] AllCompressors/CompressorTest.DecompressTruncatedFails/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.DecompressTruncatedFails/2
+[       OK ] AllCompressors/CompressorTest.DecompressTruncatedFails/2 (1 ms)
+[ RUN      ] AllCompressors/CompressorTest.CompressAppendsToExistingOutput/0
+[       OK ] AllCompressors/CompressorTest.CompressAppendsToExistingOutput/0 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.CompressAppendsToExistingOutput/1
+[       OK ] AllCompressors/CompressorTest.CompressAppendsToExistingOutput/1 (0 ms)
+[ RUN      ] AllCompressors/CompressorTest.CompressAppendsToExistingOutput/2
+[       OK ] AllCompressors/CompressorTest.CompressAppendsToExistingOutput/2 (0 ms)
+[----------] 45 tests from AllCompressors/CompressorTest (335 ms total)
+
+[----------] 34 tests from AllEncryptors/EncryptorTest
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTripSmall/0
+[       OK ] AllEncryptors/EncryptorTest.RoundTripSmall/0 (37 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTripSmall/1
+[       OK ] AllEncryptors/EncryptorTest.RoundTripSmall/1 (84 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTripEmpty/0
+[       OK ] AllEncryptors/EncryptorTest.RoundTripEmpty/0 (36 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTripEmpty/1
+[       OK ] AllEncryptors/EncryptorTest.RoundTripEmpty/1 (85 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTripSingleByte/0
+[       OK ] AllEncryptors/EncryptorTest.RoundTripSingleByte/0 (36 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTripSingleByte/1
+[       OK ] AllEncryptors/EncryptorTest.RoundTripSingleByte/1 (82 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTrip1KB/0
+[       OK ] AllEncryptors/EncryptorTest.RoundTrip1KB/0 (36 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTrip1KB/1
+[       OK ] AllEncryptors/EncryptorTest.RoundTrip1KB/1 (84 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTrip64KB/0
+[       OK ] AllEncryptors/EncryptorTest.RoundTrip64KB/0 (36 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTrip64KB/1
+[       OK ] AllEncryptors/EncryptorTest.RoundTrip64KB/1 (86 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTrip1MiB/0
+[       OK ] AllEncryptors/EncryptorTest.RoundTrip1MiB/0 (39 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTrip1MiB/1
+[       OK ] AllEncryptors/EncryptorTest.RoundTrip1MiB/1 (96 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTripCompressible1MiB/0
+[       OK ] AllEncryptors/EncryptorTest.RoundTripCompressible1MiB/0 (36 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTripCompressible1MiB/1
+[       OK ] AllEncryptors/EncryptorTest.RoundTripCompressible1MiB/1 (95 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTripBinary/0
+[       OK ] AllEncryptors/EncryptorTest.RoundTripBinary/0 (35 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.RoundTripBinary/1
+[       OK ] AllEncryptors/EncryptorTest.RoundTripBinary/1 (82 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.WrongPasswordFails/0
+[2026-07-16 00:02:25.740] [error] Decryption failed: wrong password or corrupted data
+[       OK ] AllEncryptors/EncryptorTest.WrongPasswordFails/0 (36 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.WrongPasswordFails/1
+[2026-07-16 00:02:25.823] [error] Decryption failed: wrong password or corrupted data
+[       OK ] AllEncryptors/EncryptorTest.WrongPasswordFails/1 (82 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.EmptyPassword/0
+[2026-07-16 00:02:25.823] [error] Key derivation: password is empty
+[       OK ] AllEncryptors/EncryptorTest.EmptyPassword/0 (0 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.EmptyPassword/1
+[2026-07-16 00:02:25.823] [error] Key derivation: password is empty
+[       OK ] AllEncryptors/EncryptorTest.EmptyPassword/1 (0 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.PasswordWithSpaces/0
+[       OK ] AllEncryptors/EncryptorTest.PasswordWithSpaces/0 (36 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.PasswordWithSpaces/1
+[       OK ] AllEncryptors/EncryptorTest.PasswordWithSpaces/1 (81 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.CorruptedCiphertextFails/0
+[2026-07-16 00:02:25.976] [error] Decryption failed: wrong password or corrupted data
+[       OK ] AllEncryptors/EncryptorTest.CorruptedCiphertextFails/0 (34 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.CorruptedCiphertextFails/1
+[       OK ] AllEncryptors/EncryptorTest.CorruptedCiphertextFails/1 (81 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.CorruptedHeaderMagicFails/0
+[2026-07-16 00:02:26.075] [error] Decryption: invalid magic bytes — not an encrypted file
+[       OK ] AllEncryptors/EncryptorTest.CorruptedHeaderMagicFails/0 (17 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.CorruptedHeaderMagicFails/1
+[2026-07-16 00:02:26.116] [error] Decryption: invalid magic bytes — not an encrypted file
+[       OK ] AllEncryptors/EncryptorTest.CorruptedHeaderMagicFails/1 (41 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.TruncatedInputFails/0
+[2026-07-16 00:02:26.134] [error] Decryption: input too small for header (23 bytes)
+[       OK ] AllEncryptors/EncryptorTest.TruncatedInputFails/0 (17 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.TruncatedInputFails/1
+[2026-07-16 00:02:26.178] [error] Decryption: input too small for header (23 bytes)
+[       OK ] AllEncryptors/EncryptorTest.TruncatedInputFails/1 (44 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.GarbageInputFails/0
+[2026-07-16 00:02:26.179] [error] Decryption: input too small for header (38 bytes)
+[       OK ] AllEncryptors/EncryptorTest.GarbageInputFails/0 (0 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.GarbageInputFails/1
+[2026-07-16 00:02:26.179] [error] Decryption: input too small for header (38 bytes)
+[       OK ] AllEncryptors/EncryptorTest.GarbageInputFails/1 (0 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.EncryptAppendsToExistingOutput/0
+[       OK ] AllEncryptors/EncryptorTest.EncryptAppendsToExistingOutput/0 (17 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.EncryptAppendsToExistingOutput/1
+[       OK ] AllEncryptors/EncryptorTest.EncryptAppendsToExistingOutput/1 (40 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.UnicodePassword/0
+[       OK ] AllEncryptors/EncryptorTest.UnicodePassword/0 (35 ms)
+[ RUN      ] AllEncryptors/EncryptorTest.UnicodePassword/1
+[       OK ] AllEncryptors/EncryptorTest.UnicodePassword/1 (86 ms)
+[----------] 34 tests from AllEncryptors/EncryptorTest (1650 ms total)
+
+[----------] Global test environment tear-down
+[==========] 262 tests from 17 test suites ran. (2312 ms total)
+[  PASSED  ] 262 tests.
