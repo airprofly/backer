@@ -2,8 +2,6 @@
 #include "gui/backup_tab.h"     // backupTab_ type
 #include "gui/restore_tab.h"    // restoreTab_ type
 #include "gui/schedule_tab.h"   // scheduleTab_ type
-#include "gui/settings_tab.h"   // settingsTab_ type
-
 #include <QAction>
 #include <QApplication>
 #include <QIcon>
@@ -35,21 +33,29 @@ void MainWindow::setupUi()
     backupTab_   = new BackupTab();
     restoreTab_  = new RestoreTab();
     scheduleTab_ = new ScheduleTab();
-    settingsTab_ = new SettingsTab();
 
     setWindowIcon(QIcon(QStringLiteral(":/icons/app")));
 
     tabWidget_->addTab(backupTab_,   QIcon(QStringLiteral(":/icons/backup")),   QStringLiteral("备份"));
     tabWidget_->addTab(restoreTab_,  QIcon(QStringLiteral(":/icons/restore")),  QStringLiteral("还原"));
     tabWidget_->addTab(scheduleTab_, QIcon(QStringLiteral(":/icons/schedule")), QStringLiteral("定时任务"));
-    tabWidget_->addTab(settingsTab_, QIcon(QStringLiteral(":/icons/settings")), QStringLiteral("设置"));
 
     setCentralWidget(tabWidget_);
 
     connect(backupTab_, &BackupTab::backupFinished,
             this, &MainWindow::onBackupFinished);
     connect(restoreTab_, &RestoreTab::restoreFinished,
-            this, &MainWindow::onBackupFinished);
+            this, [this](bool success, QString const& message) {
+        if (success) {
+            QMessageBox::information(this,
+                QStringLiteral("还原完成"), message);
+            tabWidget_->setCurrentWidget(backupTab_);
+        } else {
+            QMessageBox::critical(this,
+                QStringLiteral("还原失败"), message);
+            // Stay on restore tab for retry
+        }
+    });
 }
 
 void MainWindow::setupMenuBar()

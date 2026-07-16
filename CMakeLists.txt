@@ -216,7 +216,6 @@ if(BUILD_GUI AND HAVE_QT6)
         src/gui/backup_tab.cpp
         src/gui/restore_tab.cpp
         src/gui/schedule_tab.cpp
-        src/gui/settings_tab.cpp
         src/gui/backup_worker.cpp
         src/gui/progress_widget.cpp
         src/gui/log_widget.cpp
@@ -228,11 +227,11 @@ if(BUILD_GUI AND HAVE_QT6)
         src/gui/backup_tab.h
         src/gui/restore_tab.h
         src/gui/schedule_tab.h
-        src/gui/settings_tab.h
         src/gui/backup_worker.h
         src/gui/progress_widget.h
         src/gui/log_widget.h
         src/gui/filter_dialog.h
+        src/gui/gui_utils.h
     )
     set(GUI_RESOURCES
         src/gui/resources/app.qrc
