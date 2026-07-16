@@ -54,6 +54,9 @@ ENV/
 .env.bak/
 .conda-env/
 
+# =============== 静态分析缓存 ===============
+.cppcheck-cache/
+
 # =============== 日志文件 ===============
 logs/
 **/logs/
@@ -149,4 +152,4 @@ temp/
 # =============== 其他 ===============
 HELP.md
 .mvn/wrapper/maven-wrapper.jar
-      
+      *Zone.Identifier

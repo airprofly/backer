@@ -8,6 +8,7 @@
 
 class QCheckBox;
 class QComboBox;
+class QDateTimeEdit;
 class QGroupBox;
 class QLineEdit;
 class QPushButton;
@@ -57,10 +58,23 @@ private:
     QCheckBox* enableFilter_{nullptr};
     QPushButton* editFilterBtn_{nullptr};
     QGroupBox* filterGroup_{nullptr};
+
+    // ── Filter inline controls (all 6 dimensions) ────────────
     QLineEdit* includePaths_{nullptr};
     QLineEdit* excludePaths_{nullptr};
     QLineEdit* includeTypes_{nullptr};
     QLineEdit* excludeTypes_{nullptr};
+    QLineEdit* includeNames_{nullptr};
+    QLineEdit* excludeNames_{nullptr};
+    QCheckBox* enableTimeFilter_{nullptr};
+    QDateTimeEdit* mtimeAfter_{nullptr};
+    QDateTimeEdit* mtimeBefore_{nullptr};
+    QCheckBox* enableSizeFilter_{nullptr};
+    QSpinBox* sizeMin_{nullptr};
+    QComboBox* sizeUnitMin_{nullptr};
+    QSpinBox* sizeMax_{nullptr};
+    QComboBox* sizeUnitMax_{nullptr};
+    QLineEdit* ownerFilter_{nullptr};
 
     // ── Pack / compress / encrypt ─────────────────────────────
     QCheckBox* enablePack_{nullptr};
