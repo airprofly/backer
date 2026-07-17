@@ -207,6 +207,20 @@ jobs:
             windeployqt dist/backer-gui.exe
             if ($LASTEXITCODE -ne 0) { Write-Warning "windeployqt exited with $LASTEXITCODE"; $global:LASTEXITCODE = 0 }
           }
+          # 复制 VC++ 运行时 DLL（避免无 VC++ Redistributable 的机器上无法启动）
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vswhere) {
+            $vsInstallDir = & $vswhere -latest -property installationPath
+            $vcRedistPaths = Resolve-Path "$vsInstallDir\VC\Redist\MSVC\*\x64\Microsoft.VC143.CRT\*" -ErrorAction SilentlyContinue
+            if ($vcRedistPaths) {
+              Copy-Item "$(Split-Path $vcRedistPaths[0])\*.dll" dist/
+              Write-Host "✅ VC++ runtime DLLs copied"
+            } else {
+              Write-Warning "⚠ VC++ redist directory not found"
+            }
+          } else {
+            Write-Warning "⚠ vswhere not found, skipping VC++ runtime DLLs"
+          }
           Copy-Item "C:\Program Files\OpenSSL\bin\libcrypto-4-x64.dll" dist/
           Copy-Item "C:\Program Files\OpenSSL\bin\libssl-4-x64.dll" dist/
           Copy-Item LICENSE dist/
