@@ -1,0 +1,41 @@
+@startuml backer-sequence-backup
+skinparam backgroundColor #FEFEFE
+skinparam participantPadding 20
+skinparam sequenceMessageAlign center
+
+actor 用户 as USER
+participant CLI
+participant BackupEngine as ENGINE
+participant 文件系统 as FS
+participant 管道 as PIPE
+participant 存储 as STOR
+
+USER -> CLI: backup /source /dest --pack tar
+activate CLI
+
+CLI -> ENGINE: backup(source, dest, options)
+activate ENGINE
+
+ENGINE -> FS: walk(source)
+activate FS
+FS --> ENGINE: 文件列表
+deactivate FS
+
+ENGINE -> PIPE: apply(筛选/打包/压缩/加密)
+activate PIPE
+PIPE -> FS: read(file)
+FS --> PIPE: file content
+PIPE --> ENGINE: 处理完成
+deactivate PIPE
+
+ENGINE -> STOR: writeFile(dest, data)
+activate STOR
+STOR --> ENGINE: 写入成功
+deactivate STOR
+
+ENGINE --> CLI: 返回结果
+deactivate ENGINE
+
+CLI --> USER: 打印备份结果
+deactivate CLI
+@enduml

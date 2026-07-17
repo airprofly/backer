@@ -1,0 +1,41 @@
+@startuml backer-layers
+skinparam backgroundColor #FEFEFE
+skinparam componentBorderColor #2C3E50
+skinparam componentBackgroundColor #ECF0F1
+skinparam arrowColor #3498DB
+
+title 分层架构
+
+package "表现层" {
+  [CLI 命令]
+  [Qt GUI]
+}
+note right: 入口，调用业务层
+
+package "业务层" {
+  [备份/还原引擎]
+  [备份调度器]
+}
+note right: 编排管道，调度任务
+
+package "管道层" {
+  [筛选/打包/压缩/加密]
+}
+note right: 策略接口，按需组合
+
+package "基础设施层" {
+  [文件系统抽象 / 元数据]
+}
+note right: 文件读写、元数据、特殊文件
+
+package "存储层" {
+  [本地存储]
+}
+note right: 数据持久化
+
+表现层 --> 业务层 : calls
+业务层 --> 管道层 : orchestrates
+业务层 --> 基础设施层 : uses
+业务层 --> 存储层 : reads/writes
+管道层 --> 基础设施层 : accesses files
+@enduml

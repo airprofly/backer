@@ -1,0 +1,23 @@
+@startuml backer-use-case
+skinparam backgroundColor #FEFEFE
+skinparam usecaseBorderColor #2C3E50
+skinparam usecaseBackgroundColor #ECF0F1
+skinparam actorBorderColor #2C3E50
+skinparam arrowColor #2C3E50
+
+left to right direction
+
+actor "用户" as USER
+
+usecase "备份数据" as BCK
+usecase "还原数据" as RES
+usecase "管理定时任务" as SCH
+usecase "查看备份索引" as IDX
+usecase "配置参数" as CFG
+
+USER --> BCK
+USER --> RES
+USER --> SCH
+USER --> IDX
+USER --> CFG
+@enduml

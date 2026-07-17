@@ -4,7 +4,10 @@ assets/
 data/
 testdata/
 output
-
+node_modules/
+package-lock.json
+package.json
+docs/diagrams/dist/*
 
 # ================= latex =================
 .build/*
@@ -58,9 +61,9 @@ ENV/
 .cppcheck-cache/
 
 # =============== 日志文件 ===============
-logs/
-**/logs/
-*.log
+# logs/
+# **/logs/
+# *.log
 
 # =============== IDE ===============
 # JetBrains
